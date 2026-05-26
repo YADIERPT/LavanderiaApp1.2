@@ -1,5 +1,5 @@
 ﻿namespace LavanderiaApp.Modelos;
-public class Cliente
+public class Cliente : Usuario
 {
      public int IdCliente{ get; set; }
      public string Nombre { get; set; }

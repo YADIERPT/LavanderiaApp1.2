@@ -96,3 +96,4 @@ C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\obj\Debug\net9.0-windows\refin
 C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\obj\Debug\net9.0-windows\App.pdb
 C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\obj\Debug\net9.0-windows\App.genruntimeconfig.cache
 C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\obj\Debug\net9.0-windows\ref\App.dll
+C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\obj\Debug\net9.0-windows\App.sourcelink.json
