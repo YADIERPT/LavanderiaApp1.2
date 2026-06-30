@@ -5,14 +5,15 @@ namespace  LavanderiaApp;
 
 public class PedidoRepositorio
 {
-    public void Guardar(Pedido pedido)
+    public int Guardar(Pedido pedido)
     {
         using var conexion = new SqliteConnection(Config.ConnectionString);
         conexion.Open();
 
         string query = @"
             INSERT INTO Pedidos (IdCliente, IdUsuario, FechaRecepcion, FechaEntrega, Estado, Total)
-            VALUES (@IdCliente, @IdUsuario, @FechaRecepcion, @FechaEntrega, @Estado, @Total)";
+            VALUES (@IdCliente, @IdUsuario, @FechaRecepcion, @FechaEntrega, @Estado, @Total);
+            SELECT last_insert_rowid();";
         using var command = new SqliteCommand(query, conexion);
         command.Parameters.AddWithValue("@IdCliente", pedido.IdCliente);
         command.Parameters.AddWithValue("@IdUsuario", pedido.IdUsuario);
@@ -20,8 +21,8 @@ public class PedidoRepositorio
         command.Parameters.AddWithValue("@FechaEntrega", pedido.FechaEntrega.HasValue ? pedido.FechaEntrega.Value.ToString("yyyy-MM-dd HH:mm:ss") : (object)System.DBNull.Value);
         command.Parameters.AddWithValue("@Estado", string.IsNullOrEmpty(pedido.Estado) ? "En espera" : pedido.Estado);
         command.Parameters.AddWithValue("@Total", pedido.Total);
-        command.ExecuteNonQuery();
-
+        
+        return (int)(long)command.ExecuteScalar();
     }
     
     public System.Collections.Generic.List<Pedido> ObtenerTodos()

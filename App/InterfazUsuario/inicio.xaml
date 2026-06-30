@@ -1,0 +1,39 @@
+<Window x:Class="LavanderiaApp.Inicio"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lavandería Pro - Acceso" Height="450" Width="400" 
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F6FA"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    
+    <Border CornerRadius="20" Background="White" Margin="20" BorderBrush="#DCDDE1" BorderThickness="1">
+        <Grid>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="280">
+                <!-- Icono o Logo Simulado -->
+                <Border Width="80" Height="80" Background="#4834d4" CornerRadius="40" Margin="0,0,0,20">
+                    <TextBlock Text="LP" Foreground="White" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                
+                <TextBlock Text="BIENVENIDO" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#2f3542" Margin="0,0,0,10"/>
+                <TextBlock Text="Inicie sesión para continuar" FontSize="14" HorizontalAlignment="Center" Foreground="#A4B0BE" Margin="0,0,0,30"/>
+                
+                <TextBlock Text="Usuario" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtUsuario"/>
+                
+                <TextBlock Text="Contraseña" Style="{StaticResource LabelStyle}"/>
+                <PasswordBox x:Name="txtPassword"/>
+                
+                <Button Content="ENTRAR AL SISTEMA" Click="BtnLogin_Click" Height="45" FontWeight="Bold" Margin="0,10,0,0"/>
+                
+                <Button Content="Salir" Click="BtnSalir_Click" Background="Transparent" Foreground="#A4B0BE" FontSize="12" Margin="0,15,0,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="0"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -7,4 +7,5 @@ public class Servicio
     public string Descripcion { get; set; }
     public decimal Precio { get; set; }
     public int TiempoEstimado { get; set; }
+    public string UnidadMedida { get; set; } // "Kg", "Unidad", "Carga", etc.
 }

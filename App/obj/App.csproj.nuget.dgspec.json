@@ -20,6 +20,7 @@
           "net9.0-windows"
         ],
         "sources": {
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,10 +45,6 @@
         "net9.0-windows7.0": {
           "targetAlias": "net9.0-windows",
           "dependencies": {
-            "Microsoft.Data.SqlClient": {
-              "target": "Package",
-              "version": "[7.1.0-preview1.26124.5, )"
-            },
             "Microsoft.Data.Sqlite": {
               "target": "Package",
               "version": "[11.0.0-preview.4.26230.115, )"

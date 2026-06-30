@@ -1,26 +1,42 @@
 using LavanderiaApp.Modelos;
+using LavanderiaApp.Repositorios;
+using System.Collections.Generic;
 
 namespace LavanderiaApp;
 
 public class PedidoServicio
 {
     private PedidoRepositorio _pedidoRepo;
+    private DetallePedidoRepositorio _detalleRepo;
 
     public PedidoServicio()
     {
         _pedidoRepo = new PedidoRepositorio();
+        _detalleRepo = new DetallePedidoRepositorio();
     }
 
-    public string RegistrarPedido(Pedido pedido)
+    public string RegistrarPedido(Pedido pedido, List<DetallePedido> detalles)
     {
         if (pedido.Total <= 0)
         {
               return "El total del Pedido debe ser mayor a 0.";
         }
 
+        if (detalles == null || detalles.Count == 0)
+        {
+            return "El pedido debe tener al menos un servicio.";
+        }
+
         try
         {
-            _pedidoRepo.Guardar(pedido);
+            int idPedido = _pedidoRepo.Guardar(pedido);
+            
+            foreach (var detalle in detalles)
+            {
+                detalle.IdPedido = idPedido;
+                _detalleRepo.Guardar(detalle);
+            }
+            
             return "Éxito";
         }
         catch (System.Exception ex)
