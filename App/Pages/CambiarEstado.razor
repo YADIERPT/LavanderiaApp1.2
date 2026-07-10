@@ -1,0 +1,158 @@
+@page "/pedidos/estado"
+@page "/pedidos/estado/{Id:int}"
+@using System.Windows
+@using LavanderiaApp.Servicios
+@using LavanderiaApp.Modelos
+@inject NavigationManager NavManager
+
+<div class="edit-order-page-container">
+    <!-- Header -->
+    <div class="edit-order-header">
+        <div class="header-left">
+            <h1 class="header-title">Editar datos del pedido</h1>
+            <p class="header-subtitle">Pedido #@OrderId.ToString("D2")</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
+            <button class="btn-guardar" @onclick="GuardarCambios">Guardar cambios</button>
+        </div>
+    </div>
+
+    <!-- Menu Grid Content -->
+    <div class="edit-order-grid">
+        <!-- Left Column: Cambiar el estado del pedido -->
+        <div class="edit-order-form-column">
+            <div class="dashboard-card form-section-card" style="padding: 32px 36px;">
+                <div class="section-header-custom" style="margin-bottom: 28px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">person</span>
+                    </div>
+                    <h3 class="section-title-custom">Cambiar el estado del pedido</h3>
+                </div>
+
+                <!-- 6 Colored Status Buttons Grid (2 columns x 3 rows) -->
+                <div class="status-selection-grid">
+                    <!-- Option 1: En Lavado -->
+                    <button class="btn-status-option status-lavado @(SelectedStatus == "En Lavado" ? "active" : "")" 
+                            @onclick='() => SelectStatus("En Lavado")'>
+                        <span class="status-option-dot"></span>
+                        <span>En Lavado</span>
+                    </button>
+
+                    <!-- Option 2: En espera de lavado -->
+                    <button class="btn-status-option status-espera-lavado @(SelectedStatus == "En espera de lavado" ? "active" : "")" 
+                            @onclick='() => SelectStatus("En espera de lavado")'>
+                        <span class="status-option-dot"></span>
+                        <span>En espera de lavado</span>
+                    </button>
+
+                    <!-- Option 3: En Secado -->
+                    <button class="btn-status-option status-secado @(SelectedStatus == "En Secado" ? "active" : "")" 
+                            @onclick='() => SelectStatus("En Secado")'>
+                        <span class="status-option-dot"></span>
+                        <span>En Secado</span>
+                    </button>
+
+                    <!-- Option 4: En espera de secado -->
+                    <button class="btn-status-option status-espera-secado @(SelectedStatus == "En espera de secado" ? "active" : "")" 
+                            @onclick='() => SelectStatus("En espera de secado")'>
+                        <span class="status-option-dot"></span>
+                        <span>En espera de secado</span>
+                    </button>
+
+                    <!-- Option 5: Listo para entregar -->
+                    <button class="btn-status-option status-listo @(SelectedStatus == "Listo para entregar" ? "active" : "")" 
+                            @onclick='() => SelectStatus("Listo para entregar")'>
+                        <span class="status-option-dot"></span>
+                        <span>Listo para entregar</span>
+                    </button>
+
+                    <!-- Option 6: En espera -->
+                    <button class="btn-status-option status-espera @(SelectedStatus == "En espera" ? "active" : "")" 
+                            @onclick='() => SelectStatus("En espera")'>
+                        <span class="status-option-dot"></span>
+                        <span>En espera</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Current Status Card -->
+        <div class="edit-order-summary-column">
+            <div class="dashboard-card current-status-card">
+                <span class="status-header-label">ESTADO ACTUAL DEL PEDIDO</span>
+                <div class="current-status-badge-container @GetStatusClass(SelectedStatus)">
+                    <span class="current-status-dot"></span>
+                    <span class="current-status-text">@SelectedStatus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private int OrderId = 3;
+    private string SelectedStatus = "En Lavado";
+    private PedidoRepositorio _pedidoRepo = new();
+
+    protected override void OnInitialized()
+    {
+        if (Id > 0)
+        {
+            OrderId = Id;
+        }
+
+        var pedidoDb = _pedidoRepo.ObtenerPorId(OrderId);
+        if (pedidoDb != null && !string.IsNullOrEmpty(pedidoDb.Estado))
+        {
+            SelectedStatus = pedidoDb.Estado;
+        }
+    }
+
+    private void SelectStatus(string nuevoEstado)
+    {
+        SelectedStatus = nuevoEstado;
+    }
+
+    private void Cancelar()
+    {
+        NavManager.NavigateTo("/pedidos");
+    }
+
+    private void GuardarCambios()
+    {
+        try
+        {
+            _pedidoRepo.ActualizarEstado(OrderId, SelectedStatus);
+            
+            if (SelectedStatus == "En Lavado")
+            {
+                InventarioAutomatizacion.ProcesarConsumoInventario(OrderId);
+            }
+            
+            ToastService.Show("¡Hecho!", $"Estado del Pedido #{OrderId:D2} cambiado exitosamente a '{SelectedStatus}'", "success");
+            NavManager.NavigateTo("/pedidos");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"Error al guardar cambios: {ex.Message}", "danger");
+        }
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "En Lavado" => "status-lavado-pill",
+            "En espera de lavado" => "status-espera-lavado-pill",
+            "En Secado" => "status-secado-pill",
+            "En espera de secado" => "status-espera-secado-pill",
+            "Listo para entregar" => "status-listo-pill",
+            "En espera" => "status-espera-pill",
+            _ => "status-lavado-pill"
+        };
+    }
+}

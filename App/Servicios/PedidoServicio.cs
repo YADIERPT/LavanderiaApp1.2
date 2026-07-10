@@ -15,7 +15,7 @@ public class PedidoServicio
         _detalleRepo = new DetallePedidoRepositorio();
     }
 
-    public string RegistrarPedido(Pedido pedido, List<DetallePedido> detalles)
+    public string RegistrarPedido(Pedido pedido, List<DetallePedido> detalles, decimal anticipo = 0m, Pago.MetodoPago metodo = Pago.MetodoPago.Efectivo)
     {
         if (pedido.Total <= 0)
         {
@@ -35,6 +35,19 @@ public class PedidoServicio
             {
                 detalle.IdPedido = idPedido;
                 _detalleRepo.Guardar(detalle);
+            }
+
+            // Registrar el anticipo en la tabla de pagos (movimiento de caja)
+            if (anticipo > 0m)
+            {
+                var pago = new Pago
+                {
+                    IdPedido = idPedido,
+                    MontoPago = anticipo,
+                    Metodo = metodo,
+                    FechaPago = DateTime.Now
+                };
+                new PagoRepositorio().Guardar(pago);
             }
             
             return "Éxito";

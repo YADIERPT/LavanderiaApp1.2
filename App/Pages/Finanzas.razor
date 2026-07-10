@@ -1,0 +1,664 @@
+@page "/finanzas"
+@using System.Windows
+@using System.Diagnostics
+@using System.IO
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Repositorios
+@inject PedidoRepositorio PedidoRepo
+@inject ClienteRepositorio ClienteRepo
+@inject PagoRepositorio PagoRepo
+@inject NavigationManager NavManager
+
+<div class="finance-page-container" style="flex-direction: column; gap: 24px;">
+    <!-- Top Header Row -->
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 class="header-title">Rendimiento Financiero e Indicadores Clave</h1>
+            <p class="header-subtitle">Análisis de flujos de ingresos en tiempo real, margen neto y métricas ejecutivas PyME</p>
+        </div>
+        <button class="btn-guardar" @onclick="ExportarReportePDF">
+            <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">picture_as_pdf</span>
+            <span>Exportar Reporte (PDF)</span>
+        </button>
+    </div>
+
+    <!-- Period Selector & Date Bar -->
+    <div class="dashboard-card" style="padding: 14px 24px; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-status-filter-chip @(PeriodoSeleccionado == "Diario" ? "chip-active" : "")" @onclick='() => SeleccionarPeriodo("Diario")'>
+                    Diario
+                </button>
+                <button class="btn-status-filter-chip @(PeriodoSeleccionado == "Semanal" ? "chip-active" : "")" @onclick='() => SeleccionarPeriodo("Semanal")'>
+                    Semanal
+                </button>
+                <button class="btn-status-filter-chip @(PeriodoSeleccionado == "Mensual" ? "chip-active" : "")" @onclick='() => SeleccionarPeriodo("Mensual")'>
+                    Mensual
+                </button>
+            </div>
+
+            <div style="font-size: 13px; color: #64748B; font-weight: 700;">
+                Período: <strong style="color: #0F172A;">@FechaInicio.ToString("dd MMM yyyy") — @FechaFin.ToString("dd MMM yyyy")</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Executive KPI Cards Row -->
+    <!-- Executive Cash & Performance Metrics (3x2 Grid) -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;">
+        <!-- Row 1, Card 1: Flujo de Caja Real -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #3B82F6;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Flujo de Caja Real</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 4px 0 2px 0;">
+                @CurrentRevenueValue.ToString("$#,##0.00")
+            </div>
+            <span style="font-size: 12px; color: #64748B; font-weight: 700;">Cobros reales en periodo</span>
+        </div>
+
+        <!-- Row 1, Card 2: Utilidad Neta Real -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #10B981;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Utilidad Neta Real</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #059669; margin: 4px 0 2px 0;">
+                @((CurrentRevenueValue - CurrentCostValue).ToString("$#,##0.00"))
+            </div>
+            <span style="font-size: 12px; color: #059669; font-weight: 700;">@((CurrentRevenueValue > 0 ? (100.0 - (double)(CurrentCostValue / CurrentRevenueValue * 100)) : 100.0).ToString("0.0"))% margen de utilidad</span>
+        </div>
+
+        <!-- Row 1, Card 3: Saldos Pendientes (Cuentas por Cobrar) -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #EF4444;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Saldos Pendientes (En la Calle)</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #EF4444; margin: 4px 0 2px 0;">
+                @SaldosPendientesTotal.ToString("$#,##0.00")
+            </div>
+            <span style="font-size: 12px; color: #64748B; font-weight: 700;">Cuentas activas por cobrar</span>
+        </div>
+
+        <!-- Row 2, Card 1: Total Recaudado Hoy -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #F59E0B;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Recaudado Hoy</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 4px 0 2px 0;">
+                @RecaudadoHoy.ToString("$#,##0.00")
+            </div>
+            <span style="font-size: 12px; color: #22C55E; font-weight: 700;">▲ Cortes e ingresos de hoy</span>
+        </div>
+
+        <!-- Row 2, Card 2: Efectivo en Cajón -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #06B6D4;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Efectivo en Cajón (Hoy)</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0058BC; margin: 4px 0 2px 0;">
+                @EfectivoEnCajon.ToString("$#,##0.00")
+            </div>
+            <span style="font-size: 12px; color: #64748B; font-weight: 700;">Fondo ($500) + Efectivo - Gastos</span>
+        </div>
+
+        <!-- Row 2, Card 3: Tarjetas / Transferencias Neto Hoy -->
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #8B5CF6;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Tarjetas / Transferencias (Hoy)</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 4px 0 2px 0;">
+                @DigitalNetoHoy.ToString("$#,##0.00")
+            </div>
+            <span style="font-size: 12px; color: #8B5CF6; font-weight: 700;">Neto digital (-3.6% com.)</span>
+        </div>
+    </div>
+    
+    <!-- Main Finance Grid Section: 2 Columns -->
+    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 24px; width: 100%;">
+        <!-- Left Column: Recaudación Header Card + Lista de Recaudación (Estilo Pedidos.razor) + Caja Chica -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+
+            <!-- Lista de Transacciones de Recaudación -->
+            <div class="dashboard-card orders-card" style="padding: 24px;">
+                <div class="orders-list-header" style="margin-bottom: 16px;">
+                    <h3 class="card-title-custom" style="font-size: 16px; margin: 0;">Lista de Recaudación por Pedidos</h3>
+                    <span style="font-size: 12px; color: #64748B; font-weight: 600;">@RecentOrders.Count registros</span>
+                </div>
+
+                <div class="orders-vertical-list" style="max-height: 420px; overflow-y: auto;">
+                    @if (RecentOrders.Any())
+                    {
+                        @foreach (var order in RecentOrders)
+                        {
+                            <div class="order-row-item @(SelectedTransaction?.IdPedido == order.IdPedido ? "selected" : "")" 
+                                 @onclick="() => SeleccionarTransaccion(order)" style="cursor: pointer;">
+                                <div class="order-icon-container @GetIconClass(order.Estado)">
+                                    <span class="material-symbols-rounded">payments</span>
+                                </div>
+                                <div class="order-info-details">
+                                    <span class="order-title">Pedido #@order.IdPedido — @order.NombreCliente</span>
+                                    <span class="order-subtitle">@order.Fecha • @order.Peso.ToString("0.0") kg</span>
+                                </div>
+                                <div class="order-status-badge-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                    <span class="order-badge @GetBadgeClass(order.Estado)">
+                                        @order.Estado
+                                    </span>
+                                    <span style="font-weight: 800; color: #059669; font-size: 14px;">@order.Total.ToString("$#,##0.00")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-history-message" style="padding: 32px; text-align: center; color: #64748B;">
+                            No hay transacciones registradas.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Card: Gastos Operativos de Caja Chica (Hoy) -->
+            <div class="dashboard-card" style="padding: 24px; margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #EDF2F7; padding-bottom: 10px; margin-bottom: 16px;">
+                    <span class="material-symbols-rounded" style="color: #EF4444; font-size: 20px;">receipt</span>
+                    <h3 class="card-title-custom" style="font-size: 15px; margin: 0; color: #01579B;">Salidas de Caja Chica</h3>
+                </div>
+
+                <div style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    @if (ListaGastos.Any())
+                    {
+                        @foreach (var g in ListaGastos)
+                        {
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; padding: 10px 14px; border-radius: 12px; border-left: 4px solid #EF4444;">
+                                <div>
+                                    <strong style="font-size: 13px; color: #1E293B; display: block;">@g.Concepto</strong>
+                                    <span style="font-size: 11px; color: #64748B;">@g.Fecha.ToString("dd MMM, hh:mm tt")</span>
+                                </div>
+                                <span style="font-size: 14px; font-weight: 800; color: #EF4444;">- @g.Monto.ToString("$#,##0.00")</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="font-size: 12.5px; color: #64748B; text-align: center; padding: 12px;">
+                            No hay gastos registrados hoy.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Cuadro de Detalles de Transacción Financiera + Cortes -->
+        <div class="order-details-column">
+            @if (SelectedTransaction != null)
+            {
+                <div class="dashboard-card details-card">
+                    <!-- Cyan-Blue Gradient Banner Header -->
+                    <div class="details-header-banner">
+                        <div class="header-banner-text">
+                            <h2>Detalles</h2>
+                            <span>Transacción Financiera</span>
+                        </div>
+                        <span class="material-symbols-rounded decorative-icon">receipt_long</span>
+                    </div>
+
+                    <!-- Properties List -->
+                    <div class="details-body">
+                        <div class="detail-property-row">
+                            <span class="prop-label">CLIENTE</span>
+                            <span class="prop-val font-bold">@SelectedTransaction.NombreCliente</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">ID PEDIDO</span>
+                            <span class="prop-val font-bold">#@SelectedTransaction.IdPedido.ToString("D2")</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">FECHA Y HORA</span>
+                            <span class="prop-val">@SelectedTransaction.Fecha</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">MÁQUINA</span>
+                            <span class="prop-val">@SelectedTransaction.Maquina</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">PESO REGISTRADO</span>
+                            <span class="prop-val">@SelectedTransaction.Peso.ToString("0.0") kg</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">IMPORTE TOTAL</span>
+                            <span class="prop-val val-cost" style="color: #0F172A; font-weight: 700;">@SelectedTransaction.Total.ToString("$#,##0.00")</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">SALDO PENDIENTE</span>
+                            <span class="prop-val font-bold" style="color: @(SelectedTransaction.SaldoPendiente > 0 ? "#DC2626" : "#059669");">@SelectedTransaction.SaldoPendiente.ToString("$#,##0.00")</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">MÉTODO PAGO</span>
+                            <span class="prop-val font-bold">@SelectedTransaction.MetodoPago</span>
+                        </div>
+                        <div class="detail-property-row">
+                            <span class="prop-label">ESTADO DEL PEDIDO</span>
+                            <span class="order-badge @GetBadgeClass(SelectedTransaction.Estado)">@SelectedTransaction.Estado</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="dashboard-card details-card" style="padding: 32px; text-align: center; color: #64748B;">
+                    Seleccione una transacción de la lista para ver sus detalles.
+                </div>
+            }
+
+            <!-- Card: Auditoría de Turnos (Cortes de Caja) -->
+            <div class="dashboard-card" style="padding: 24px; margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #EDF2F7; padding-bottom: 10px; margin-bottom: 16px;">
+                    <span class="material-symbols-rounded" style="color: #059669; font-size: 20px;">lock_open</span>
+                    <h3 class="card-title-custom" style="font-size: 15px; margin: 0; color: #01579B;">Auditoría de Cortes de Caja</h3>
+                </div>
+
+                <div style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                    @if (ListaCortes.Any())
+                    {
+                        @foreach (var c in ListaCortes)
+                        {
+                            <div style="background: #F8FAFC; padding: 12px 14px; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 13px; color: #0F172A;">Corte por: @c.Empleado</strong>
+                                    <span style="font-size: 11px; color: #64748B;">@c.Fecha.ToString("dd/MM/yyyy hh:mm tt")</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+                                    <span>Efectivo Contado: <strong>@c.EfectivoReportado.ToString("$#,##0.00")</strong></span>
+                                    <span>Esperado: <strong>@c.EfectivoEsperado.ToString("$#,##0.00")</strong></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #E2E8F0;">
+                                    <span style="font-size: 12px; font-weight: 700; color: #475569;">Diferencia:</span>
+                                    @if (c.Diferencia > 0)
+                                    {
+                                        <span style="background: #D1FAE5; color: #065F46; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                                            Sobrante de @c.Diferencia.ToString("$#,##0.00")
+                                        </span>
+                                    }
+                                    else if (c.Diferencia < 0)
+                                    {
+                                        <span style="background: #FEE2E2; color: #991B1B; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                                            Faltante de @Math.Abs(c.Diferencia).ToString("$#,##0.00")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="background: #E2E8F0; color: #334155; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                                            Cuadrado ($0.00)
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="font-size: 12.5px; color: #64748B; text-align: center; padding: 12px;">
+                            No se han realizado cortes de caja.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Interactivo para Selección de Tipo de Recaudación -->
+@if (ShowRevenueModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowRevenueModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 36px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <h3 class="section-title-custom" style="font-size: 18px;">Filtrar Recaudación</h3>
+                <button @onclick="() => ShowRevenueModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button class="btn-status-option status-lavando @(CurrentRevenueType == "Ingresos por pedidos" ? "active" : "")" 
+                        @onclick='() => SelectRevenueType("Ingresos por pedidos", TotalGeneralDb)' style="justify-content: space-between;">
+                    <span>Ingresos por pedidos</span>
+                    <span style="font-weight: 800;">@TotalGeneralDb.ToString("$#,##0.00")</span>
+                </button>
+
+                <button class="btn-status-option status-secado @(CurrentRevenueType == "Total General" ? "active" : "")" 
+                        @onclick='() => SelectRevenueType("Total General", TotalGeneralDb)' style="justify-content: space-between;">
+                    <span>Total General Recaudado</span>
+                    <span style="font-weight: 800;">@TotalGeneralDb.ToString("$#,##0.00")</span>
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Reporte PDF Generado -->
+@if (MostrarModalPdfFinanzas)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalPdfFinanzas = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 460px; padding: 36px; text-align: center;">
+            <div style="margin-bottom: 16px;">
+                <span class="material-symbols-rounded" style="font-size: 48px; color: #10B981;">picture_as_pdf</span>
+            </div>
+            <h3 class="section-title-custom" style="font-size: 19px; margin-bottom: 8px; color: #0F172A;">¡Reporte Financiero PDF Listo!</h3>
+            <p style="font-size: 13.5px; color: #475569; margin-bottom: 24px; line-height: 1.5;">
+                El reporte financiero se ha generado exitosamente.<br/>¿Deseas abrir el PDF en tu visor o elegir en qué carpeta guardarlo?
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #0058BC; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" @onclick="AbrirVisorPdfFinanzas">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">visibility</span>
+                    <span>VER REPORTE EN PDF</span>
+                </button>
+                <button class="btn-payment-submit" style="background: #059669; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" @onclick="GuardarComoPdfFinanzas">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">save</span>
+                    <span>ELEGIR DÓNDE GUARDAR...</span>
+                </button>
+                <button class="btn-payment-cancel" style="width: 100%; margin-top: 4px;" @onclick="() => MostrarModalPdfFinanzas = false">
+                    CERRAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public class OrderFinanceModel
+    {
+        public int IdPedido { get; set; }
+        public string NombreCliente { get; set; } = "";
+        public string Fecha { get; set; } = "";
+        public string Estado { get; set; } = "";
+        public decimal Total { get; set; }
+        public double Peso { get; set; } = 10.0;
+        public string Maquina { get; set; } = "Lavadora #01";
+        public string MetodoPago { get; set; } = "Efectivo";
+        public decimal SaldoPendiente { get; set; } = 0m;
+    }
+
+    private bool ShowRevenueModal = false;
+    private bool MostrarModalPdfFinanzas = false;
+    private string GeneradoPdfPathFinanzas = "";
+    private string CurrentRevenueType = "Ingresos por pedidos";
+    private decimal CurrentRevenueValue = 0m;
+    private decimal CurrentCostValue = 0m;
+    private decimal TotalGeneralDb = 0m;
+    private decimal TotalCostDb = 0m;
+    private int TotalPedidosCount = 0;
+    private int PedidosCompletadosCount = 0;
+
+    private decimal RecaudadoHoy = 0m;
+    private decimal EfectivoEnCajon = 0m;
+    private decimal DigitalNetoHoy = 0m;
+    private decimal SaldosPendientesTotal = 0m;
+    private decimal GastosHoyTotal = 0m;
+
+    private List<Gasto> ListaGastos = new();
+    private List<CorteCaja> ListaCortes = new();
+
+    private string PeriodoSeleccionado = "Mensual";
+    private DateTime FechaInicio = DateTime.Today.AddDays(-30);
+    private DateTime FechaFin = DateTime.Now;
+
+    private List<OrderFinanceModel> RecentOrders = new();
+    private OrderFinanceModel? SelectedTransaction;
+
+    protected override void OnInitialized()
+    {
+        CargarDatosFinancieros();
+    }
+
+    private void CargarDatosFinancieros()
+    {
+        var pedidos = PedidoRepo.ObtenerTodos();
+        var clientes = ClienteRepo.ListarTodo();
+        var pagos = PagoRepo.ObtenerTodos();
+        var gastos = new GastoRepositorio().ObtenerTodos();
+
+        TotalPedidosCount = pedidos.Count;
+        PedidosCompletadosCount = pedidos.Count(p => p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase));
+        TotalGeneralDb = pagos.Sum(p => p.MontoPago);
+        TotalCostDb = pedidos.Sum(p => p.CostoInsumos);
+        
+        // 1. Recaudado Hoy
+        RecaudadoHoy = pagos.Where(p => p.FechaPago.Date == DateTime.Today).Sum(p => p.MontoPago);
+
+        // 2. Gastos Hoy
+        GastosHoyTotal = gastos.Where(g => g.Fecha.Date == DateTime.Today).Sum(g => g.Monto);
+
+        // 3. Efectivo en Cajón (Fondo inicial de $500 + Pagos efectivo hoy - Gastos hoy)
+        decimal pagosEfectivoHoy = pagos
+            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Efectivo)
+            .Sum(p => p.MontoPago);
+        EfectivoEnCajon = 500.00m + pagosEfectivoHoy - GastosHoyTotal;
+
+        // 4. Tarjetas / Transferencias Neto Hoy (restar comisión del 3.6% en pagos con tarjeta)
+        decimal pagosTarjetaHoy = pagos
+            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Tarjeta)
+            .Sum(p => p.MontoPago);
+        decimal pagosTransferenciaHoy = pagos
+            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Transferencia)
+            .Sum(p => p.MontoPago);
+        DigitalNetoHoy = (pagosTarjetaHoy * 0.964m) + pagosTransferenciaHoy;
+
+        // 5. Saldos Pendientes (Cuentas por Cobrar) - Suma de saldos restantes en pedidos activos no entregados
+        SaldosPendientesTotal = 0m;
+        foreach (var p in pedidos.Where(x => !x.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) && !x.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase)))
+        {
+            decimal yaPagado = pagos.Where(pg => pg.IdPedido == p.IdPedido).Sum(pg => pg.MontoPago);
+            decimal pendiente = p.Total - yaPagado;
+            if (pendiente > 0m)
+            {
+                SaldosPendientesTotal += pendiente;
+            }
+        }
+
+        CurrentRevenueValue = TotalGeneralDb;
+        CurrentCostValue = TotalCostDb;
+
+        ListaGastos = gastos.OrderByDescending(g => g.Fecha).ToList();
+        ListaCortes = new CorteCajaRepositorio().ObtenerTodos().OrderByDescending(c => c.Fecha).ToList();
+
+        var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
+        var detallesRepo = new DetallePedidoRepositorio();
+
+        decimal activePrice = 15.00m;
+        try
+        {
+            var servicioLavado = new ServicioRepositorio().ObtenerTodos().FirstOrDefault(s => s.IdServicio == 1);
+            if (servicioLavado != null)
+            {
+                activePrice = servicioLavado.Precio;
+            }
+        }
+        catch { }
+
+        RecentOrders = pedidos.OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).Select(p => {
+            var cliente = clientes.FirstOrDefault(c => c.IdCliente == p.IdCliente);
+            var pagoList = pagos.Where(pg => pg.IdPedido == p.IdPedido).ToList();
+            decimal pagado = pagoList.Sum(x => x.MontoPago);
+            
+            var detalles = detallesRepo.ObtenerPorPedido(p.IdPedido);
+            var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
+            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : (double)(p.Total / activePrice);
+
+            string machineName = !string.IsNullOrEmpty(p.MaquinaAsignada) ? p.MaquinaAsignada : "Sin Asignar";
+            if (string.IsNullOrEmpty(p.MaquinaAsignada) && maquinasDb.Count > 0)
+            {
+                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
+                machineName = assignedMachine.Nombre;
+            }
+
+            return new OrderFinanceModel
+            {
+                IdPedido = p.IdPedido,
+                NombreCliente = cliente?.Nombre ?? $"Cliente #{p.IdCliente}",
+                Fecha = p.FechaRecepcion.ToString("dd MMM yyyy, hh:mm tt"),
+                Estado = p.Estado,
+                Total = p.Total,
+                Peso = peso,
+                Maquina = machineName,
+                MetodoPago = pagoList.Count > 0 ? string.Join(", ", pagoList.Select(x => x.Metodo.ToString())) : "Pendiente",
+                SaldoPendiente = p.Total - pagado
+            };
+        }).ToList();
+
+        SelectedTransaction = RecentOrders.FirstOrDefault();
+    }
+
+    private void SeleccionarTransaccion(OrderFinanceModel tx)
+    {
+        SelectedTransaction = tx;
+    }
+
+    private void SeleccionarPeriodo(string periodo)
+    {
+        PeriodoSeleccionado = periodo;
+        var pagos = PagoRepo.ObtenerTodos();
+        var pedidos = PedidoRepo.ObtenerTodos();
+
+        if (periodo == "Diario")
+        {
+            FechaInicio = DateTime.Today;
+            var pagosDia = pagos.Where(p => p.FechaPago.Date == DateTime.Today).ToList();
+            var pedidosDia = pedidos.Where(p => p.FechaRecepcion.Date == DateTime.Today).ToList();
+            
+            CurrentRevenueValue = pagosDia.Sum(p => p.MontoPago);
+            CurrentCostValue = pedidosDia.Sum(p => p.CostoInsumos);
+            TotalPedidosCount = pedidosDia.Count;
+        }
+        else if (periodo == "Semanal")
+        {
+            FechaInicio = DateTime.Today.AddDays(-7);
+            var pagosSemana = pagos.Where(p => p.FechaPago.Date >= FechaInicio.Date).ToList();
+            var pedidosSemana = pedidos.Where(p => p.FechaRecepcion.Date >= FechaInicio.Date).ToList();
+            
+            CurrentRevenueValue = pagosSemana.Sum(p => p.MontoPago);
+            CurrentCostValue = pedidosSemana.Sum(p => p.CostoInsumos);
+            TotalPedidosCount = pedidosSemana.Count;
+        }
+        else
+        {
+            FechaInicio = DateTime.Today.AddDays(-30);
+            CurrentRevenueValue = TotalGeneralDb;
+            CurrentCostValue = TotalCostDb;
+            TotalPedidosCount = pedidos.Count;
+        }
+    }
+
+    private void ExportarReportePDF()
+    {
+        try
+        {
+            string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
+            if (!File.Exists(scriptPath))
+            {
+                scriptPath = @"C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\generar_pdf_actividad.py";
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "python",
+                Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+            using var proc = Process.Start(psi);
+            proc?.WaitForExit(5000); // Esperar que termine de generarse
+
+            string pdfPath = Path.Combine(Path.GetDirectoryName(Config.DbPath) ?? AppDomain.CurrentDomain.BaseDirectory, "Registro_Actividad_Lavanderia.pdf");
+            if (File.Exists(pdfPath))
+            {
+                GeneradoPdfPathFinanzas = pdfPath;
+                MostrarModalPdfFinanzas = true;
+                StateHasChanged();
+            }
+            else
+            {
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF no se encontró en la ruta especificada.", "warning");
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Exportar Reporte", $"Error al generar el reporte PDF: {ex.Message}", "warning");
+        }
+    }
+
+    private void AbrirVisorPdfFinanzas()
+    {
+        MostrarModalPdfFinanzas = false;
+        try
+        {
+            if (File.Exists(GeneradoPdfPathFinanzas))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = GeneradoPdfPathFinanzas,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error", $"No se pudo abrir el visor PDF: {ex.Message}", "warning");
+        }
+    }
+
+    private void GuardarComoPdfFinanzas()
+    {
+        MostrarModalPdfFinanzas = false;
+        try
+        {
+            if (File.Exists(GeneradoPdfPathFinanzas))
+            {
+                var sfd = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Guardar Reporte Financiero PDF",
+                    Filter = "Archivo PDF (*.pdf)|*.pdf",
+                    FileName = $"Reporte_Financiero_Lavanderia_{DateTime.Now:yyyyMMdd}.pdf",
+                    DefaultExt = ".pdf"
+                };
+
+                if (sfd.ShowDialog() == true)
+                {
+                    File.Copy(GeneradoPdfPathFinanzas, sfd.FileName, true);
+                    CustomMessageBox.Show("Reporte Guardado", $"El reporte financiero fue guardado exitosamente en:\n{sfd.FileName}", "success");
+                }
+            }
+            else
+            {
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF original no se encontró para guardar.", "warning");
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error al Guardar", $"No se pudo guardar el archivo: {ex.Message}", "warning");
+        }
+    }
+
+    private void ChangeRevenueType()
+    {
+        ShowRevenueModal = true;
+    }
+
+    private void SelectRevenueType(string type, decimal amount)
+    {
+        CurrentRevenueType = type;
+        CurrentRevenueValue = amount;
+        ShowRevenueModal = false;
+    }
+
+    private string GetBadgeClass(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "ENTREGADO" or "PAGADO" => "badge-completado",
+            "LAVANDO" => "badge-lavando",
+            "SECANDO" => "badge-secando",
+            _ => "badge-espera"
+        };
+    }
+
+    private string GetIconClass(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "ENTREGADO" or "PAGADO" => "status-completado",
+            "LAVANDO" => "status-lavando",
+            "SECANDO" => "status-secando",
+            _ => "status-espera"
+        };
+    }
+}

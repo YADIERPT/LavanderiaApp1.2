@@ -1,0 +1,117 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\css\\app.css",
+      "PackagePath": "staticwebassets\\css\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\css\\google-fonts.css",
+      "PackagePath": "staticwebassets\\css\\google-fonts.css"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\css\\material-icons.css",
+      "PackagePath": "staticwebassets\\css\\material-icons.css"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-100.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-100.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-200.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-200.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-300.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-300.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-400.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-400.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-500.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-500.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-600.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-600.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\materialsymbolsrounded-700.ttf",
+      "PackagePath": "staticwebassets\\fonts\\materialsymbolsrounded-700.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-300.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-300.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-400.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-400.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-500.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-500.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-600.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-600.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-700.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-700.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\outfit-800.ttf",
+      "PackagePath": "staticwebassets\\fonts\\outfit-800.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-300.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-300.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-400.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-400.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-500.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-500.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-600.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-600.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-700.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-700.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\fonts\\plusjakartasans-800.ttf",
+      "PackagePath": "staticwebassets\\fonts\\plusjakartasans-800.ttf"
+    },
+    {
+      "Id": "C:\\Users\\Yadie\\RiderProjects\\LavanderiaApp0.1\\App\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows\\staticwebassets\\msbuild.App.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows\\staticwebassets\\msbuild.App.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows\\staticwebassets\\msbuild.build.App.props",
+      "PackagePath": "build\\App.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows\\staticwebassets\\msbuild.buildMultiTargeting.App.props",
+      "PackagePath": "buildMultiTargeting\\App.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows\\staticwebassets\\msbuild.buildTransitive.App.props",
+      "PackagePath": "buildTransitive\\App.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

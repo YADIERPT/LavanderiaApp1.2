@@ -1,0 +1,504 @@
+
+@page "/maquinas"
+@using System.Windows
+@using LavanderiaApp.Repositorios
+@using LavanderiaApp.Modelos
+@inject NavigationManager NavManager
+
+<div class="maquinas-page-container">
+    <!-- Header Row -->
+    <div class="maquinas-header">
+        <div>
+            <h1 class="header-title">Máquinas y Mantenimiento Preventivo</h1>
+            <p class="header-subtitle" style="color: #64748B; margin-top: 2px;">Gestión de estados, conteo de ciclos operados y alertas de servicio técnico</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
+            <button class="btn-guardar" @onclick="GuardarCambios">Guardar cambios</button>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards for Preventive Maintenance -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;">
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #22C55E;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Máquinas Saludables</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+                @Machines.Count(m => m.Status != "alert") <span style="font-size: 14px; font-weight: 600; color: #22C55E;">/ @Machines.Count de alta</span>
+            </div>
+        </div>
+
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #EF4444;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Mantenimiento Requerido</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #DC2626; margin-top: 4px;">
+                @Machines.Count(m => m.Status == "alert") <span style="font-size: 14px; font-weight: 600; color: #DC2626;">unidades</span>
+            </div>
+        </div>
+
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #3B82F6;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Ciclos Operados</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+                @Machines.Sum(m => m.CiclosOperados) <span style="font-size: 14px; font-weight: 600; color: #64748B;">ciclos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 1: Estado de Máquinas -->
+    <div class="dashboard-card machine-status-card-large">
+        <h3 class="card-title-custom" style="margin-bottom: 2px;">Estado de Unidades y Ciclos</h3>
+        <p class="card-subtitle-custom">Seleccione una unidad para cambiar estado o registrar servicio técnico</p>
+        
+        <div class="machines-grid-large">
+            @if (Machines.Count == 0)
+            {
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; text-align: center; color: #64748B; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 16px; width: 100%;">
+                    <span class="material-symbols-rounded" style="font-size: 56px; color: #94A3B8; margin-bottom: 12px;">local_laundry_service</span>
+                    <h4 style="font-size: 15px; font-weight: 700; color: #334155; margin: 0;">No hay máquinas registradas</h4>
+                    <p style="font-size: 12.5px; color: #64748B; margin: 6px 0 0 0; max-width: 320px;">
+                        Agrega unidades de lavado y secado en la sección de <strong>Configuración del Sistema</strong> para poder gestionar sus ciclos y mantenimiento.
+                    </p>
+                </div>
+            }
+            else
+            {
+                @foreach (var machine in Machines)
+                {
+                    <div class="machine-item-custom-large @(SelectedMachine?.Id == machine.Id ? "selected-machine" : "")" @onclick="() => SelectMachine(machine)">
+                        <div class="machine-circle @GetMachineCircleClass(machine.Status)">
+                            @if (machine.Status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="material-symbols-rounded">local_laundry_service</span>
+                                <div class="check-badge">
+                                    <span class="material-symbols-rounded">check</span>
+                                </div>
+                            }
+                            else if (machine.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || machine.Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="material-symbols-rounded">error</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-rounded">dry_cleaning</span>
+                            }
+                        </div>
+                        <span class="machine-name">@machine.Name</span>
+                        <span class="machine-status @GetStatusTextClass(machine.Status)">
+                            @GetStatusText(machine)
+                        </span>
+                        <span style="font-size: 11px; font-weight: 700; color: #64748B; margin-top: 4px;">
+                            @machine.CiclosOperados ciclos • Próx: @machine.ProxMantenimientoCiclos
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Card 2: Cambiar estado de la máquina -->
+    @if (SelectedMachine != null)
+    {
+        <div class="dashboard-card change-status-card">
+            <div class="change-status-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div>
+                    <h3 class="card-title-custom">Cambiar estado de la @SelectedMachine?.Name</h3>
+                    <span style="font-size: 13px; color: #64748B;">Ciclos actuales: <strong>@SelectedMachine?.CiclosOperados</strong> | Próximo mantenimiento en: <strong>@SelectedMachine?.ProxMantenimientoCiclos ciclos</strong></span>
+                </div>
+            </div>
+
+            <div class="status-options-list" style="margin-top: 20px;">
+                <!-- Option 1: Inactiva -->
+                <div class="status-option-item @(string.Equals(PendingStatus, "INACTIVA", StringComparison.OrdinalIgnoreCase) ? "selected" : "")" @onclick='() => SetPendingStatus("INACTIVA")'>
+                    <div class="activity-icon-container bg-blue">
+                        <span class="material-symbols-rounded">shopping_basket</span>
+                    </div>
+                    <div class="status-option-details">
+                        <span class="status-option-title">Unidad inactiva</span>
+                    </div>
+                    <div class="status-option-meta">
+                        <span class="activity-tag tag-lavando" style="background: rgba(26, 115, 232, 0.1); color: #1A73E8;">INACTIVA</span>
+                    </div>
+                </div>
+
+                <!-- Option 2: Activa -->
+                <div class="status-option-item @(string.Equals(PendingStatus, "ACTIVA", StringComparison.OrdinalIgnoreCase) ? "selected" : "")" @onclick='() => SetPendingStatus("ACTIVA")'>
+                    <div class="activity-icon-container bg-green">
+                        <span class="material-symbols-rounded">check</span>
+                    </div>
+                    <div class="status-option-details">
+                        <span class="status-option-title">Unidad activa</span>
+                    </div>
+                    <div class="status-option-meta">
+                        <span class="activity-tag tag-completado" style="background: rgba(21, 128, 61, 0.1); color: #15803D;">ACTIVA</span>
+                    </div>
+                </div>
+
+                <!-- Option 3: Fuera de servicio (Mantenimiento) -->
+                <div class="status-option-item @(string.Equals(PendingStatus, "MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || string.Equals(PendingStatus, "ALERT", StringComparison.OrdinalIgnoreCase) ? "selected" : "")" @onclick='() => SetPendingStatus("MANTENIMIENTO")'>
+                    <div class="activity-icon-container bg-red">
+                        <span class="material-symbols-rounded">warning</span>
+                    </div>
+                    <div class="status-option-details">
+                        <span class="status-option-title">Fuera de servicio (Mantenimiento)</span>
+                    </div>
+                    <div class="status-option-meta">
+                        <span class="activity-tag tag-alerta" style="background: rgba(220, 38, 38, 0.1); color: #DC2626;">MANTENIMIENTO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (MostrarModalObservacion)
+{
+    <div class="tipo-pago-backdrop">
+        <div class="tipo-pago-modal-card" style="max-width: 520px; padding: 36px 32px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg" style="background: rgba(220, 38, 38, 0.1); color: #DC2626;">
+                    <span class="material-symbols-rounded payment-icon">build</span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 8px;">
+                Observaciones
+            </h2>
+
+            <p style="font-size: 13.5px; color: #64748B; text-align: center; margin-bottom: 20px; line-height: 1.4;">
+                La <strong>@SelectedMachine?.Name</strong> fue cambiada a <strong>FUERA DE SERVICIO (MANTENIMIENTO)</strong>.<br />
+                Describa el motivo u observación del servicio:
+            </p>
+
+            <div style="width: 100%; margin-bottom: 24px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px; text-transform: uppercase;">
+                    Observación del Operador (@(SessionManager.UsuarioActual?.Nombre ?? "Atendiendo"))
+                </label>
+                <textarea class="search-input" style="width: 100%; height: 95px; padding: 12px; border-radius: 12px; border: 1.5px solid #CBD5E1; font-family: inherit; font-size: 14px; resize: none;"
+                          placeholder="Ejemplo: Calentamiento en motor / Banda desgastada..."
+                          @bind="TextoObservacionActual"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 14px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #DC2626;" @onclick="GuardarObservacionMantenimiento">
+                    GUARDAR OBSERVACIÓN
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalObservacion = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (MostrarModalConfirmacion)
+{
+    <div class="tipo-pago-backdrop">
+        <div class="tipo-pago-modal-card" style="max-width: 500px; padding: 36px 32px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg" style="background: rgba(0, 86, 198, 0.1); color: #0056C6;">
+                    <span class="material-symbols-rounded payment-icon">help_outline</span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px;">
+                ¿Confirmar cambio de estado?
+            </h2>
+
+            <p style="font-size: 14.5px; color: #475569; text-align: center; margin-bottom: 24px; line-height: 1.5;">
+                Estás a punto de guardar y sincronizar el estado de la <strong>@SelectedMachine?.Name</strong> a:<br />
+                <span class="activity-tag" style="display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 700; padding: 6px 16px; background: rgba(0,86,198,0.1); color: #0056C6; border-radius: 20px;">
+                    @SelectedMachine?.Status.ToUpper()
+                </span>
+            </p>
+
+            <div style="display: flex; gap: 14px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #0056C6;" @onclick="EjecutarGuardadoConfirmado">
+                    CONFIRMAR Y GUARDAR
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalConfirmacion = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public class MachineItem
+    {
+        public int Id { get; set; }
+        
+        private string? _name;
+        public string Name
+        {
+            get => string.IsNullOrEmpty(_name) ? $"Unidad #{Id:02}" : _name;
+            set => _name = value;
+        }
+        
+        public string Status { get; set; } // "ACTIVA", "MANTENIMIENTO", "INACTIVA"
+        
+        private string _timeRemainingText = "";
+        public string TimeRemainingText
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_timeRemainingText)) return _timeRemainingText;
+                if (Status == "ACTIVA") return "10m rest.";
+                if (Status == "MANTENIMIENTO") return "Requiere Mantenimiento";
+                return "Inactiva";
+            }
+            set => _timeRemainingText = value;
+        }
+        
+        public int CiclosOperados { get; set; }
+        public int ProxMantenimientoCiclos { get; set; }
+        public string Observacion { get; set; } = "";
+    }
+
+    public static List<MachineItem> SharedMachines
+    {
+        get
+        {
+            try
+            {
+                var repo = new MaquinaRepositorio();
+                var dbMaquinas = repo.ObtenerTodas();
+                return dbMaquinas.Select(m => new MachineItem
+                {
+                    Id = m.IdMaquina,
+                    Name = m.Nombre,
+                    Status = m.Status,
+                    CiclosOperados = m.CiclosOperados,
+                    ProxMantenimientoCiclos = m.ProxMantenimientoCiclos,
+                    Observacion = m.Observacion ?? "",
+                    TimeRemainingText = m.TimeRemainingText
+                }).ToList();
+            }
+            catch
+            {
+                return new List<MachineItem>();
+            }
+        }
+    }
+
+    private List<MachineItem> Machines = new();
+    private MaquinaRepositorio _maquinaRepo = new();
+    private MachineItem SelectedMachine;
+    private string PendingStatus = "";
+    private bool MostrarModalConfirmacion = false;
+    private bool MostrarModalObservacion = false;
+    private string TextoObservacionActual = "";
+
+    protected override void OnInitialized()
+    {
+        CargarMaquinas();
+        SelectedMachine = Machines.FirstOrDefault(m => m.Id == 4) ?? Machines.FirstOrDefault();
+        PendingStatus = SelectedMachine?.Status ?? "INACTIVA";
+        TextoObservacionActual = SelectedMachine?.Observacion ?? "";
+    }
+
+    private void CargarMaquinas()
+    {
+        var dbMaquinas = _maquinaRepo.ObtenerTodas();
+        Machines = dbMaquinas.Select(m => new MachineItem
+        {
+            Id = m.IdMaquina,
+            Name = m.Nombre,
+            Status = m.Status,
+            CiclosOperados = m.CiclosOperados,
+            ProxMantenimientoCiclos = m.ProxMantenimientoCiclos,
+            Observacion = m.Observacion,
+            TimeRemainingText = m.TimeRemainingText
+        }).ToList();
+    }
+
+    private void SelectMachine(MachineItem machine)
+    {
+        SelectedMachine = machine;
+        PendingStatus = machine.Status;
+        TextoObservacionActual = machine.Observacion ?? "";
+    }
+
+    private void SetPendingStatus(string status)
+    {
+        PendingStatus = status;
+        if (SelectedMachine != null)
+        {
+            SelectedMachine.Status = PendingStatus.ToUpper();
+
+            if (SelectedMachine.Status == "ACTIVA")
+            {
+                SelectedMachine.TimeRemainingText = "10m rest.";
+                
+                // Guardar en base de datos
+                var maquinaDb = new Maquina
+                {
+                    IdMaquina = SelectedMachine.Id,
+                    Nombre = SelectedMachine.Name,
+                    Status = SelectedMachine.Status,
+                    CiclosOperados = SelectedMachine.CiclosOperados,
+                    ProxMantenimientoCiclos = SelectedMachine.ProxMantenimientoCiclos,
+                    Observacion = SelectedMachine.Observacion
+                };
+                _maquinaRepo.Guardar(maquinaDb);
+
+                try
+                {
+                    new AuditoriaRepositorio().Guardar(new Auditoria
+                    {
+                        Fecha = DateTime.Now,
+                        Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                        Modulo = "Maquinas",
+                        Accion = "Puesta en Marcha",
+                        Detalle = $"Máquina {SelectedMachine.Name} reactivada y puesta en estado ACTIVA."
+                    });
+                }
+                catch { }
+            }
+            else if (SelectedMachine.Status == "MANTENIMIENTO" || SelectedMachine.Status == "ALERT")
+            {
+                SelectedMachine.TimeRemainingText = "Requiere Mantenimiento";
+                TextoObservacionActual = string.IsNullOrWhiteSpace(SelectedMachine.Observacion)
+                    ? "Sensor detectó calentamiento anormal del motor."
+                    : SelectedMachine.Observacion;
+                MostrarModalObservacion = true; // Abre modal de observación
+            }
+            else
+            {
+                SelectedMachine.TimeRemainingText = "Inactiva";
+                
+                // Guardar en base de datos
+                var maquinaDb = new Maquina
+                {
+                    IdMaquina = SelectedMachine.Id,
+                    Nombre = SelectedMachine.Name,
+                    Status = SelectedMachine.Status,
+                    CiclosOperados = SelectedMachine.CiclosOperados,
+                    ProxMantenimientoCiclos = SelectedMachine.ProxMantenimientoCiclos,
+                    Observacion = SelectedMachine.Observacion
+                };
+                _maquinaRepo.Guardar(maquinaDb);
+
+                try
+                {
+                    new AuditoriaRepositorio().Guardar(new Auditoria
+                    {
+                        Fecha = DateTime.Now,
+                        Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                        Modulo = "Maquinas",
+                        Accion = "Detención",
+                        Detalle = $"Máquina {SelectedMachine.Name} apagada manualmente (INACTIVA)."
+                    });
+                }
+                catch { }
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private void GuardarObservacionMantenimiento()
+    {
+        if (SelectedMachine != null)
+        {
+            SelectedMachine.Observacion = TextoObservacionActual;
+            
+            // Guardar en base de datos
+            var maquinaDb = new Maquina
+            {
+                IdMaquina = SelectedMachine.Id,
+                Nombre = SelectedMachine.Name,
+                Status = SelectedMachine.Status,
+                CiclosOperados = SelectedMachine.CiclosOperados,
+                ProxMantenimientoCiclos = SelectedMachine.ProxMantenimientoCiclos,
+                Observacion = SelectedMachine.Observacion
+            };
+            _maquinaRepo.Guardar(maquinaDb);
+
+            MostrarModalObservacion = false;
+            ToastService.Show("¡Observación Registrada!", $"Observación guardada para la {SelectedMachine.Name}.", "info");
+            
+            try
+            {
+                new AuditoriaRepositorio().Guardar(new Auditoria
+                {
+                    Fecha = DateTime.Now,
+                    Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                    Modulo = "Maquinas",
+                    Accion = "Reporte Falla",
+                    Detalle = $"Máquina {SelectedMachine.Name} fuera de servicio por mantenimiento. Observación: {TextoObservacionActual}"
+                });
+            }
+            catch { }
+
+            StateHasChanged();
+        }
+    }
+
+    private void Cancelar()
+    {
+        NavManager.NavigateTo("/dashboard");
+    }
+
+    private void GuardarCambios()
+    {
+        if (SelectedMachine != null)
+        {
+            // Abre el modal de salvaguarda/confirmación antes de regresar a General
+            MostrarModalConfirmacion = true;
+        }
+    }
+
+    private void EjecutarGuardadoConfirmado()
+    {
+        if (SelectedMachine != null)
+        {
+            // Asegurar que el estado final quede guardado en base de datos
+            var maquinaDb = new Maquina
+            {
+                IdMaquina = SelectedMachine.Id,
+                Nombre = SelectedMachine.Name,
+                Status = SelectedMachine.Status,
+                CiclosOperados = SelectedMachine.CiclosOperados,
+                ProxMantenimientoCiclos = SelectedMachine.ProxMantenimientoCiclos,
+                Observacion = SelectedMachine.Observacion
+            };
+            _maquinaRepo.Guardar(maquinaDb);
+
+            MostrarModalConfirmacion = false;
+            ToastService.Show("¡Hecho!", $"Estado de la {SelectedMachine.Name} guardado exitosamente como '{SelectedMachine.Status}'", "success");
+            NavManager.NavigateTo("/dashboard");
+        }
+    }
+
+    private string GetMachineCircleClass(string status)
+    {
+        return status.ToUpper() switch
+        {
+            "ACTIVA" => "active",
+            "MANTENIMIENTO" or "ALERT" => "alert",
+            "INACTIVA" => "inactive",
+            _ => "inactive"
+        };
+    }
+
+    private string GetStatusText(MachineItem m)
+    {
+        return m.Status.ToUpper() switch
+        {
+            "ACTIVA" => $"Activa • {m.TimeRemainingText}",
+            "MANTENIMIENTO" or "ALERT" => "Requiere Mantenimiento",
+            "INACTIVA" => "Inactiva",
+            _ => "En Espera"
+        };
+    }
+
+    private string GetStatusTextClass(string status)
+    {
+        return status.ToUpper() switch
+        {
+            "ACTIVA" => "status-active",
+            "MANTENIMIENTO" or "ALERT" => "status-alert",
+            "INACTIVA" => "status-inactive",
+            _ => ""
+        };
+    }
+}

@@ -1,0 +1,520 @@
+@page "/pedidos"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
+@inject NavigationManager NavManager
+
+<div class="orders-page-container">
+    <!-- Left Column: Orders List -->
+    <div class="orders-list-column">
+        <div class="dashboard-card orders-card">
+            <!-- Header -->
+            <div class="orders-list-header">
+                <h1 class="header-title">Gestión de pedidos</h1>
+                <button class="filter-button @(SelectedStatusFilter != "TODOS" || !string.IsNullOrEmpty(SearchText) ? "filter-active" : "")" @onclick="ToggleFilters">
+                    <span class="material-symbols-rounded">filter_list</span>
+                    <span>Filtrar @(SelectedStatusFilter != "TODOS" ? $"({SelectedStatusFilter})" : "")</span>
+                </button>
+            </div>
+
+            <!-- Active Filter Badge Bar if filtering -->
+            @if (SelectedStatusFilter != "TODOS" || !string.IsNullOrEmpty(SearchText))
+            {
+                <div class="active-filter-bar">
+                    <span>Filtro: <strong>@SelectedStatusFilter</strong> @(!string.IsNullOrEmpty(SearchText) ? $"• \"{SearchText}\"" : "")</span>
+                    <button class="btn-clear-filter" @onclick="LimpiarFiltros">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">close</span>
+                    </button>
+                </div>
+            }
+
+            <!-- Orders vertical list -->
+            <div class="orders-vertical-list">
+                @if (FilteredOrders.Any())
+                {
+                    @foreach (var order in FilteredOrders)
+                    {
+                        <div class="order-row-item @(SelectedOrder?.Id == order.Id ? "selected" : "")" @onclick="() => SelectOrder(order)">
+                            <div class="order-icon-container @GetIconClass(order.Estado)">
+                                <span class="material-symbols-rounded">assignment</span>
+                            </div>
+                            <div class="order-info-details">
+                                <span class="order-title">Pedido #@order.Id</span>
+                                <span class="order-subtitle">@order.Cliente • @order.Peso.ToString("0.0") kg</span>
+                            </div>
+                            <div class="order-status-badge-container">
+                                <span class="order-badge @GetBadgeClass(order.Estado)">
+                                    @order.Estado
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-history-message" style="padding: 32px; text-align: center; color: #64748B;">
+                        No se encontraron pedidos con el filtro seleccionado.
+                    </div>
+                }
+            </div>
+
+            <!-- Register Button -->
+            <div class="register-btn-container">
+                <button class="btn-register-order" @onclick="OpenRegisterModal">
+                    <span class="material-symbols-rounded">add</span>
+                    <span>Registrar pedido</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Selected Order Details -->
+    <div class="order-details-column">
+        @if (SelectedOrder != null)
+        {
+            <div class="dashboard-card details-card">
+                <!-- Cyan-Blue Gradient Header -->
+                <div class="details-header-banner">
+                    <div class="header-banner-text">
+                        <h2>Detalles</h2>
+                        <span>Pedidos</span>
+                    </div>
+                    <!-- Decorative back card icon -->
+                    <span class="material-symbols-rounded decorative-icon">badge</span>
+                </div>
+
+                <!-- Properties List -->
+                <div class="details-body">
+                    <div class="detail-property-row">
+                        <span class="prop-label">CLIENTE</span>
+                        <span class="prop-val font-bold">@SelectedOrder.Cliente</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">DÍA</span>
+                        <span class="prop-val">@SelectedOrder.Dia</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">HORA RECEPCIÓN</span>
+                        <span class="prop-val">@SelectedOrder.HoraRecepcion</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">MÁQUINA</span>
+                        <span class="prop-val">@SelectedOrder.Maquina</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">PESO</span>
+                        <span class="prop-val">@SelectedOrder.Peso.ToString("0.0") kg</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">IMPORTE TOTAL</span>
+                        <span class="prop-val val-cost" style="color: #0F172A; font-weight: 700;">@SelectedOrder.Costo.ToString("$#,##0.00")</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">MONTO ABONADO</span>
+                        <span class="prop-val font-bold" style="color: #059669;">@SelectedOrder.Abonado.ToString("$#,##0.00")</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">SALDO PENDIENTE</span>
+                        <span class="prop-val font-bold" style="color: @(SelectedOrder.SaldoPendiente > 0 ? "#DC2626" : "#059669");">@SelectedOrder.SaldoPendiente.ToString("$#,##0.00")</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">OTROS SERVICIOS</span>
+                        <span class="prop-val">@SelectedOrder.OtrosServicios</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">EMPLEADO</span>
+                        <span class="prop-val">@SelectedOrder.Empleado</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">HORA ENTREGA</span>
+                        <span class="prop-val">@SelectedOrder.HoraEntrega</span>
+                    </div>
+
+                    <!-- Inner action buttons -->
+                    <div class="details-actions">
+                        <button class="btn-order-status" @onclick="ChangeStatus">
+                            Estado del pedido
+                        </button>
+                        <button class="btn-order-edit" @onclick="EditOrder">
+                            <span class="material-symbols-rounded">edit</span>
+                            <span>Editar pedido</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Attached Large Button -->
+            <div class="finalize-btn-container">
+                <button class="btn-finalize-order" @onclick="FinalizeOrder">
+                    Finalizar pedido
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Interactivo de Filtros de Pedidos -->
+@if (ShowFilterModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowFilterModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 540px; padding: 40px;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 24px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">filter_list</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 20px;">Filtrar Pedidos</h3>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowFilterModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Search box inside filter modal -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 20px;">
+                <label class="form-input-label">Buscar por Cliente o Pedido #</label>
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">search</span>
+                    <input type="text" class="form-input-field" @bind="SearchText" @bind:event="oninput" placeholder="Nombre o número..." />
+                </div>
+            </div>
+
+            <!-- Filter by Status options -->
+            <div style="width: 100%; margin-bottom: 24px;">
+                <label class="form-input-label" style="margin-bottom: 10px; display: block;">Estado del Pedido</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    @foreach (var statusOption in StatusOptions)
+                    {
+                        <button class="btn-status-filter-chip @(SelectedStatusFilter == statusOption ? "chip-active" : "")" 
+                                @onclick="() => SetStatusFilter(statusOption)">
+                            @statusOption
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div style="width: 100%; display: flex; gap: 16px; margin-top: 10px;">
+                <button class="btn-payment-submit" @onclick="() => ShowFilterModal = false">
+                    APLICAR FILTROS
+                </button>
+                <button class="btn-payment-cancel" @onclick="LimpiarFiltros">
+                    RESTAURAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (MostrarModalPedidoEntregado)
+{
+    <!-- Recreación exacta de 'evitar finalizar pedido mas de una vez.png' -->
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalPedidoEntregado = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 48px 40px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 24px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon">local_laundry_service</span>
+                    <span class="online-status-dot"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 28px; font-size: 20px; text-transform: uppercase;">
+                EL PEDIDO YA ESTA ENTREGADO
+            </h2>
+
+            <div style="width: 100%; display: flex; justify-content: center;">
+                <button class="btn-pago-efectivo" style="max-width: 240px; padding: 14px 28px;" @onclick="() => MostrarModalPedidoEntregado = false">
+                    CONTINUAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de Pago y Entrega -->
+@if (MostrarModalPagoEntrega)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalPagoEntrega = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px; text-align: center;">
+            <!-- Icon Wrapper -->
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg" style="background: @(ModalSaldoPendiente > 0m ? "#FEF3C7" : "#D1FAE5");">
+                    <span class="material-symbols-rounded payment-icon" style="color: @(ModalSaldoPendiente > 0m ? "#D97706" : "#059669");">
+                        @(ModalSaldoPendiente > 0m ? "payments" : "check_circle")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Title & Text -->
+            <h3 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 19px; font-weight: 700; color: #1E293B;">
+                Confirmación de Entrega
+            </h3>
+
+            @if (ModalSaldoPendiente > 0m)
+            {
+                <p style="font-size: 14.5px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                    Este pedido tiene un saldo pendiente de <strong style="color: #DC2626; font-size: 16px;">@ModalSaldoPendiente.ToString("$#,##0.00")</strong> pesos.
+                    <br />¿Cómo lo está pagando el cliente?
+                </p>
+
+                <!-- Payment Method Selector -->
+                <div class="form-input-group" style="text-align: left; width: 100%; margin-bottom: 24px;">
+                    <label class="form-input-label" style="font-weight: 700; color: #1E293B; margin-bottom: 6px; display: block;">Método de Pago</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">credit_card</span>
+                        <select class="form-input-field select-field" style="padding-left: 48px;" @bind="MetodoPagoEntrega">
+                            <option value="@Pago.MetodoPago.Efectivo">Efectivo</option>
+                            <option value="@Pago.MetodoPago.Tarjeta">Tarjeta</option>
+                            <option value="@Pago.MetodoPago.Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p style="font-size: 14.5px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                    Este pedido se encuentra **totalmente liquidado** (Saldo pendiente: $0.00).
+                    <br />¿Desea confirmar la entrega física al cliente?
+                </p>
+            }
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 12px;">
+                <button class="btn-payment-submit" style="background: #0058BC;" @onclick="ConfirmarPagoEntrega">
+                    CONFIRMAR ENTREGA
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalPagoEntrega = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public class OrderItem
+    {
+        public int Id { get; set; }
+        public string Cliente { get; set; }
+        public string Dia { get; set; }
+        public string HoraRecepcion { get; set; }
+        public string Maquina { get; set; }
+        public double Peso { get; set; }
+        public decimal Costo { get; set; }
+        public string OtrosServicios { get; set; }
+        public string Empleado { get; set; }
+        public string HoraEntrega { get; set; }
+        public string Estado { get; set; }
+        public decimal Abonado { get; set; } = 0m;
+        public decimal SaldoPendiente { get; set; } = 0m;
+    }
+
+    private bool MostrarModalPedidoEntregado = false;
+    private bool ShowFilterModal = false;
+    private string SearchText = "";
+    private string SelectedStatusFilter = "TODOS";
+
+    private readonly string[] StatusOptions = new[] { "TODOS", "EN ESPERA DE ENTREGA", "SECANDO", "LAVANDO", "ENTREGADO" };
+
+    private List<OrderItem> Orders = new();
+    private OrderItem SelectedOrder;
+
+    private PedidoRepositorio _pedidoRepo = new();
+    private ClienteRepositorio _clienteRepo = new();
+    private PagoRepositorio _pagoRepo = new();
+    private MaquinaRepositorio _maquinaRepo = new();
+
+    private bool MostrarModalPagoEntrega = false;
+    private decimal ModalSaldoPendiente = 0m;
+    private Pago.MetodoPago MetodoPagoEntrega = Pago.MetodoPago.Efectivo;
+
+    private IEnumerable<OrderItem> FilteredOrders => Orders.Where(o =>
+        (SelectedStatusFilter == "TODOS" || o.Estado.Equals(SelectedStatusFilter, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(SearchText) ||
+         o.Cliente.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+         o.Id.ToString().Contains(SearchText))
+    );
+
+    protected override void OnInitialized()
+    {
+        CargarPedidos();
+    }
+
+    private void CargarPedidos()
+    {
+        var pedidosDb = _pedidoRepo.ObtenerTodos();
+        var clientesDb = _clienteRepo.ListarTodo();
+        var pagosDb = _pagoRepo.ObtenerTodos();
+        var maquinasDb = _maquinaRepo.ObtenerTodas();
+        var serviciosDb = new ServicioRepositorio().ObtenerTodos();
+        var detallesRepo = new DetallePedidoRepositorio();
+
+        var servicioLavado = serviciosDb.FirstOrDefault(s => s.IdServicio == 1);
+        decimal activePrice = servicioLavado?.Precio ?? 15.00m;
+
+        Orders = pedidosDb.Select((p, index) => {
+            var cliente = clientesDb.FirstOrDefault(c => c.IdCliente == p.IdCliente);
+            string nombreCliente = cliente?.Nombre ?? $"Cliente #{p.IdCliente}";
+
+            var pagos = pagosDb.Where(pg => pg.IdPedido == p.IdPedido).ToList();
+            decimal abonado = pagos.Sum(x => x.MontoPago);
+            decimal saldoPendiente = p.Total - abonado;
+
+            // Cargar detalles para obtener peso real y nombres de servicios reales
+            var detalles = detallesRepo.ObtenerPorPedido(p.IdPedido);
+
+            // Asignar máquina dinámicamente según las máquinas reales en la base de datos si no tiene una guardada
+            string machineName = !string.IsNullOrEmpty(p.MaquinaAsignada) ? p.MaquinaAsignada : "Sin Asignar";
+            if (string.IsNullOrEmpty(p.MaquinaAsignada) && maquinasDb.Count > 0)
+            {
+                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
+                machineName = assignedMachine.Nombre;
+            }
+
+            // Calcular peso real si existe el servicio de Lavado General (IdServicio = 1)
+            var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
+            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : (double)(p.Total / activePrice);
+
+            // Obtener nombres de todos los servicios asociados al pedido
+            var nombresServicios = detalles
+                .Select(d => serviciosDb.FirstOrDefault(s => s.IdServicio == d.IdServicio)?.Nombre ?? "Servicio")
+                .ToList();
+            string otrosServicios = nombresServicios.Count > 0 ? string.Join(" + ", nombresServicios) : "Lavado Estándar";
+
+            return new OrderItem {
+                Id = p.IdPedido,
+                Cliente = nombreCliente,
+                Dia = p.FechaRecepcion.ToString("dd MMM, yyyy"),
+                HoraRecepcion = p.FechaRecepcion.ToString("hh:mm tt"),
+                Maquina = machineName,
+                Peso = peso,
+                Costo = p.Total,
+                OtrosServicios = otrosServicios,
+                Empleado = SessionManager.UsuarioActual?.Nombre ?? "Atendido en Recepción",
+                HoraEntrega = p.FechaEntrega.HasValue ? p.FechaEntrega.Value.ToString("hh:mm tt") : (p.Estado.ToLower().Contains("entregado") ? p.FechaRecepcion.AddHours(2).ToString("hh:mm tt") : "Pendiente"),
+                Estado = p.Estado.ToUpper(),
+                Abonado = abonado,
+                SaldoPendiente = Math.Max(0m, saldoPendiente)
+            };
+        }).ToList();
+
+        SelectedOrder = Orders.FirstOrDefault();
+    }
+
+    private void SelectOrder(OrderItem order)
+    {
+        SelectedOrder = order;
+    }
+
+    private void ToggleFilters()
+    {
+        ShowFilterModal = !ShowFilterModal;
+    }
+
+    private void SetStatusFilter(string status)
+    {
+        SelectedStatusFilter = status;
+    }
+
+    private void LimpiarFiltros()
+    {
+        SearchText = "";
+        SelectedStatusFilter = "TODOS";
+        ShowFilterModal = false;
+    }
+
+    private void OpenRegisterModal()
+    {
+        NavManager.NavigateTo("/pedidos/agregar");
+    }
+
+    private void ChangeStatus()
+    {
+        if (SelectedOrder != null)
+        {
+            NavManager.NavigateTo($"/pedidos/estado/{SelectedOrder.Id}");
+        }
+    }
+
+    private void EditOrder()
+    {
+        if (SelectedOrder != null)
+        {
+            NavManager.NavigateTo($"/pedidos/editar/{SelectedOrder.Id}");
+        }
+    }
+
+    private void FinalizeOrder()
+    {
+        if (SelectedOrder != null)
+        {
+            if (SelectedOrder.Estado.Equals("ENTREGADO", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoEntregado = true;
+                return;
+            }
+
+            // Calcular saldo pendiente real
+            var pagos = _pagoRepo.ObtenerTodos().Where(pg => pg.IdPedido == SelectedOrder.Id).ToList();
+            decimal yaPagado = pagos.Sum(pg => pg.MontoPago);
+            ModalSaldoPendiente = SelectedOrder.Costo - yaPagado;
+            MetodoPagoEntrega = Pago.MetodoPago.Efectivo; // Por defecto en Efectivo
+            
+            MostrarModalPagoEntrega = true;
+        }
+    }
+
+    private void ConfirmarPagoEntrega()
+    {
+        try
+        {
+            if (ModalSaldoPendiente > 0m)
+            {
+                // Registrar el pago restante
+                var pago = new Pago
+                {
+                    IdPedido = SelectedOrder.Id,
+                    MontoPago = ModalSaldoPendiente,
+                    Metodo = MetodoPagoEntrega,
+                    FechaPago = DateTime.Now
+                };
+                _pagoRepo.Guardar(pago);
+            }
+
+            // Cambiar estado a Entregado
+            _pedidoRepo.Entregar(SelectedOrder.Id);
+            
+            ToastService.Show("¡Pedido Entregado!", $"El pedido #{SelectedOrder.Id:D2} ha sido entregado correctamente.", "success");
+            
+            MostrarModalPagoEntrega = false;
+            CargarPedidos();
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error", $"Error al procesar la entrega: {ex.Message}", "error");
+        }
+    }
+
+    private string GetBadgeClass(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "EN ESPERA DE ENTREGA" => "badge-espera",
+            "SECANDO" => "badge-secando",
+            "ENTREGADO" => "badge-entregado",
+            "LAVANDO" => "badge-lavando",
+            _ => "badge-espera"
+        };
+    }
+
+    private string GetIconClass(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "EN ESPERA DE ENTREGA" => "icon-espera",
+            "SECANDO" => "icon-secando",
+            "ENTREGADO" => "icon-entregado",
+            "LAVANDO" => "icon-lavando",
+            _ => "icon-espera"
+        };
+    }
+}

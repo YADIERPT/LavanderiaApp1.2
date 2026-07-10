@@ -1,0 +1,524 @@
+@page "/inventario"
+@using System.Windows
+@using LavanderiaApp.Repositorios
+@inject NavigationManager NavManager
+
+<div class="edit-order-page-container">
+    <!-- Header -->
+    <div class="edit-order-header">
+        <div class="header-left">
+            <h1 class="header-title">Control de Inventario e Insumos</h1>
+            <p class="header-subtitle">Gestión de insumos operativos, insumos críticos y valuación de stock</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 12px;">
+            <button class="btn-guardar" style="background: #10B981;" @onclick="AbrirModalCuadre">
+                <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">balance</span>
+                <span>Cuadre Mensual</span>
+            </button>
+            <button class="btn-guardar" @onclick="AbrirModalNuevo">
+                <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">add</span>
+                <span>Nuevo Insumo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards Row -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;">
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #3B82F6;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total de Insumos</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+                @Insumos.Count <span style="font-size: 14px; font-weight: 600; color: #64748B;">ítems</span>
+            </div>
+        </div>
+
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #EF4444;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Insumos en Alerta</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #DC2626; margin-top: 4px;">
+                @Insumos.Count(i => i.EstaEnAlertaStock) <span style="font-size: 14px; font-weight: 600; color: #DC2626;">reabastecer</span>
+            </div>
+        </div>
+
+        <div class="dashboard-card" style="padding: 20px 24px; border-left: 5px solid #10B981;">
+            <span style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase;">Valuación de Stock</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+                @Insumos.Sum(i => i.ValuacionTotal).ToString("$#,##0.00")
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Row -->
+    <div class="dashboard-card" style="padding: 20px 24px; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
+            <div class="form-input-wrapper" style="max-width: 380px; flex: 1;">
+                <span class="material-symbols-rounded form-input-icon">search</span>
+                <input type="text" class="form-input-field" @bind="SearchQuery" @bind:event="oninput" placeholder="Buscar insumo por nombre..." />
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                @foreach (var cat in Categorias)
+                {
+                    <button class="btn-status-filter-chip @(SelectedCat == cat ? "chip-active" : "")" @onclick="() => SelectedCat = cat">
+                        @cat
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Table / Items Grid -->
+    <div class="dashboard-card" style="padding: 24px; width: 100%;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid #F1F5F9; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th style="padding: 12px 16px;">INSUMO</th>
+                    <th style="padding: 12px 16px;">CATEGORÍA</th>
+                    <th style="padding: 12px 16px;">CANTIDAD DISPONIBLE</th>
+                    <th style="padding: 12px 16px;">STOCK MÍNIMO</th>
+                    <th style="padding: 12px 16px;">PRECIO UNITARIO</th>
+                    <th style="padding: 12px 16px;">VALUACIÓN</th>
+                    <th style="padding: 12px 16px; text-align: center;">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in FilteredInsumos)
+                {
+                    <tr style="border-bottom: 1px solid #F1F5F9; font-size: 14px;">
+                        <td style="padding: 16px;">
+                            <strong style="color: #0F172A; display: block;">@item.Nombre</strong>
+                            <span style="font-size: 11.5px; color: #94A3B8;">Act: @item.UltimaActualizacion</span>
+                        </td>
+                        <td style="padding: 16px;">
+                            <span style="background: #F1F5F9; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 12px; color: #475569;">
+                                @item.Categoria
+                            </span>
+                        </td>
+                        <td style="padding: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <strong style="font-size: 16px; color: @(item.EstaEnAlertaStock ? "#DC2626" : "#0F172A");">
+                                    @item.Cantidad.ToString("0.0") @item.UnidadMedida
+                                </strong>
+                                @if (item.EstaEnAlertaStock)
+                                {
+                                    <span style="background: rgba(220, 38, 38, 0.1); color: #DC2626; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800;">
+                                        ¡ALERTA!
+                                    </span>
+                                }
+                            </div>
+                        </td>
+                        <td style="padding: 16px; color: #64748B;">@item.StockMinimo.ToString("0.0") @item.UnidadMedida</td>
+                        <td style="padding: 16px; font-weight: 700;">@item.PrecioUnitario.ToString("$0.00")</td>
+                        <td style="padding: 16px; font-weight: 800; color: #0F172A;">@item.ValuacionTotal.ToString("$#,##0.00")</td>
+                        <td style="padding: 16px; text-align: center;">
+                            <div style="display: flex; justify-content: center; gap: 8px;">
+                                <button class="filter-button" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;" @onclick="() => AbrirModalAjuste(item)">
+                                    <span class="material-symbols-rounded" style="font-size: 16px;">sync_alt</span>
+                                    <span>Ajuste / Entrada</span>
+                                </button>
+                                <button class="filter-button" style="padding: 6px 12px; font-size: 12px;" @onclick="() => EditarInsumo(item)">
+                                    <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
+                                </button>
+                                <button class="filter-button" style="padding: 6px 12px; font-size: 12px; border-color: #FEC2C2; color: #DC2626;" @onclick="() => ConfirmarEliminar(item)">
+                                    <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Agregar/Editar Insumo -->
+@if (ShowModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 520px; padding: 36px;">
+            <h3 class="section-title-custom" style="margin-bottom: 20px;">
+                @(ItemEdicion.IdInsumo > 0 ? "Editar Insumo" : "Agregar Nuevo Insumo")
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <div class="form-input-group">
+                    <label class="form-input-label">Nombre del Insumo</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">label</span>
+                        <input type="text" class="form-input-field" @bind="ItemEdicion.Nombre" placeholder="ej. Detergente industrial" />
+                    </div>
+                </div>
+
+                <div class="form-inputs-grid-2x2">
+                    <div class="form-input-group">
+                        <label class="form-input-label">Categoría</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">category</span>
+                            <select class="form-input-field select-field" @bind="ItemEdicion.Categoria" style="padding-left: 48px;">
+                                <option value="Detergentes">Detergentes</option>
+                                <option value="Suavizantes">Suavizantes</option>
+                                <option value="Quitamanchas">Quitamanchas</option>
+                                <option value="Empaque">Empaque</option>
+                                <option value="Accesorios">Accesorios</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-input-group">
+                        <label class="form-input-label">Unidad de Medida</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">scale</span>
+                            <select class="form-input-field select-field" @bind="ItemEdicion.UnidadMedida" style="padding-left: 48px;">
+                                <option value="Litros">Litros</option>
+                                <option value="Kg">Kg</option>
+                                <option value="Piezas">Piezas</option>
+                                <option value="Galones">Galones</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-inputs-grid-2x2">
+                    <div class="form-input-group">
+                        <label class="form-input-label">Cantidad Actual</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">inventory_2</span>
+                            <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.Cantidad" />
+                        </div>
+                    </div>
+
+                    <div class="form-input-group">
+                        <label class="form-input-label">Stock Mínimo Alerta</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">warning</span>
+                            <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.StockMinimo" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-input-group">
+                    <label class="form-input-label">Precio Unitario ($)</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">attach_money</span>
+                        <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.PrecioUnitario" />
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 24px;">
+                <button class="btn-payment-submit" @onclick="GuardarInsumo">
+                    GUARDAR
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => ShowModal = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Ajuste de Stock -->
+@if (ShowAjusteModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowAjusteModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 32px;">
+            <h3 class="section-title-custom" style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-rounded" style="color: #0058BC;">sync_alt</span>
+                <span>Ajuste de Insumo: @ItemAjuste.Nombre</span>
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <div class="form-input-group">
+                    <label class="form-input-label">Tipo de Movimiento</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">swap_horiz</span>
+                        <select class="form-input-field select-field" @bind="TipoAjuste" style="padding-left: 48px;">
+                            <option value="Entrada">Entrada (Compra / Reabastecimiento)</option>
+                            <option value="Salida">Salida (Merma / Pérdida / Ajuste)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-input-group">
+                    <label class="form-input-label">Cantidad a Ajustar (@ItemAjuste.UnidadMedida)</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">edit_attributes</span>
+                        <input type="number" step="0.1" class="form-input-field" @bind="CantidadAjuste" min="0.1" />
+                    </div>
+                </div>
+
+                <div class="form-input-group">
+                    <label class="form-input-label">Nota o Motivo del Ajuste</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">rate_review</span>
+                        <input type="text" class="form-input-field" @bind="MotivoAjuste" placeholder="Ej. Compra proveedor, Derrame accidental, etc." />
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 24px;">
+                <button class="btn-payment-submit" @onclick="AplicarAjuste">
+                    APLICAR AJUSTE
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => ShowAjusteModal = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Cuadre Mensual (Inventario Teórico vs Físico) -->
+@if (ShowCuadreModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowCuadreModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 800px; width: 90%; padding: 32px; max-height: 85vh; overflow-y: auto;">
+            <h3 class="section-title-custom" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                <span class="material-symbols-rounded" style="color: #10B981;">balance</span>
+                <span>Reconciliación y Cuadre Mensual de Inventario</span>
+            </h3>
+            <p style="font-size: 13px; color: #64748B; margin-bottom: 24px; line-height: 1.4;">
+                Ingrese el conteo físico real medido en el local. El sistema actualizará las cantidades teóricas a los conteos físicos y calculará cualquier diferencia financiera como costo operativo.
+            </p>
+
+            <div style="overflow-x: auto; width: 100%;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #E2E8F0; color: #475569; font-size: 12px; text-transform: uppercase; font-weight: 700;">
+                            <th style="padding: 10px 8px;">Insumo</th>
+                            <th style="padding: 10px 8px;">Unidad</th>
+                            <th style="padding: 10px 8px; text-align: right;">Teórico (Sistema)</th>
+                            <th style="padding: 10px 8px; width: 140px; text-align: center;">Físico (Conteo Real)</th>
+                            <th style="padding: 10px 8px; text-align: right;">Diferencia</th>
+                            <th style="padding: 10px 8px; text-align: right;">Valuación Dif.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in CuadreRows)
+                        {
+                            <tr style="border-bottom: 1px solid #EDF2F7; font-size: 13.5px; vertical-align: middle;">
+                                <td style="padding: 12px 8px; font-weight: 600; color: #1E293B;">@row.Nombre</td>
+                                <td style="padding: 12px 8px; color: #64748B;">@row.UnidadMedida</td>
+                                <td style="padding: 12px 8px; text-align: right; font-weight: 600;">@row.CantidadTeorica.ToString("0.0")</td>
+                                <td style="padding: 6px 8px; text-align: center;">
+                                    <input type="number" step="0.1" class="form-input-field" 
+                                           style="height: 34px; padding: 4px 8px; text-align: center; font-size: 13px; font-weight: 700; width: 100px; margin: 0 auto; border: 1.5px solid #CBD5E1; background: #F8FAFC; border-radius: 8px;" 
+                                           @bind="row.CantidadFisica" />
+                                </td>
+                                <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: @(row.Diferencia == 0 ? "#64748B" : (row.Diferencia < 0 ? "#DC2626" : "#10B981"));">
+                                    @(row.Diferencia > 0 ? "+" : "")@row.Diferencia.ToString("0.0")
+                                </td>
+                                <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: @(row.CostoDiferencia == 0 ? "#64748B" : (row.CostoDiferencia < 0 ? "#DC2626" : "#10B981"));">
+                                    @row.CostoDiferencia.ToString("$#,##0.00")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 24px;">
+                <button class="btn-payment-submit" style="background: #10B981;" @onclick="AplicarCuadre">
+                    APLICAR CUADRE Y AJUSTAR STOCK
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => ShowCuadreModal = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<InsumoItem> Insumos = new();
+    private InventarioRepositorio _repo = new();
+
+    private string SearchQuery = "";
+    private string SelectedCat = "TODOS";
+    private readonly string[] Categorias = new[] { "TODOS", "Detergentes", "Suavizantes", "Quitamanchas", "Empaque", "Accesorios" };
+
+    private bool ShowModal = false;
+    private InsumoItem ItemEdicion = new();
+
+    // Variables para el Modal de Ajuste
+    private bool ShowAjusteModal = false;
+    private InsumoItem ItemAjuste = new();
+    private string TipoAjuste = "Entrada";
+    private double CantidadAjuste = 1.0;
+    private string MotivoAjuste = "Reabastecimiento";
+
+    // Variables para el Modal de Cuadre
+    private bool ShowCuadreModal = false;
+    private List<CuadreRowModel> CuadreRows = new();
+
+    public class CuadreRowModel
+    {
+        public int IdInsumo { get; set; }
+        public string Nombre { get; set; } = "";
+        public string UnidadMedida { get; set; } = "";
+        public double CantidadTeorica { get; set; }
+        public double CantidadFisica { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public double Diferencia => CantidadFisica - CantidadTeorica;
+        public decimal CostoDiferencia => (decimal)Diferencia * PrecioUnitario;
+    }
+
+    private IEnumerable<InsumoItem> FilteredInsumos => Insumos.Where(i =>
+        (SelectedCat == "TODOS" || i.Categoria.Equals(SelectedCat, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(SearchQuery) || i.Nombre.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+    );
+
+    protected override void OnInitialized()
+    {
+        CargarInsumos();
+    }
+
+    private void CargarInsumos()
+    {
+        Insumos = _repo.ObtenerTodos();
+    }
+
+    private void AbrirModalNuevo()
+    {
+        ItemEdicion = new InsumoItem { Cantidad = 10, StockMinimo = 5, PrecioUnitario = 50 };
+        ShowModal = true;
+    }
+
+    private void EditarInsumo(InsumoItem item)
+    {
+        ItemEdicion = new InsumoItem
+        {
+            IdInsumo = item.IdInsumo,
+            Nombre = item.Nombre,
+            Categoria = item.Categoria,
+            Cantidad = item.Cantidad,
+            UnidadMedida = item.UnidadMedida,
+            StockMinimo = item.StockMinimo,
+            PrecioUnitario = item.PrecioUnitario
+        };
+        ShowModal = true;
+    }
+
+    private void GuardarInsumo()
+    {
+        if (string.IsNullOrWhiteSpace(ItemEdicion.Nombre))
+        {
+            ToastService.Show("Atención", "Por favor ingrese el nombre del insumo.", "warning");
+            return;
+        }
+
+        _repo.Guardar(ItemEdicion);
+        ShowModal = false;
+        CargarInsumos();
+        ToastService.Show("¡Hecho!", $"Insumo '{ItemEdicion.Nombre}' guardado correctamente.", "success");
+    }
+
+    // Métodos para el flujo de Ajuste Manual (Reabastecimientos / Mermas)
+    private void AbrirModalAjuste(InsumoItem item)
+    {
+        ItemAjuste = item;
+        TipoAjuste = "Entrada";
+        CantidadAjuste = 1.0;
+        MotivoAjuste = "Reabastecimiento por compra";
+        ShowAjusteModal = true;
+    }
+
+    private void AplicarAjuste()
+    {
+        if (CantidadAjuste <= 0)
+        {
+            ToastService.Show("Atención", "Ingrese una cantidad válida mayor a cero.", "warning");
+            return;
+        }
+
+        double cambio = TipoAjuste == "Entrada" ? CantidadAjuste : -CantidadAjuste;
+        double nuevaCantidad = Math.Max(0, ItemAjuste.Cantidad + cambio);
+
+        _repo.ActualizarStock(ItemAjuste.IdInsumo, nuevaCantidad);
+        
+        string msgTipo = TipoAjuste == "Entrada" ? "Entrada registrada" : "Merma registrada";
+        string msgDetalle = $"{ItemAjuste.Nombre}: {nuevaCantidad} {ItemAjuste.UnidadMedida} ({MotivoAjuste})";
+        ToastService.Show(msgTipo, msgDetalle, TipoAjuste == "Entrada" ? "success" : "warning");
+
+        // Registrar ajuste manual de inventario en Auditorías
+        try
+        {
+            new AuditoriaRepositorio().Guardar(new LavanderiaApp.Modelos.Auditoria
+            {
+                Fecha = DateTime.Now,
+                Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                Modulo = "Inventario",
+                Accion = TipoAjuste == "Entrada" ? "Ajuste Entrada" : "Ajuste Merma",
+                Detalle = $"{ItemAjuste.Nombre}: {cambio:+#.##;-#.##} {ItemAjuste.UnidadMedida} (Motivo: {MotivoAjuste}, Nueva cant: {nuevaCantidad} {ItemAjuste.UnidadMedida})"
+            });
+        }
+        catch { }
+
+        ShowAjusteModal = false;
+        CargarInsumos();
+    }
+
+    // Métodos para el flujo de Cuadre Mensual
+    private void AbrirModalCuadre()
+    {
+        CuadreRows = Insumos.Select(i => new CuadreRowModel
+        {
+            IdInsumo = i.IdInsumo,
+            Nombre = i.Nombre,
+            UnidadMedida = i.UnidadMedida,
+            CantidadTeorica = i.Cantidad,
+            CantidadFisica = i.Cantidad, // Pre-rellenado para comodidad del usuario
+            PrecioUnitario = i.PrecioUnitario
+        }).ToList();
+        ShowCuadreModal = true;
+    }
+
+    private void AplicarCuadre()
+    {
+        decimal costoTotalDiferencias = 0m;
+        int itemsAjustados = 0;
+
+        foreach (var row in CuadreRows)
+        {
+            if (row.Diferencia != 0)
+            {
+                _repo.ActualizarStock(row.IdInsumo, row.CantidadFisica);
+                costoTotalDiferencias += row.CostoDiferencia;
+                itemsAjustados++;
+            }
+        }
+
+        string resumenMsg = itemsAjustados > 0 
+            ? $"Se han reconciliado {itemsAjustados} insumos con éxito.\n\nDiferencia financiera neta: {costoTotalDiferencias.ToString("$#,##0.00")} MXN absorbida como costo operativo."
+            : "No se registraron diferencias físicas. El inventario se encuentra al corriente.";
+
+        CustomMessageBox.Show("Cuadre de Inventario Aplicado", resumenMsg, "success");
+
+        ShowCuadreModal = false;
+        CargarInsumos();
+    }
+
+    private void ConfirmarEliminar(InsumoItem item)
+    {
+        CustomMessageBox.Show(
+            "Confirmar Eliminación", 
+            $"¿Está seguro de que desea eliminar el insumo '{item.Nombre}' permanentemente del inventario?", 
+            "warning",
+            () => {
+                try
+                {
+                    _repo.Eliminar(item.IdInsumo);
+                    CargarInsumos();
+                    ToastService.Show("Eliminado", $"El insumo '{item.Nombre}' ha sido removido.", "danger");
+                }
+                catch (Exception ex)
+                {
+                    CustomMessageBox.Show(
+                        "Error al Eliminar", 
+                        $"No se pudo eliminar el insumo '{item.Nombre}' debido a un problema con la base de datos:\n\n{ex.Message}", 
+                        "error"
+                    );
+                }
+            }
+        );
+    }
+}
+

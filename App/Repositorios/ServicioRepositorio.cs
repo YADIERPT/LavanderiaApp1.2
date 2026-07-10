@@ -30,4 +30,16 @@ public class ServicioRepositorio
         }
         return lista;
     }
+
+    public void ActualizarPrecio(int idServicio, decimal nuevoPrecio)
+    {
+        using var conexion = new SqliteConnection(Config.ConnectionString);
+        conexion.Open();
+
+        string query = "UPDATE Servicios SET Precio = @Precio WHERE IdServicio = @IdServicio";
+        using var cmd = new SqliteCommand(query, conexion);
+        cmd.Parameters.AddWithValue("@Precio", nuevoPrecio);
+        cmd.Parameters.AddWithValue("@IdServicio", idServicio);
+        cmd.ExecuteNonQuery();
+    }
 }

@@ -1,0 +1,461 @@
+@page "/configuraciones"
+@implements IDisposable
+@using LavanderiaApp.Servicios
+
+<div class="edit-order-page-container" style="animation: fadeIn 0.4s ease-out;">
+    <!-- Header -->
+    <div class="edit-order-header">
+        <div class="header-left">
+            <h1 class="header-title">Configuración del Sistema</h1>
+            <p class="header-subtitle">Gestión de la información del negocio, tickets, impuestos y moneda de la aplicación</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-guardar" @onclick="GuardarConfiguracion">
+                <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle;">save</span>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%;">
+        <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+            <span class="material-symbols-rounded" style="color: #0058BC;">store</span>
+            <span>Datos Generales del Establecimiento</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Nombre del Negocio -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Nombre del Negocio</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">storefront</span>
+                    <input type="text" class="form-input" @bind="configData.NombreNegocio" placeholder="Ej. Lavanderías Express" />
+                </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Teléfono de Contacto</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">call</span>
+                    <input type="text" class="form-input" @bind="configData.Telefono" placeholder="Ej. 961 123 4567" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Dirección -->
+        <div class="input-group" style="margin-bottom: 0;">
+            <label class="input-label">Dirección Física</label>
+            <div class="input-container">
+                <span class="material-symbols-rounded input-icon-left">location_on</span>
+                <input type="text" class="form-input" @bind="configData.Direccion" placeholder="Dirección completa del local" />
+            </div>
+        </div>
+
+        <!-- Mensaje de Ticket -->
+        <div class="input-group" style="margin-bottom: 0;">
+            <label class="input-label">Mensaje en el Pie de Ticket</label>
+            <div class="input-container">
+                <span class="material-symbols-rounded input-icon-left">sticky_note_2</span>
+                <input type="text" class="form-input" @bind="configData.MensajeTicket" placeholder="Ej. ¡Gracias por su preferencia!" />
+            </div>
+        </div>
+
+        <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px; margin-top: 10px;">
+            <span class="material-symbols-rounded" style="color: #0058BC;">receipt_long</span>
+            <span>Configuración de Cobros</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- IVA -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">I.V.A. Aplicable (%)</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">percent</span>
+                    <input type="number" step="0.1" class="form-input" @bind="configData.Iva" style="padding-left: 48px;" />
+                </div>
+            </div>
+
+            <!-- Simbolo Moneda -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Símbolo de Moneda</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">attach_money</span>
+                    <input type="text" class="form-input" @bind="configData.Moneda" placeholder="Ej. $" />
+                </div>
+            </div>
+        </div>
+
+        <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px; margin-top: 10px;">
+            <span class="material-symbols-rounded" style="color: #0058BC;">palette</span>
+            <span>Preferencias Visuales</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Tema -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Tema de la Aplicación</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">contrast</span>
+                    <select class="form-input" value="@configData.Tema" @onchange="OnTemaChanged" style="padding-left: 48px; height: 52px; border-radius: 12px; background: #F1F3FF; border: 1px solid rgba(194, 198, 213, 0.4); outline: none;">
+                        <option value="Claro">Claro ☀</option>
+                        <option value="Oscuro">Oscuro </option>
+                        <option value="MonocromicoClaro">Claro Monocromático 🪨</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarifas de Servicios -->
+    <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px; margin: 0;">
+            <span class="material-symbols-rounded" style="color: #0058BC;">payments</span>
+            <span>Precios y Tarifas de Servicios</span>
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            @foreach (var s in serviciosList.Where(x => x.IdServicio == 1))
+            {
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label" style="font-weight: 600; color: #475569;">Precio del @s.Nombre (por @s.UnidadMedida)</label>
+                    <div class="input-container">
+                        <span class="material-symbols-rounded input-icon-left">attach_money</span>
+                        <input type="number" step="0.5" class="form-input" @bind="s.Precio" style="padding-left: 48px;" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Gestión de Máquinas -->
+    <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+            <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                <span class="material-symbols-rounded" style="color: #0058BC;">local_laundry_service</span>
+                <span>Control de Máquinas (Lavadoras / Secadoras)</span>
+            </h3>
+            <button class="btn-guardar" style="padding: 8px 16px; font-size: 13px; background: #0058BC; display: flex; align-items: center; gap: 6px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;" @onclick="AbrirModalAgregarMaquina">
+                <span class="material-symbols-rounded" style="font-size: 16px;">add</span>
+                <span>Agregar Máquina</span>
+            </button>
+        </div>
+
+        <div style="overflow-x: auto; width: 100%;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #E2E8F0; color: #475569;">
+                        <th style="padding: 12px 8px; font-weight: 600;">Máquina</th>
+                        <th style="padding: 12px 8px; font-weight: 600;">Estado</th>
+                        <th style="padding: 12px 8px; font-weight: 600;">Ciclos</th>
+                        <th style="padding: 12px 8px; font-weight: 600;">Límite Mantenimiento</th>
+                        <th style="padding: 12px 8px; font-weight: 600; text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (maquinasList.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 32px; color: #94A3B8;">
+                                <span class="material-symbols-rounded" style="font-size: 32px; display: block; margin-bottom: 6px;">info</span>
+                                No hay máquinas registradas en el sistema.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var m in maquinasList)
+                        {
+                            <tr style="border-bottom: 1px solid #F1F5F9; color: #1E293B;">
+                                <td style="padding: 12px 8px; font-weight: 600;">@m.Nombre</td>
+                                <td style="padding: 12px 8px;">
+                                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+                                        background: @(m.Status == "ACTIVA" ? "#ECFDF5" : m.Status == "MANTENIMIENTO" ? "#FEF2F2" : "#F1F5F9");
+                                        color: @(m.Status == "ACTIVA" ? "#059669" : m.Status == "MANTENIMIENTO" ? "#DC2626" : "#475569");">
+                                        @m.Status
+                                    </span>
+                                </td>
+                                <td style="padding: 12px 8px;">@m.CiclosOperados</td>
+                                <td style="padding: 12px 8px;">@m.ProxMantenimientoCiclos</td>
+                                <td style="padding: 12px 8px; text-align: right;">
+                                    <button style="background: none; border: none; color: #0058BC; cursor: pointer; margin-right: 16px; font-weight: 600; font-size: 13px;" @onclick="() => AbrirModalEditarMaquina(m)">
+                                        Editar
+                                    </button>
+                                    <button style="background: none; border: none; color: #DC2626; cursor: pointer; font-weight: 600; font-size: 13px;" @onclick="() => EliminarMaquina(m.IdMaquina)">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar / Editar Máquina -->
+@if (mostrarModalMaquina)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease-out;">
+        <div style="background: white; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); max-width: 440px; width: 100%; padding: 28px; display: flex; flex-direction: column; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+                <h3 style="font-size: 17px; font-weight: 700; color: #0F172A; margin: 0;">
+                    @(esNuevaMaquina ? "Registrar Nueva Máquina" : $"Editar Máquina {maquinaEdicion.Nombre}")
+                </h3>
+                <button style="background: none; border: none; color: #94A3B8; cursor: pointer;" @onclick="CerrarModalMaquina">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Número de Máquina (solo para nueva máquina) -->
+            @if (esNuevaMaquina)
+            {
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label" style="font-weight: 600; color: #475569;">Número de Máquina (ID)</label>
+                    <div class="input-container">
+                        <span class="material-symbols-rounded input-icon-left">tag</span>
+                        <input type="number" min="1" class="form-input" @bind="maquinaEdicion.IdMaquina" placeholder="Ej. 1" />
+                    </div>
+                </div>
+            }
+
+            <!-- Nombre de Máquina -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" style="font-weight: 600; color: #475569;">Nombre de la Máquina</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">label</span>
+                    <input type="text" class="form-input" @bind="maquinaEdicion.Nombre" placeholder="Ej. Unidad #12" />
+                </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" style="font-weight: 600; color: #475569;">Estado inicial</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">traffic</span>
+                    <select class="form-input" @bind="maquinaEdicion.Status" style="padding-left: 48px; height: 52px; border-radius: 12px; background: #F1F3FF; border: 1px solid rgba(194, 198, 213, 0.4); outline: none;">
+                        <option value="INACTIVA">Inactiva </option>
+                        <option value="ACTIVA">Activa ⚡</option>
+                        <option value="MANTENIMIENTO">En Mantenimiento 🔧</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Ciclos Operados -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" style="font-weight: 600; color: #475569;">Ciclos Operados</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">autorenew</span>
+                    <input type="number" class="form-input" @bind="maquinaEdicion.CiclosOperados" placeholder="0" />
+                </div>
+            </div>
+
+            <!-- Prox Mantenimiento -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" style="font-weight: 600; color: #475569;">Límite de Ciclos para Mantenimiento</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">build</span>
+                    <input type="number" class="form-input" @bind="maquinaEdicion.ProxMantenimientoCiclos" placeholder="Ej. 100" />
+                </div>
+            </div>
+
+            <!-- Observación -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" style="font-weight: 600; color: #475569;">Observaciones / Detalles</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">description</span>
+                    <input type="text" class="form-input" @bind="maquinaEdicion.Observacion" placeholder="Detalles o observaciones de la máquina..." />
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 10px; justify-content: flex-end;">
+                <button @onclick="CerrarModalMaquina" style="background: #F1F5F9; color: #475569; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                    Cancelar
+                </button>
+                <button @onclick="GuardarMaquina" style="background: #0058BC; color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private BusinessConfigData configData = new();
+    private string originalTema = "Claro";
+
+    private List<Servicio> serviciosList = new();
+    private List<Maquina> maquinasList = new();
+
+    private bool mostrarModalMaquina = false;
+    private bool esNuevaMaquina = false;
+    private Maquina maquinaEdicion = new();
+
+    protected override void OnInitialized()
+    {
+        originalTema = BusinessConfig.Current.Tema;
+        
+        configData = new BusinessConfigData
+        {
+            NombreNegocio = BusinessConfig.Current.NombreNegocio,
+            Telefono = BusinessConfig.Current.Telefono,
+            Direccion = BusinessConfig.Current.Direccion,
+            MensajeTicket = BusinessConfig.Current.MensajeTicket,
+            Iva = BusinessConfig.Current.Iva,
+            Moneda = BusinessConfig.Current.Moneda,
+            Tema = BusinessConfig.Current.Tema
+        };
+
+        CargarDatosBase();
+    }
+
+    private void CargarDatosBase()
+    {
+        serviciosList = new ServicioRepositorio().ObtenerTodos();
+        maquinasList = new MaquinaRepositorio().ObtenerTodas();
+    }
+
+    private void OnTemaChanged(ChangeEventArgs e)
+    {
+        string selectedTheme = e.Value?.ToString() ?? "Claro";
+        configData.Tema = selectedTheme;
+        
+        BusinessConfig.Current.Tema = selectedTheme;
+        BusinessConfig.TriggerConfigUpdated();
+    }
+
+    private void GuardarConfiguracion()
+    {
+        if (string.IsNullOrWhiteSpace(configData.NombreNegocio))
+        {
+            ToastService.Show("Error de Validación", "El nombre del negocio no puede estar vacío.", "danger");
+            return;
+        }
+
+        BusinessConfig.Current.NombreNegocio = configData.NombreNegocio;
+        BusinessConfig.Current.Telefono = configData.Telefono;
+        BusinessConfig.Current.Direccion = configData.Direccion;
+        BusinessConfig.Current.MensajeTicket = configData.MensajeTicket;
+        BusinessConfig.Current.Iva = configData.Iva;
+        BusinessConfig.Current.Moneda = configData.Moneda;
+        BusinessConfig.Current.Tema = configData.Tema;
+        
+        originalTema = configData.Tema;
+        BusinessConfig.Guardar();
+
+        // Guardar cambios en tarifas de servicios
+        try
+        {
+            var repoServicio = new ServicioRepositorio();
+            foreach (var s in serviciosList.Where(x => x.IdServicio == 1))
+            {
+                repoServicio.ActualizarPrecio(s.IdServicio, s.Precio);
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"No se pudieron actualizar los precios de servicios: {ex.Message}", "danger");
+            return;
+        }
+
+        ToastService.Show("Configuración Guardada", "La información de la lavandería y las tarifas de servicios se han guardado exitosamente.", "success");
+        CargarDatosBase();
+    }
+
+    private void AbrirModalAgregarMaquina()
+    {
+        maquinaEdicion = new Maquina
+        {
+            IdMaquina = 0,
+            Nombre = "",
+            Status = "INACTIVA",
+            CiclosOperados = 0,
+            ProxMantenimientoCiclos = 100,
+            Observacion = ""
+        };
+        esNuevaMaquina = true;
+        mostrarModalMaquina = true;
+    }
+
+    private void AbrirModalEditarMaquina(Maquina m)
+    {
+        maquinaEdicion = new Maquina
+        {
+            IdMaquina = m.IdMaquina,
+            Nombre = m.Nombre,
+            Status = m.Status,
+            CiclosOperados = m.CiclosOperados,
+            ProxMantenimientoCiclos = m.ProxMantenimientoCiclos,
+            Observacion = m.Observacion ?? ""
+        };
+        esNuevaMaquina = false;
+        mostrarModalMaquina = true;
+    }
+
+    private void CerrarModalMaquina()
+    {
+        mostrarModalMaquina = false;
+    }
+
+    private void GuardarMaquina()
+    {
+        var repo = new MaquinaRepositorio();
+        try
+        {
+            if (esNuevaMaquina)
+            {
+                if (maquinaEdicion.IdMaquina <= 0)
+                {
+                    ToastService.Show("Error", "El número de máquina debe ser mayor a 0.", "danger");
+                    return;
+                }
+                
+                var existentes = repo.ObtenerTodas();
+                if (existentes.Any(x => x.IdMaquina == maquinaEdicion.IdMaquina))
+                {
+                    ToastService.Show("Error", $"Ya existe una máquina con el número #{maquinaEdicion.IdMaquina:02}.", "danger");
+                    return;
+                }
+
+                repo.Insertar(maquinaEdicion);
+                ToastService.Show("Máquina Registrada", "La máquina se ha agregado exitosamente al catálogo.", "success");
+            }
+            else
+            {
+                repo.Guardar(maquinaEdicion);
+                ToastService.Show("Máquina Actualizada", "Los datos de la máquina se han guardado correctamente.", "success");
+            }
+            mostrarModalMaquina = false;
+            CargarDatosBase();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"No se pudo guardar la máquina: {ex.Message}", "danger");
+        }
+    }
+
+    private void EliminarMaquina(int idMaquina)
+    {
+        try
+        {
+            new MaquinaRepositorio().Eliminar(idMaquina);
+            ToastService.Show("Máquina Eliminada", "La máquina ha sido retirada del sistema exitosamente.", "info");
+            CargarDatosBase();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("Error", $"No se pudo eliminar la máquina: {ex.Message}", "danger");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (BusinessConfig.Current.Tema != originalTema)
+        {
+            BusinessConfig.Current.Tema = originalTema;
+            BusinessConfig.TriggerConfigUpdated();
+        }
+    }
+}

@@ -1,0 +1,505 @@
+@page "/pedidos/editar"
+@page "/pedidos/editar/{id:int}"
+@page "/pedidos/agregar"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@inject ClienteRepositorio ClienteRepo
+@inject PedidoRepositorio PedidoRepo
+@inject ServicioRepositorio ServicioRepo
+@inject PedidoServicio PedidoServicio
+@inject NavigationManager NavManager
+
+<div class="edit-order-page-container">
+    <!-- Header -->
+    <div class="edit-order-header">
+        <div class="header-left">
+            <h1 class="header-title">@(IsEditMode ? "Editar datos del pedido" : "Registrar nuevo pedido")</h1>
+            <p class="header-subtitle">@(IsEditMode ? $"Pedido #{OrderId.ToString("D2")}" : "Nuevo Pedido")</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
+            <button class="btn-guardar" @onclick="GuardarCambios">@(IsEditMode ? "Guardar cambios" : "Registrar pedido")</button>
+        </div>
+    </div>
+
+    <!-- Main Grid Content -->
+    <div class="edit-order-grid">
+        <!-- Left Column: Inputs Form -->
+        <div class="edit-order-form-column">
+            <!-- Section 1: Cliente y Contacto -->
+            <div class="dashboard-card form-section-card">
+                <div class="section-header-custom" style="align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="section-icon-wrapper bg-blue-tint">
+                            <span class="material-symbols-rounded">person</span>
+                        </div>
+                        <h3 class="section-title-custom">Cliente y Contacto</h3>
+                    </div>
+                </div>
+
+                <!-- Big Touch-friendly Select Client Button -->
+                <div style="margin-top: 16px; margin-bottom: 18px; width: 100%;">
+                    <button type="button" style="background: #0058BC; color: white; height: 48px; padding: 0 24px; font-size: 14.5px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 88, 188, 0.15); transition: all 0.2s;" @onclick="() => ShowSelectClientModal = true">
+                        <span class="material-symbols-rounded" style="font-size: 22px;">person_search</span>
+                        <span>SELECCIONAR / CAMBIAR CLIENTE</span>
+                    </button>
+                </div>
+
+                <div class="form-inputs-row">
+                    <div class="form-input-group">
+                        <label class="form-input-label">ID de Cliente <span class="label-aside">(seleccionado)</span></label>
+                        <div class="form-input-wrapper disabled">
+                            <span class="material-symbols-rounded form-input-icon">fingerprint</span>
+                            <input type="text" class="form-input-field" value="@(string.IsNullOrEmpty(ClientId) ? "Sin seleccionar" : ClientId)" readonly />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Nombre del Cliente <span class="label-aside">(seleccionado)</span></label>
+                        <div class="form-input-wrapper disabled">
+                            <span class="material-symbols-rounded form-input-icon">assignment_ind</span>
+                            <input type="text" class="form-input-field" value="@(string.IsNullOrEmpty(ClientName) ? "Haz clic en 'Seleccionar Cliente'" : ClientName)" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Programación y Logística -->
+            <div class="dashboard-card form-section-card">
+                <div class="section-header-custom">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">schedule</span>
+                    </div>
+                    <h3 class="section-title-custom">Programación y Logística</h3>
+                </div>
+
+                <div class="form-inputs-grid-2x2">
+                    <div class="form-input-group">
+                        <label class="form-input-label">Día de Procesamiento</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">calendar_today</span>
+                            <input type="text" class="form-input-field" @bind="ProcessingDate" placeholder="dd/mm/aaaa" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Hora Estimada</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">schedule</span>
+                            <input type="text" class="form-input-field" @bind="EstimatedTime" placeholder="00:00 PM" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Máquina Asignada</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">settings</span>
+                            <select class="form-input-field select-field" @bind="AssignedMachine">
+                                <option value="">Seleccionar máquina...</option>
+                                @foreach (var m in ListaMaquinas)
+                                {
+                                    <option value="@m.Nombre">@m.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Peso (kg)</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">scale</span>
+                            <input type="number" step="0.1" class="form-input-field" @bind="Weight" @bind:event="oninput" placeholder="00.0" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Charge Summary and Order Status -->
+        <div class="edit-order-summary-column">
+            <!-- Card 1: Resumen de Carga -->
+            <div class="dashboard-card charge-summary-card">
+                <span class="summary-header-label">RESUMEN DE CARGA</span>
+                <div class="summary-kg-row">
+                    <div class="summary-kg-text">
+                        <span class="summary-kg-number">@Weight.ToString("00.0")</span>
+                        <span class="summary-kg-unit">KILOGRAMOS TOTALES</span>
+                    </div>
+                    <div class="summary-kg-icon-box">
+                        <span class="material-symbols-rounded">hourglass_empty</span>
+                    </div>
+                </div>
+
+                <div class="summary-details-rows">
+                    <div class="summary-detail-item">
+                        <span class="summary-detail-label">Precio por kg</span>
+                        <span class="summary-detail-val">@PricePerKg.ToString("$00.00")</span>
+                    </div>
+                    <div class="summary-detail-item total-item">
+                        <span class="summary-detail-label font-bold">Total Pedido</span>
+                        <span class="summary-detail-val font-bold">@TotalCost.ToString("$00.00")</span>
+                    </div>
+
+                    @if (!IsEditMode)
+                    {
+                        <!-- High-contrast Advance Payment Widget -->
+                        <div style="margin-top: 20px; background: #FFFFFF; border-radius: 16px; padding: 18px; color: #1E293B; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); text-align: left;">
+                            
+                            <!-- Widget Header -->
+                            <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #EDF2F7; padding-bottom: 8px; margin-bottom: 4px;">
+                                <span class="material-symbols-rounded" style="color: #0288D1; font-size: 20px;">payments</span>
+                                <span style="font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 800; color: #01579B; letter-spacing: 0.5px; text-transform: uppercase;">
+                                    Registro de Anticipo
+                                </span>
+                            </div>
+
+                            <!-- Anticipo Input -->
+                            <div class="form-input-group" style="margin-bottom: 0;">
+                                <label class="form-input-label" style="font-weight: 700; color: #475569; font-size: 12.5px; margin-bottom: 4px; display: block;">¿Cuánto abona el cliente?</label>
+                                <div class="form-input-wrapper" style="height: 40px; border-color: #CBD5E1; background: #F8FAFC;">
+                                    <span class="material-symbols-rounded form-input-icon" style="font-size: 18px; left: 12px; color: #0288D1;">attach_money</span>
+                                    <input type="number" step="1" min="0" max="@TotalCost" class="form-input-field" 
+                                           style="padding: 4px 8px 4px 36px; font-size: 14px; font-weight: 700; color: #1E293B; background: transparent; border: none; outline: none; width: 100%;" 
+                                           @bind="Anticipo" @bind:event="oninput" />
+                                </div>
+                            </div>
+
+                            <!-- Selector Método de Pago -->
+                            <div class="form-input-group" style="margin-bottom: 0;">
+                                <label class="form-input-label" style="font-weight: 700; color: #475569; font-size: 12.5px; margin-bottom: 4px; display: block;">Método de Pago</label>
+                                <div class="form-input-wrapper @(Anticipo == 0 ? "disabled" : "")" style="height: 40px; border-color: #CBD5E1; background: @(Anticipo == 0 ? "#F1F5F9" : "#F8FAFC");">
+                                    <span class="material-symbols-rounded form-input-icon" style="font-size: 18px; left: 12px; color: @(Anticipo == 0 ? "#94A3B8" : "#0288D1");">credit_card</span>
+                                    <select class="form-input-field select-field" style="padding: 4px 8px 4px 36px; font-size: 13.5px; color: @(Anticipo == 0 ? "#94A3B8" : "#1E293B"); font-weight: 600; background: transparent; border: none; outline: none; width: 100%;" 
+                                            @bind="MetodoPago" disabled="@(Anticipo == 0)">
+                                        <option value="@Pago.MetodoPago.Efectivo">Efectivo</option>
+                                        <option value="@Pago.MetodoPago.Tarjeta">Tarjeta (Terminal)</option>
+                                        <option value="@Pago.MetodoPago.Transferencia">Transferencia Coppel/BBVA</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Saldo Pendiente Text (Highlighted Row) -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: @(SaldoPendiente > 0 ? "#FEF2F2" : "#ECFDF5"); padding: 10px 12px; border-radius: 10px; margin-top: 4px;">
+                                <span style="font-size: 13px; font-weight: 700; color: @(SaldoPendiente > 0 ? "#991B1B" : "#065F46");">
+                                    Saldo Pendiente:
+                                </span>
+                                <span style="font-size: 15px; font-weight: 800; color: @(SaldoPendiente > 0 ? "#DC2626" : "#059669");">
+                                    @SaldoPendiente.ToString("$#,##0.00")
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Card 2: Estado del Pedido -->
+            <div class="dashboard-card order-status-card-edit">
+                <span class="status-header-label">ESTADO DEL PEDIDO</span>
+                <div class="status-badge-container-edit">
+                    <span class="status-dot-indicator"></span>
+                    <span class="status-text-val">@OrderStatus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Interactivo para Seleccionar / Crear Cliente -->
+@if (ShowSelectClientModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowSelectClientModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 580px; padding: 36px;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">person_search</span>
+                    </div>
+                    <h3 class="section-title-custom">Seleccionar Cliente para el Pedido</h3>
+                </div>
+                <button @onclick="() => ShowSelectClientModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Search input -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 16px;">
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">search</span>
+                    <input type="text" class="form-input-field" @bind="SearchClientText" @bind:event="oninput" placeholder="Buscar por nombre o teléfono..." />
+                </div>
+            </div>
+
+            <!-- Button to jump to Create Client page -->
+            <div style="width: 100%; margin-bottom: 16px;">
+                <button @onclick="IrACrearCliente" 
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: #E8F0FE; color: #0056C6; border: 1.5px dashed #0056C6; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+                    <span class="material-symbols-rounded">person_add</span>
+                    <span>+ CREAR NUEVO CLIENTE</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Client List -->
+            <div style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                @if (ClientesFiltrados.Any())
+                {
+                    @foreach (var client in ClientesFiltrados)
+                    {
+                        <div @onclick="() => SeleccionarCliente(client)" 
+                             style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; cursor: pointer; transition: all 0.2s;"
+                             onmouseover="this.style.background='#F1F5F9'; this.style.borderColor='#0056C6';"
+                             onmouseout="this.style.background='#F8FAFC'; this.style.borderColor='#E2E8F0';">
+                            <div>
+                                <span style="font-weight: 700; color: #0F172A; display: block; font-size: 14px;">@client.Nombre</span>
+                                <span style="font-size: 12px; color: #64748B;">Tel: @(string.IsNullOrEmpty(client.Telefono) ? "Sin teléfono" : client.Telefono) • ID: #@client.IdCliente.ToString("D2")</span>
+                            </div>
+                            <span class="material-symbols-rounded" style="color: #0056C6;">chevron_right</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 24px; color: #64748B; font-size: 13px;">
+                        No se encontraron clientes coincidentes.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool IsEditMode => Id > 0 || NavManager.Uri.Contains("/editar/");
+
+    private int OrderId = 1;
+    private int RawClientId = 1;
+    private string ClientId = "01";
+    private string ClientName = "";
+
+    private string ProcessingDate = DateTime.Now.ToString("dd/MM/yyyy");
+    private string EstimatedTime = DateTime.Now.AddHours(2).ToString("hh:mm tt");
+    private string AssignedMachine = "";
+    private double Weight = 5.0;
+    private double PricePerKg = 15.0;
+
+    private double TotalCost => Weight * PricePerKg;
+    private string OrderStatus = "En espera";
+
+    private double? _anticipo;
+    private double Anticipo
+    {
+        get => _anticipo ?? TotalCost;
+        set => _anticipo = value;
+    }
+    private Pago.MetodoPago MetodoPago = Pago.MetodoPago.Efectivo;
+    private double SaldoPendiente => Math.Max(0.0, TotalCost - Anticipo);
+
+    private bool ShowSelectClientModal = false;
+    private string SearchClientText = "";
+    private List<Cliente> ListaClientes = new();
+    private List<Maquina> ListaMaquinas = new();
+
+    private IEnumerable<Cliente> ClientesFiltrados => ListaClientes.Where(c =>
+        string.IsNullOrWhiteSpace(SearchClientText) ||
+        c.Nombre.Contains(SearchClientText, StringComparison.OrdinalIgnoreCase) ||
+        c.Telefono.Contains(SearchClientText)
+    );
+
+    protected override void OnInitialized()
+    {
+        CargarClientes();
+
+        // Cargar precio de lavado actual desde la base de datos
+        try
+        {
+            var servicioLavado = ServicioRepo.ObtenerTodos().FirstOrDefault(s => s.IdServicio == 1);
+            if (servicioLavado != null)
+            {
+                PricePerKg = (double)servicioLavado.Precio;
+            }
+        }
+        catch { }
+
+        // Cargar máquinas reales de la base de datos
+        try
+        {
+            ListaMaquinas = new MaquinaRepositorio().ObtenerTodas();
+            if (Id == 0 && ListaMaquinas.Count > 0)
+            {
+                AssignedMachine = ListaMaquinas.First().Nombre;
+            }
+            else if (Id == 0)
+            {
+                AssignedMachine = "";
+            }
+        }
+        catch { }
+
+        // 1. Verificar si se regresa desde la creación de un cliente con el parámetro selectedClientId
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        string? selectedClientStr = query.Get("selectedClientId");
+
+        if (int.TryParse(selectedClientStr, out int selId))
+        {
+            var clienteSel = ClienteRepo.ObtenerPorId(selId);
+            if (clienteSel != null)
+            {
+                RawClientId = clienteSel.IdCliente;
+                ClientId = clienteSel.IdCliente.ToString("D2");
+                ClientName = clienteSel.Nombre;
+            }
+        }
+
+        // 2. Cargar detalles del pedido si está en modo edición
+        if (Id > 0)
+        {
+            OrderId = Id;
+            var pedidoDb = PedidoRepo.ObtenerPorId(Id);
+            if (pedidoDb != null)
+            {
+                RawClientId = pedidoDb.IdCliente;
+                ClientId = pedidoDb.IdCliente.ToString("D2");
+                var clienteDb = ClienteRepo.ObtenerPorId(pedidoDb.IdCliente);
+                ClientName = clienteDb?.Nombre ?? $"Cliente #{pedidoDb.IdCliente}";
+
+                ProcessingDate = pedidoDb.FechaRecepcion.ToString("dd/MM/yyyy");
+                EstimatedTime = pedidoDb.FechaRecepcion.ToString("hh:mm tt");
+                OrderStatus = pedidoDb.Estado;
+                AssignedMachine = pedidoDb.MaquinaAsignada ?? "";
+                
+                var detallesRepo = new DetallePedidoRepositorio();
+                var detalles = detallesRepo.ObtenerPorPedido(Id);
+                var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
+                if (lavadoDetalle != null)
+                {
+                    Weight = lavadoDetalle.Cantidad;
+                    PricePerKg = (double)lavadoDetalle.PrecioUnitario;
+                }
+                else
+                {
+                    Weight = (double)(pedidoDb.Total / (decimal)PricePerKg);
+                }
+            }
+        }
+        else if (string.IsNullOrEmpty(ClientName))
+        {
+            // 3. Modo Registro - Asignar por defecto al primer cliente si aún no hay ninguno seleccionado
+            var clienteBase = ListaClientes.FirstOrDefault();
+            if (clienteBase != null)
+            {
+                RawClientId = clienteBase.IdCliente;
+                ClientId = clienteBase.IdCliente.ToString("D2");
+                ClientName = clienteBase.Nombre;
+            }
+            OrderId = PedidoRepo.ObtenerTodos().Count + 1;
+        }
+    }
+
+    private void CargarClientes()
+    {
+        ListaClientes = ClienteRepo.ListarTodo();
+    }
+
+    private void AbrirModalSeleccionarCliente()
+    {
+        CargarClientes();
+        SearchClientText = "";
+        ShowSelectClientModal = true;
+    }
+
+    private void SeleccionarCliente(Cliente client)
+    {
+        RawClientId = client.IdCliente;
+        ClientId = client.IdCliente.ToString("D2");
+        ClientName = client.Nombre;
+        ShowSelectClientModal = false;
+    }
+
+    private void IrACrearCliente()
+    {
+        ShowSelectClientModal = false;
+        // 4. Navegar al registro de cliente con la bandera para regresar al pedido
+        NavManager.NavigateTo("/clientes/agregar?returnToOrder=true");
+    }
+
+    private void Cancelar()
+    {
+        NavManager.NavigateTo("/pedidos");
+    }
+
+    private void GuardarCambios()
+    {
+        if (RawClientId <= 0 || string.IsNullOrEmpty(ClientName))
+        {
+            CustomMessageBox.Show("Cliente Requerido", "Por favor, seleccione un cliente para el pedido.", "warning");
+            return;
+        }
+
+        if (Weight <= 0)
+        {
+            CustomMessageBox.Show("Peso Requerido", "Por favor, ingrese un peso válido en kg.", "warning");
+            return;
+        }
+
+        var pedido = new Pedido
+        {
+            IdCliente = RawClientId,
+            IdUsuario = SessionManager.UsuarioActual?.IdUsuario ?? 1,
+            FechaRecepcion = DateTime.Now,
+            Estado = string.IsNullOrEmpty(OrderStatus) ? "En espera" : OrderStatus,
+            Total = (decimal)TotalCost,
+            MaquinaAsignada = AssignedMachine
+        };
+
+        if (IsEditMode && Id > 0)
+        {
+            pedido.IdPedido = Id;
+            PedidoRepo.ActualizarEstadoYMaquina(Id, OrderStatus, AssignedMachine);
+            if (OrderStatus == "En Lavado")
+            {
+                InventarioAutomatizacion.ProcesarConsumoInventario(Id);
+            }
+            if (OrderStatus == "Cancelado")
+            {
+                try
+                {
+                    new AuditoriaRepositorio().Guardar(new LavanderiaApp.Modelos.Auditoria
+                    {
+                        Fecha = DateTime.Now,
+                        Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                        Modulo = "Pedidos",
+                        Accion = "Cancelación",
+                        Detalle = $"Pedido #{Id} cancelado manualmente por el personal."
+                    });
+                }
+                catch { }
+            }
+            CustomMessageBox.Show("Éxito", $"Pedido #{Id} actualizado exitosamente.", "success", () => NavManager.NavigateTo("/pedidos"));
+        }
+        else
+        {
+            var detalles = new List<DetallePedido>
+            {
+                new DetallePedido { IdServicio = 1, Cantidad = Weight, PrecioUnitario = (decimal)PricePerKg, Subtotal = (decimal)TotalCost }
+            };
+
+            string res = PedidoServicio.RegistrarPedido(pedido, detalles, (decimal)Anticipo, MetodoPago);
+            if (res == "Éxito")
+            {
+                decimal total = (decimal)TotalCost;
+                decimal abono = (decimal)Anticipo;
+                decimal pendiente = total - abono;
+                string msg = $"¡Pedido registrado exitosamente!\n\n" +
+                             $"Cliente: {ClientName}\n" +
+                             $"Total del Pedido: ${total:N2} MXN\n" +
+                             $"Monto Abonado: ${abono:N2} MXN ({MetodoPago})\n" +
+                             $"Saldo Pendiente: ${pendiente:N2} MXN";
+                CustomMessageBox.Show("Pedido Registrado", msg, "success", () => NavManager.NavigateTo("/pedidos"));
+            }
+            else
+            {
+                CustomMessageBox.Show("Información de Registro", res, "info");
+            }
+        }
+    }
+}

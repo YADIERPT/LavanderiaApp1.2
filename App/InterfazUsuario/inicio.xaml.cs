@@ -1,35 +1,42 @@
 using System.Windows;
-using LavanderiaApp.Servicios;
+using System.Windows.Input;
 
 namespace LavanderiaApp;
 
 public partial class Inicio : Window
 {
-    private LoginServicio _loginServicio;
-
     public Inicio()
     {
         InitializeComponent();
-        _loginServicio = new LoginServicio();
+        
+        // Inicializamos los servicios de BlazorWebView
+        blazorWebView.Services = App.Services;
     }
 
-    private void BtnLogin_Click(object sender, RoutedEventArgs e)
+    // Permite arrastrar la ventana sin bordes al hacer clic y arrastrar en la parte superior
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        string usuario = txtUsuario.Text;
-        string password = txtPassword.Password;
-
-        if (_loginServicio.Login(usuario, password))
+        if (e.LeftButton == MouseButtonState.Pressed)
         {
-            MainWindow main = new MainWindow();
-            main.Show();
-            this.Close();
-        }
-        else
-        {
-            MessageBox.Show("Usuario o contraseña incorrectos", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            this.DragMove();
         }
     }
 
+    // Minimiza la ventana
+    private void BtnMinimizar_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.Minimized;
+    }
+
+    // Maximiza / Restaura la ventana
+    private void BtnMaximizar_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = this.WindowState == WindowState.Maximized 
+            ? WindowState.Normal 
+            : WindowState.Maximized;
+    }
+
+    // Cierra la aplicación
     private void BtnSalir_Click(object sender, RoutedEventArgs e)
     {
         Application.Current.Shutdown();

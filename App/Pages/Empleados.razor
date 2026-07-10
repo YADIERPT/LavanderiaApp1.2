@@ -1,0 +1,344 @@
+@page "/empleados"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@inject NavigationManager NavManager
+
+<div class="employees-page-container">
+    <!-- Left Column: Employees List -->
+    <div class="employees-list-column">
+        <div class="dashboard-card employees-card">
+            <!-- Header -->
+            <div class="employees-list-header">
+                <h1 class="header-title">Gestión de Empleados</h1>
+                <button class="filter-button @(SelectedPosFilter != "TODOS" || !string.IsNullOrEmpty(SearchText) ? "filter-active" : "")" @onclick="ToggleFilters">
+                    <span class="material-symbols-rounded">filter_list</span>
+                    <span>Filtrar @(SelectedPosFilter != "TODOS" ? $"({SelectedPosFilter})" : "")</span>
+                </button>
+            </div>
+
+            <!-- Active Filter Bar -->
+            @if (SelectedPosFilter != "TODOS" || !string.IsNullOrEmpty(SearchText))
+            {
+                <div class="active-filter-bar">
+                    <span>Filtro: <strong>@SelectedPosFilter</strong> @(!string.IsNullOrEmpty(SearchText) ? $"• \"{SearchText}\"" : "")</span>
+                    <button class="btn-clear-filter" @onclick="LimpiarFiltros">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">close</span>
+                    </button>
+                </div>
+            }
+
+            <!-- Employees vertical list -->
+            <div class="employees-vertical-list">
+                @if (FilteredEmployees.Any())
+                {
+                    @foreach (var emp in FilteredEmployees)
+                    {
+                        <div class="employee-row-item @(SelectedEmployee?.Id == emp.Id ? "selected" : "")" @onclick="() => SelectEmployee(emp)">
+                            <!-- Circular Avatar -->
+                            @if (emp.HasAvatarImage)
+                            {
+                                <div class="employee-avatar-circle img-avatar">
+                                    <span class="material-symbols-rounded">support_agent</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="employee-avatar-circle text-avatar @GetAvatarBgClass(emp.Id)">
+                                    <span>@emp.Initials</span>
+                                </div>
+                            }
+
+                            <div class="employee-info-left">
+                                <span class="employee-name">@emp.Nombre</span>
+                                <span class="employee-id-label">ID: @emp.Codigo</span>
+                            </div>
+                            
+                            <div class="employee-info-middle">
+                                <span class="employee-meta-label">Posición</span>
+                                <span class="employee-meta-val">@emp.Posicion</span>
+                            </div>
+
+                            <div class="employee-info-right">
+                                <span class="employee-status-badge @(emp.Estado == "ACTIVO" ? "status-active-badge" : "status-rest-badge")">
+                                    @emp.Estado
+                                </span>
+                            </div>
+
+                            <div class="employee-chevron-right">
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-history-message" style="padding: 32px; text-align: center; color: #64748B;">
+                        No se encontraron empleados con los criterios especificados.
+                    </div>
+                }
+            </div>
+
+            <!-- Register Button -->
+            <div class="register-btn-container">
+                <button class="btn-register-employee" @onclick="OpenRegisterModal">
+                    <span class="material-symbols-rounded">add</span>
+                    <span>Registrar empleado</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Details Card -->
+    <div class="employee-details-column">
+        @if (SelectedEmployee != null)
+        {
+            <div class="dashboard-card emp-details-card">
+                <!-- Cyan-Blue Gradient Header -->
+                <div class="details-header-banner">
+                    <div class="header-banner-text">
+                        <h2>Detalles</h2>
+                        <span>Empleados</span>
+                    </div>
+                    <!-- Decorative Icon -->
+                    <span class="material-symbols-rounded decorative-icon">contact_mail</span>
+                </div>
+
+                <!-- Properties Grid Body -->
+                <div class="emp-details-grid-body">
+                    <!-- Row 1: ID and Nombre -->
+                    <div class="emp-grid-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">ID EMPLEADO:</span>
+                            <span class="prop-val font-bold">@SelectedEmployee.IdEmpleado</span>
+                        </div>
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">NOMBRE:</span>
+                            <span class="prop-val font-bold">@SelectedEmployee.Nombre</span>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Fecha Contrato and Turno -->
+                    <div class="emp-grid-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">FECHA CONTRATO:</span>
+                            <span class="prop-val">@SelectedEmployee.FechaContrato</span>
+                        </div>
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">TURNO:</span>
+                            <span class="prop-val">@SelectedEmployee.Turno</span>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Pago/Mes and Telefono -->
+                    <div class="emp-grid-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">PAGO / MES:</span>
+                            <span class="prop-val val-payment">@SelectedEmployee.PagoMes.ToString("$#,##0")</span>
+                        </div>
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">TELÉFONO:</span>
+                            <span class="prop-val">@SelectedEmployee.Telefono</span>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Correo Electronico (full row width style) -->
+                    <div class="emp-grid-row full-width-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">CORREO ELECTRÓNICO:</span>
+                            <span class="prop-val val-email">@SelectedEmployee.Correo</span>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Rol Sistema and Usuario -->
+                    <div class="emp-grid-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">ROL DE SISTEMA:</span>
+                            <span class="prop-val font-bold" style="color: #0056C6;">@SelectedEmployee.Rol</span>
+                        </div>
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">USUARIO:</span>
+                            <span class="prop-val val-username-handle">@SelectedEmployee.Usuario</span>
+                        </div>
+                    </div>
+
+                    <!-- Inner action buttons -->
+                    <div class="emp-details-actions">
+                        <button class="btn-emp-edit" @onclick="EditEmployee">
+                            <span class="material-symbols-rounded">edit</span>
+                            <span>Editar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Interactivo de Filtros de Empleados -->
+@if (ShowFilterModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowFilterModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 540px; padding: 40px;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 24px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">filter_list</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 20px;">Filtrar Empleados</h3>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowFilterModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Search input inside filter modal -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 20px;">
+                <label class="form-input-label">Buscar Nombre o Código</label>
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">search</span>
+                    <input type="text" class="form-input-field" @bind="SearchText" @bind:event="oninput" placeholder="Nombre o código (ej. CT-01)..." />
+                </div>
+            </div>
+
+            <!-- Position filter chips -->
+            <div style="width: 100%; margin-bottom: 24px;">
+                <label class="form-input-label" style="margin-bottom: 10px; display: block;">Posición / Puesto</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    @foreach (var posOpt in PosOptions)
+                    {
+                        <button class="btn-status-filter-chip @(SelectedPosFilter == posOpt ? "chip-active" : "")" 
+                                @onclick="() => SetPosFilter(posOpt)">
+                            @posOpt
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div style="width: 100%; display: flex; gap: 16px; margin-top: 10px;">
+                <button class="btn-payment-submit" @onclick="() => ShowFilterModal = false">
+                    APLICAR FILTROS
+                </button>
+                <button class="btn-payment-cancel" @onclick="LimpiarFiltros">
+                    RESTAURAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public class EmployeeItem
+    {
+        public string Id { get; set; }
+        public string Nombre { get; set; }
+        public string Posicion { get; set; }
+        public string Estado { get; set; }
+        public string Codigo { get; set; }
+        public string IdEmpleado { get; set; }
+        public string FechaContrato { get; set; }
+        public string Turno { get; set; }
+        public decimal PagoMes { get; set; }
+        public string Telefono { get; set; }
+        public string Correo { get; set; }
+        public int Edad { get; set; }
+        public string Rol { get; set; } = "Empleado";
+        public string Usuario { get; set; }
+        public bool HasAvatarImage { get; set; }
+        public string Initials { get; set; }
+    }
+
+    private bool ShowFilterModal = false;
+    private string SearchText = "";
+    private string SelectedPosFilter = "TODOS";
+    private readonly string[] PosOptions = new[] { "TODOS", "Recepcionista", "Lavadero", "Supervisor" };
+
+    private List<EmployeeItem> Employees = new();
+    private EmployeeItem SelectedEmployee;
+
+    private UsuarioRepositorio _usuarioRepo = new();
+
+    private IEnumerable<EmployeeItem> FilteredEmployees => Employees.Where(e =>
+        (SelectedPosFilter == "TODOS" || e.Posicion.Equals(SelectedPosFilter, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(SearchText) ||
+         e.Nombre.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+         e.Codigo.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+         e.Usuario.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+    );
+
+    protected override void OnInitialized()
+    {
+        CargarEmpleados();
+    }
+
+    private void CargarEmpleados()
+    {
+        var usuariosDb = _usuarioRepo.ListarTodo();
+
+        Employees = usuariosDb.Select((u, index) => new EmployeeItem
+        {
+            Id = u.IdUsuario.ToString("D2"),
+            Codigo = $"EMP-{u.IdUsuario:D2}",
+            IdEmpleado = u.Nombre.Split(' ')[0] + $"_{u.IdUsuario:D2}",
+            Nombre = u.Nombre,
+            Posicion = u.Rol == "Admin" ? "Administrador" : "Operador",
+            Rol = string.IsNullOrEmpty(u.Rol) ? "Empleado" : u.Rol,
+            Estado = "ACTIVO",
+            FechaContrato = "N/A",
+            Turno = "N/A",
+            PagoMes = 0.00m,
+            Telefono = "N/A",
+            Correo = u.NombreUsuario.ToLower() + "@lavanderia.com",
+            Edad = 0,
+            Usuario = $"@{u.NombreUsuario}",
+            HasAvatarImage = false,
+            Initials = string.IsNullOrEmpty(u.Nombre) ? "US" : string.Concat(u.Nombre.Split(' ').Select(w => w.FirstOrDefault()))
+        }).ToList();
+
+        SelectedEmployee = Employees.FirstOrDefault();
+    }
+
+    private void SelectEmployee(EmployeeItem emp)
+    {
+        SelectedEmployee = emp;
+    }
+
+    private void ToggleFilters()
+    {
+        ShowFilterModal = !ShowFilterModal;
+    }
+
+    private void SetPosFilter(string pos)
+    {
+        SelectedPosFilter = pos;
+    }
+
+    private void LimpiarFiltros()
+    {
+        SearchText = "";
+        SelectedPosFilter = "TODOS";
+        ShowFilterModal = false;
+    }
+
+    private void OpenRegisterModal()
+    {
+        NavManager.NavigateTo("/empleados/agregar");
+    }
+
+    private void EditEmployee()
+    {
+        if (SelectedEmployee != null)
+        {
+            NavManager.NavigateTo($"/empleados/editar/{SelectedEmployee.Id}");
+        }
+    }
+
+    private string GetAvatarBgClass(string id)
+    {
+        return id switch
+        {
+            "02" => "bg-blue-avatar",
+            "03" => "bg-grey-avatar",
+            _ => "bg-default-avatar"
+        };
+    }
+}

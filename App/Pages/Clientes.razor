@@ -1,0 +1,366 @@
+@page "/clientes"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@inject NavigationManager NavManager
+
+<div class="clients-page-container">
+    <!-- Left Column: Clients List -->
+    <div class="clients-list-column">
+        <div class="dashboard-card clients-card">
+            <!-- Header -->
+            <div class="clients-list-header">
+                <h1 class="header-title">Gestión de clientes</h1>
+                <button class="filter-button @(SelectedTypeFilter != "TODOS" || !string.IsNullOrEmpty(SearchText) ? "filter-active" : "")" @onclick="ToggleFilters">
+                    <span class="material-symbols-rounded">filter_list</span>
+                    <span>Filtrar @(SelectedTypeFilter != "TODOS" ? $"({SelectedTypeFilter})" : "")</span>
+                </button>
+            </div>
+
+            <!-- Active Filter Bar -->
+            @if (SelectedTypeFilter != "TODOS" || !string.IsNullOrEmpty(SearchText))
+            {
+                <div class="active-filter-bar">
+                    <span>Filtro: <strong>@SelectedTypeFilter</strong> @(!string.IsNullOrEmpty(SearchText) ? $"• \"{SearchText}\"" : "")</span>
+                    <button class="btn-clear-filter" @onclick="LimpiarFiltros">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">close</span>
+                    </button>
+                </div>
+            }
+
+            <!-- Clients vertical list -->
+            <div class="clients-vertical-list">
+                @if (FilteredClients.Any())
+                {
+                    @foreach (var client in FilteredClients)
+                    {
+                        <div class="client-row-item @(SelectedClient?.Id == client.Id ? "selected" : "")" @onclick="() => SelectClient(client)">
+                            <div class="client-info-left">
+                                <span class="client-name">@client.Nombre</span>
+                                <span class="client-type-label">@client.Tipo</span>
+                            </div>
+                            
+                            <div class="client-info-middle-left">
+                                <span class="client-meta-label">ÚLTIMO PEDIDO</span>
+                                <span class="client-meta-val">@client.UltimoPedido</span>
+                            </div>
+
+                            <div class="client-info-middle-right">
+                                <span class="client-meta-label">FRECUENCIA</span>
+                                <span class="client-meta-val @(client.Frecuencia == "N/A" ? "freq-na" : "freq-active")">
+                                    @client.Frecuencia
+                                </span>
+                            </div>
+
+                            <div class="client-chevron-right">
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-history-message" style="padding: 32px; text-align: center; color: #64748B;">
+                        No se encontraron clientes con el filtro especificado.
+                    </div>
+                }
+            </div>
+
+            <!-- Register Button -->
+            <div class="register-btn-container">
+                <button class="btn-register-client" @onclick="OpenRegisterModal">
+                    <span class="material-symbols-rounded">add</span>
+                    <span>Registrar Cliente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Details and History -->
+    <div class="client-details-column">
+        @if (SelectedClient != null)
+        {
+            <!-- Card 1: Details -->
+            <div class="dashboard-card client-details-card">
+                <!-- Cyan-Blue Gradient Header -->
+                <div class="details-header-banner">
+                    <div class="header-banner-text">
+                        <h2>Detalles</h2>
+                        <span>Cliente</span>
+                    </div>
+                    <!-- Decorative Icon -->
+                    <span class="material-symbols-rounded decorative-icon">badge</span>
+                </div>
+
+                <!-- Properties List -->
+                <div class="details-body">
+                    <div class="detail-property-row">
+                        <span class="prop-label">CLIENTE</span>
+                        <span class="prop-val font-bold">@SelectedClient.Nombre</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">NUMERO</span>
+                        <span class="prop-val">@SelectedClient.Telefono</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">DIRECCIÓN</span>
+                        <span class="prop-val">@SelectedClient.Direccion</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">ID</span>
+                        <span class="prop-val">@SelectedClient.Id</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">PEDIDOS REALIZADOS</span>
+                        <span class="prop-val">@SelectedClient.PedidosRealizados</span>
+                    </div>
+                    <div class="detail-property-row">
+                        <span class="prop-label">PESO APROX. POR PEDIDO</span>
+                        <span class="prop-val">@SelectedClient.PesoAprox</span>
+                    </div>
+
+                    <!-- Inner action buttons -->
+                    <div class="details-actions" style="margin-top: 16px;">
+                        <button class="btn-client-edit" @onclick="EditClient">
+                            <span class="material-symbols-rounded">edit</span>
+                            <span>Editar Detalles</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: History -->
+            <div class="dashboard-card client-history-card">
+                <div class="history-header">
+                    <span class="material-symbols-rounded history-header-icon">history</span>
+                    <h3 class="card-title-custom">Historial de Pedidos</h3>
+                </div>
+
+                <div class="history-list-items" style="max-height: 205px; overflow-y: auto; padding-right: 6px;">
+                    @if (SelectedClient.Historial != null && SelectedClient.Historial.Count > 0)
+                    {
+                        @foreach (var hist in SelectedClient.Historial)
+                        {
+                            <div class="history-row-item">
+                                <div class="history-icon-check">
+                                    <span class="material-symbols-rounded">check</span>
+                                </div>
+                                <div class="history-item-details">
+                                    <span class="history-item-title">@hist.Servicio</span>
+                                    <span class="history-item-subtitle">@hist.Subservicio</span>
+                                    <span class="history-item-meta">@hist.Fecha • @hist.Codigo</span>
+                                </div>
+                                <div class="history-item-cost">
+                                    <span>@hist.Costo.ToString("$0.00")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-history-message">
+                            Este cliente no tiene historial de pedidos.
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Interactivo de Filtros de Clientes -->
+@if (ShowFilterModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowFilterModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 540px; padding: 40px;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 24px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">filter_list</span>
+                    </div>
+                    <h3 class="section-title-custom">Filtrar Clientes</h3>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowFilterModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Search input inside filter modal -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 20px;">
+                <label class="form-input-label">Buscar Nombre o Teléfono</label>
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">search</span>
+                    <input type="text" class="form-input-field" @bind="SearchText" @bind:event="oninput" placeholder="Ej. Julio, 988..." />
+                </div>
+            </div>
+
+            <!-- Category filter chips -->
+            <div style="width: 100%; margin-bottom: 24px;">
+                <label class="form-input-label" style="margin-bottom: 10px; display: block;">Tipo de Cliente</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    @foreach (var typeOpt in TypeOptions)
+                    {
+                        <button class="btn-status-filter-chip @(SelectedTypeFilter == typeOpt ? "chip-active" : "")" 
+                                @onclick="() => SetTypeFilter(typeOpt)">
+                            @typeOpt
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div style="width: 100%; display: flex; gap: 16px; margin-top: 10px;">
+                <button class="btn-payment-submit" @onclick="() => ShowFilterModal = false">
+                    APLICAR FILTROS
+                </button>
+                <button class="btn-payment-cancel" @onclick="LimpiarFiltros">
+                    RESTAURAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public class HistoryItem
+    {
+        public string Servicio { get; set; }
+        public string Subservicio { get; set; }
+        public string Fecha { get; set; }
+        public string Codigo { get; set; }
+        public decimal Costo { get; set; }
+    }
+
+    public class ClientItem
+    {
+        public string Id { get; set; }
+        public string Nombre { get; set; }
+        public string Tipo { get; set; }
+        public string UltimoPedido { get; set; }
+        public string Frecuencia { get; set; }
+        public string Telefono { get; set; }
+        public string Direccion { get; set; }
+        public int PedidosRealizados { get; set; }
+        public string PesoAprox { get; set; }
+        public List<HistoryItem> Historial { get; set; }
+    }
+
+    private bool ShowFilterModal = false;
+    private string SearchText = "";
+    private string SelectedTypeFilter = "TODOS";
+    private readonly string[] TypeOptions = new[] { "TODOS", "Cliente frecuente", "Cliente nuevo", "Miembro Premium", "Cliente mensual" };
+
+    private List<ClientItem> Clients = new();
+    private ClientItem SelectedClient;
+
+    private ClienteRepositorio _clienteRepo = new();
+
+    private IEnumerable<ClientItem> FilteredClients => Clients.Where(c =>
+        (SelectedTypeFilter == "TODOS" || c.Tipo.Equals(SelectedTypeFilter, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(SearchText) ||
+         c.Nombre.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+         c.Telefono.Contains(SearchText))
+    );
+
+    protected override void OnInitialized()
+    {
+        CargarClientes();
+    }
+
+    private void CargarClientes()
+    {
+        var clientesDb = _clienteRepo.ListarTodo();
+        var ordersDb = new PedidoRepositorio().ObtenerTodos();
+
+        Clients = clientesDb.Select(c => {
+            var clientOrders = ordersDb.Where(p => p.IdCliente == c.IdCliente).ToList();
+            int orderCount = clientOrders.Count;
+            
+            string tipo = "Cliente nuevo";
+            string frecuencia = "N/A";
+            if (orderCount >= 20)
+            {
+                tipo = "Miembro Premium";
+                frecuencia = "Diario";
+            }
+            else if (orderCount >= 5)
+            {
+                tipo = "Cliente frecuente";
+                frecuencia = "Semanal";
+            }
+
+            var ultimoPedidoObj = clientOrders.MaxBy(p => p.FechaRecepcion);
+            string ultimoPedido = "Sin pedidos";
+            if (ultimoPedidoObj != null)
+            {
+                var diff = DateTime.Now - ultimoPedidoObj.FechaRecepcion;
+                if (diff.TotalDays < 1)
+                {
+                    ultimoPedido = diff.TotalHours < 1 ? "Hace unos minutos" : $"Hace {Math.Round(diff.TotalHours)} horas";
+                }
+                else
+                {
+                    ultimoPedido = $"Hace {Math.Round(diff.TotalDays)} días";
+                }
+            }
+
+            var historyItems = clientOrders.Select(p => new HistoryItem
+            {
+                Codigo = $"#{p.IdPedido}",
+                Fecha = p.FechaRecepcion.ToString("dd MMM, yyyy"),
+                Costo = p.Total,
+                Servicio = "Servicio de Lavandería",
+                Subservicio = p.Estado
+            }).ToList();
+
+            return new ClientItem
+            {
+                Id = c.IdCliente.ToString("D2"),
+                Nombre = c.Nombre,
+                Tipo = tipo,
+                UltimoPedido = ultimoPedido,
+                Frecuencia = frecuencia,
+                Telefono = string.IsNullOrEmpty(c.Telefono) ? "N/A" : c.Telefono,
+                Direccion = string.IsNullOrEmpty(c.Direccion) ? "Sin dirección" : c.Direccion,
+                PedidosRealizados = orderCount,
+                PesoAprox = "N/A",
+                Historial = historyItems
+            };
+        }).ToList();
+
+        SelectedClient = Clients.FirstOrDefault();
+    }
+
+    private void SelectClient(ClientItem client)
+    {
+        SelectedClient = client;
+    }
+
+    private void ToggleFilters()
+    {
+        ShowFilterModal = !ShowFilterModal;
+    }
+
+    private void SetTypeFilter(string tipo)
+    {
+        SelectedTypeFilter = tipo;
+    }
+
+    private void LimpiarFiltros()
+    {
+        SearchText = "";
+        SelectedTypeFilter = "TODOS";
+        ShowFilterModal = false;
+    }
+
+    private void OpenRegisterModal()
+    {
+        NavManager.NavigateTo("/clientes/agregar");
+    }
+
+    private void EditClient()
+    {
+        if (SelectedClient != null)
+        {
+            NavManager.NavigateTo($"/clientes/editar/{SelectedClient.Id}");
+        }
+    }
+}

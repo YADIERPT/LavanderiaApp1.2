@@ -1,0 +1,402 @@
+@page "/cobro"
+@page "/cobro/{Id:int}"
+@page "/cobro/tarjeta"
+@page "/cobro/tarjeta/{Id:int}"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
+@inject NavigationManager NavManager
+
+<div class="cobro-page-container">
+    <!-- Left Column: Order & Client Summary Details -->
+    <div class="cobro-sidebar-column">
+        <div class="dashboard-card cobro-details-card">
+            <!-- Cyan-Blue Gradient Header Banner -->
+            <div class="cobro-header-banner">
+                <div class="header-banner-text">
+                    <h2>PEDIDO # @OrderId</h2>
+                    <span>DETALLES</span>
+                </div>
+                <span class="material-symbols-rounded decorative-icon">local_laundry_service</span>
+            </div>
+
+            <!-- Details Body -->
+            <div class="cobro-details-body">
+                <!-- Section 1: Detalle de Cliente -->
+                <div class="cobro-section-title">DETALLES DE CLIENTE</div>
+                
+                <div class="cobro-property-row">
+                    <span class="prop-label-light">CLIENTE</span>
+                    <span class="prop-val-dark font-bold">@ClientName</span>
+                </div>
+                <div class="cobro-property-row">
+                    <span class="prop-label-light">NUMERO</span>
+                    <span class="prop-val-dark">@ClientPhone</span>
+                </div>
+                <div class="cobro-property-row">
+                    <span class="prop-label-light">ID</span>
+                    <span class="prop-val-dark">@ClientId</span>
+                </div>
+                <div class="cobro-property-row">
+                    <span class="prop-label-light">MAQUINA ASIGNADA</span>
+                    <span class="prop-val-dark">@AssignedMachine</span>
+                </div>
+
+                <!-- Section 2: Detalles Pedido -->
+                <div class="cobro-section-title" style="margin-top: 24px;">DETALLES PEDIDO</div>
+                
+                <div class="dotted-details-list">
+                    <div class="dotted-row">
+                        <span class="dotted-label">CLIENTE</span>
+                        <span class="dotted-dots"></span>
+                        <span class="dotted-val">@ClientName</span>
+                    </div>
+                    <div class="dotted-row">
+                        <span class="dotted-label">PESO</span>
+                        <span class="dotted-dots"></span>
+                        <span class="dotted-val">@Weight.ToString("0.0")kg</span>
+                    </div>
+                    <div class="dotted-row">
+                        <span class="dotted-label">PRECIO POR KG</span>
+                        <span class="dotted-dots"></span>
+                        <span class="dotted-val">@PricePerKg.ToString("$ 0.00")</span>
+                    </div>
+                    <div class="dotted-row">
+                        <span class="dotted-label">OTROS SERVICIOS</span>
+                        <span class="dotted-dots"></span>
+                        <span class="dotted-val">@OtherServices.ToString("$00.00")</span>
+                    </div>
+                </div>
+
+                <!-- Total Row -->
+                <div class="cobro-total-container">
+                    <span class="cobro-total-label">TOTAL</span>
+                    <span class="cobro-total-amount">@TotalAmount.ToString("$0.00")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Main Area: Payment Form (Efectivo or Tarjeta) -->
+    <div class="cobro-main-column">
+        <div class="dashboard-card cobro-payment-card">
+            <!-- Icon header with live green status dot -->
+            <div class="payment-icon-wrapper">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon">local_laundry_service</span>
+                    <span class="online-status-dot"></span>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h2 class="payment-title">@(EsTarjeta ? "TARJETA" : "EFECTIVO")</h2>
+
+            <!-- Inner White Payment Form Box -->
+            <div class="payment-form-box">
+                @if (EsTarjeta)
+                {
+                    <!-- Recreación exacta de 'pago targeta.png' (2 campos) -->
+                    <div class="payment-grid-2x2" style="margin-bottom: 48px;">
+                        <!-- Monto a pagar -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Monto a pagar</label>
+                            <div class="payment-input-display">
+                                @TotalAmount.ToString("$0.00") MXN
+                            </div>
+                        </div>
+
+                        <!-- Folio -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Folio</label>
+                            <div class="payment-input-display">
+                                @FolioText MXN
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Recreación exacta de 'COBRO.png' (4 campos) -->
+                    <div class="payment-grid-2x2">
+                        <!-- Monto a pagar -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Monto a pagar</label>
+                            <div class="payment-input-display">
+                                @TotalAmount.ToString("$0.00") MXN
+                            </div>
+                        </div>
+
+                        <!-- Pago con -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Pago con</label>
+                            <div class="payment-input-wrapper">
+                                <input type="number" step="0.5" class="payment-input-edit" 
+                                       @bind="AmountPaid" @bind:event="oninput" 
+                                       placeholder="0.00" />
+                            </div>
+                        </div>
+
+                        <!-- Cambio -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Cambio</label>
+                            <div class="payment-input-display">
+                                @CalculatedChange.ToString("$0.00") MXN
+                            </div>
+                        </div>
+
+                        <!-- Folio -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label">Folio</label>
+                            <div class="payment-input-display">
+                                @FolioText MXN
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Bottom Action Buttons -->
+                <div class="payment-actions-row">
+                    <button class="btn-payment-submit" @onclick="ProcesarPago">
+                        PAGAR
+                    </button>
+                    <button class="btn-payment-cancel" @onclick="Cancelar">
+                        CANCELAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (MostrarModalExitoPago)
+{
+    <!-- Recreación exacta de 'confirmacion de pago.png' + opciones PyME (Ticket & WhatsApp) -->
+    <div class="tipo-pago-backdrop">
+        <div class="tipo-pago-modal-card" style="max-width: 540px; padding: 44px 40px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon">local_laundry_service</span>
+                    <span class="online-status-dot"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 24px;">
+                Su pago se realizo con exito!
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 24px;">
+                <button class="btn-status-option status-lavado" style="justify-content: center; background: #0056C6;" @onclick="VerTicketImpresion">
+                    <span class="material-symbols-rounded">receipt_long</span>
+                    <span>Ver / Imprimir Ticket POS</span>
+                </button>
+
+                <button class="btn-status-option status-listo" style="justify-content: center; background: #25D366; color: white;" @onclick="EnviarTicketWhatsApp">
+                    <span class="material-symbols-rounded">chat</span>
+                    <span>Enviar Ticket por WhatsApp</span>
+                </button>
+            </div>
+
+            <div style="width: 100%; display: flex; justify-content: center;">
+                <button class="btn-payment-cancel" style="max-width: 240px; padding: 14px 28px;" @onclick="FinalizarTransaccion">
+                    CONTINUAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (MostrarModalTicketView)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalTicketView = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 32px; background: #FFFDF7; font-family: monospace;">
+            <h3 style="text-align: center; margin-bottom: 12px; font-family: 'Outfit', sans-serif;">COMPROBANTE TÉRMICO POS</h3>
+            <pre style="background: #FFFFFF; border: 1px dashed #CBD5E1; padding: 16px; border-radius: 8px; font-size: 12px; line-height: 1.4; color: #0F172A; white-space: pre-wrap; word-break: break-all;">@TextoTicketFormatted</pre>
+            
+            <div style="display: flex; gap: 12px; width: 100%; margin-top: 16px;">
+                <button class="btn-payment-submit" @onclick="ImprimirTicket">
+                    IMPRIMIR
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalTicketView = false">
+                    CERRAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool EsTarjeta => NavManager.Uri.Contains("/tarjeta");
+    private bool MostrarModalExitoPago = false;
+
+    private int OrderId = 2;
+    private string ClientName = "Julio vera";
+    private string ClientPhone = "9888346747";
+    private string ClientId = "01";
+    private string AssignedMachine = "#2";
+
+    private double Weight = 12.5;
+    private decimal PricePerKg = 16.00m;
+    private decimal OtherServices = 0.00m;
+
+    private decimal TotalAmount => (decimal)Weight * PricePerKg + OtherServices;
+
+    private decimal AmountPaid = 200.00m;
+    private decimal SaldoDeudor = 0m;
+    private decimal CalculatedChange => AmountPaid > SaldoDeudor ? AmountPaid - SaldoDeudor : 0.00m;
+    private string FolioText => SaldoDeudor.ToString("$0.00");
+
+    private PagoServicio _pagoServicio = new();
+    private PedidoRepositorio _pedidoRepo = new();
+    private ClienteRepositorio _clienteRepo = new();
+    private PagoRepositorio _pagoRepo = new();
+
+    protected override void OnInitialized()
+    {
+        decimal activePrice = 15.00m;
+        try
+        {
+            var servicioLavado = new ServicioRepositorio().ObtenerTodos().FirstOrDefault(s => s.IdServicio == 1);
+            if (servicioLavado != null)
+            {
+                activePrice = servicioLavado.Precio;
+            }
+        }
+        catch { }
+        
+        PricePerKg = activePrice;
+
+        if (Id > 0)
+        {
+            OrderId = Id;
+            var pedidoDb = _pedidoRepo.ObtenerPorId(OrderId);
+            if (pedidoDb != null)
+            {
+                var clienteDb = _clienteRepo.ObtenerPorId(pedidoDb.IdCliente);
+                ClientName = clienteDb?.Nombre ?? $"Cliente #{pedidoDb.IdCliente}";
+                ClientPhone = clienteDb?.Telefono ?? "";
+                ClientId = pedidoDb.IdCliente.ToString("D2");
+                
+                var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
+                string machineName = !string.IsNullOrEmpty(pedidoDb.MaquinaAsignada) ? pedidoDb.MaquinaAsignada : "Sin Asignar";
+                if (string.IsNullOrEmpty(pedidoDb.MaquinaAsignada) && maquinasDb.Count > 0)
+                {
+                    var assignedMachine = maquinasDb[(OrderId - 1) % maquinasDb.Count];
+                    machineName = assignedMachine.Nombre;
+                }
+                AssignedMachine = machineName;
+
+                var detallesRepo = new DetallePedidoRepositorio();
+                var detalles = detallesRepo.ObtenerPorPedido(OrderId);
+                var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
+                Weight = lavadoDetalle != null ? lavadoDetalle.Cantidad : 10.0;
+                PricePerKg = lavadoDetalle != null ? lavadoDetalle.PrecioUnitario : activePrice;
+                OtherServices = detalles.Where(d => d.IdServicio != 1).Sum(d => d.Subtotal);
+
+                var pagos = _pagoRepo.ObtenerTodos().Where(pg => pg.IdPedido == OrderId).ToList();
+                decimal yaPagado = pagos.Sum(pg => pg.MontoPago);
+                
+                SaldoDeudor = pedidoDb.Total - yaPagado;
+                AmountPaid = SaldoDeudor;
+            }
+            else
+            {
+                SaldoDeudor = TotalAmount;
+                AmountPaid = TotalAmount;
+            }
+        }
+        else
+        {
+            SaldoDeudor = TotalAmount;
+            AmountPaid = TotalAmount;
+        }
+    }
+
+    private void ProcesarPago()
+    {
+        if (!EsTarjeta && AmountPaid < SaldoDeudor)
+        {
+            CustomMessageBox.Show("Monto insuficiente", $"El monto pagado (${AmountPaid:0.00}) es menor que el saldo pendiente (${SaldoDeudor:0.00}).", "warning");
+            return;
+        }
+
+        var metodo = EsTarjeta ? Pago.MetodoPago.Tarjeta : Pago.MetodoPago.Efectivo;
+        var resultado = _pagoServicio.ProcesarPago(OrderId, SaldoDeudor, metodo);
+        if (resultado == "Éxito")
+        {
+            MostrarModalExitoPago = true;
+        }
+        else
+        {
+            CustomMessageBox.Show("Error", $"Error al guardar pago: {resultado}", "error");
+        }
+    }
+
+    private bool MostrarModalTicketView = false;
+    private string TextoTicketFormatted = "";
+
+    private void VerTicketImpresion()
+    {
+        var detalles = new DetallePedidoRepositorio().ObtenerPorPedido(OrderId);
+        var servicios = new ServicioRepositorio().ObtenerTodos();
+        var itemsList = detalles.Select(d =>
+        {
+            var s = servicios.FirstOrDefault(x => x.IdServicio == d.IdServicio);
+            return new CarritoItem
+            {
+                NombreServicio = s?.Nombre ?? "Servicio",
+                Cantidad = d.Cantidad,
+                Subtotal = d.Subtotal
+            };
+        }).ToList();
+
+        if (itemsList.Count == 0)
+        {
+            itemsList.Add(new CarritoItem { NombreServicio = "Servicio de Lavandería", Cantidad = Weight, Subtotal = TotalAmount });
+        }
+
+        var ticket = new Ticket
+        {
+            IdPedido = OrderId,
+            ClienteNombre = ClientName,
+            TelefonoCliente = ClientPhone,
+            AtendidoPor = SessionManager.UsuarioActual?.Nombre ?? "Personal de Recepción",
+            Total = TotalAmount,
+            MontoPagado = AmountPaid,
+            SaldoPendiente = 0m,
+            Cambio = CalculatedChange,
+            Codigo = Ticket.GenerarCodigo(OrderId),
+            Items = itemsList
+        };
+
+        TextoTicketFormatted = ticket.GenerarTextoFormateado();
+        MostrarModalTicketView = true;
+    }
+
+    private void EnviarTicketWhatsApp()
+    {
+        string mensaje = $"Hola {ClientName}, ¡tu pago de {TotalAmount.ToString("$0.00")} para el Pedido #{OrderId} ha sido registrado con éxito en Lavanderías Villas del Sur! 🧺✨";
+        string url = $"https://wa.me/{ClientPhone.Replace(" ", "").Replace("+", "")}?text={Uri.EscapeDataString(mensaje)}";
+        CustomMessageBox.Show("Notificación por WhatsApp", $"Abriendo WhatsApp Web para notificar a {ClientName} ({ClientPhone})...\n\nMensaje: {mensaje}", "info");
+    }
+
+    private void ImprimirTicket()
+    {
+        CustomMessageBox.Show("Impresión en proceso", "Enviando comprobante a la impresora térmica POS...", "info");
+        MostrarModalTicketView = false;
+    }
+
+    private void FinalizarTransaccion()
+    {
+        MostrarModalExitoPago = false;
+        ToastService.Show("¡Pago Procesado!", $"El cobro del Pedido #{OrderId:D2} por {TotalAmount.ToString("$#,##0.00")} fue registrado exitosamente.", "success");
+        NavManager.NavigateTo("/pedidos");
+    }
+
+    private void Cancelar()
+    {
+        NavManager.NavigateTo("/pedidos");
+    }
+}

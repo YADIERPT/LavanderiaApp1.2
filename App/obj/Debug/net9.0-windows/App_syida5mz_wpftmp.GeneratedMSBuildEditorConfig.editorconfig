@@ -1,0 +1,86 @@
+is_global = true
+build_property.TargetFramework = net9.0-windows
+build_property.TargetPlatformMinVersion = 7.0
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = LavanderiaApp
+build_property.RootNamespace = LavanderiaApp
+build_property.ProjectDir = C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/BlazorApp.razor]
+build_metadata.AdditionalFiles.TargetPath = Qmxhem9yQXBwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/CambiarEstado.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2FtYmlhckVzdGFkby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Clientes.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2xpZW50ZXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Cobro.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29icm8ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Dashboard.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/EditarCliente.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRWRpdGFyQ2xpZW50ZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/EditarEmpleado.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRWRpdGFyRW1wbGVhZG8ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/EditarPedido.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRWRpdGFyUGVkaWRvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Empleados.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRW1wbGVhZG9zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Finanzas.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRmluYW56YXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Maquinas.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTWFxdWluYXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/Pedidos.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUGVkaWRvcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Pages/TipoPago.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVGlwb1BhZ28ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/Shared/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Yadie/RiderProjects/LavanderiaApp0.1/App/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 

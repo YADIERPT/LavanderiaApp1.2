@@ -1,0 +1,406 @@
+@page "/empleados/editar"
+@page "/empleados/editar/{id:int}"
+@page "/empleados/agregar"
+@using System.Windows
+@using Microsoft.AspNetCore.Components.Forms
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Repositorios
+@using LavanderiaApp.Servicios
+@inject UsuarioRepositorio UsuarioRepo
+@inject NavigationManager NavManager
+
+<div class="edit-emp-page-container">
+    <!-- Breadcrumbs & Header -->
+    <div class="edit-emp-breadcrumbs">
+        <span class="breadcrumb-link" @onclick="GoToEmployees">Empleados</span>
+        <span class="breadcrumb-separator">&gt;</span>
+        <span class="breadcrumb-current">@(IsEditMode ? "editar Perfil" : "agregar Perfil")</span>
+    </div>
+
+    <div class="edit-emp-header">
+        <div class="header-left">
+            <h1 class="header-title">Gestión de empleados</h1>
+            <p class="header-subtitle">
+                Agregar datos contractuales y seguridad de acceso para @(IsEditMode ? (string.IsNullOrWhiteSpace(Nombre) ? "-------" : Nombre) : "-------")
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-cancelar" @onclick="GoToEmployees">Descartar</button>
+            <button class="btn-guardar" @onclick="GuardarDatos">
+                <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">save</span>
+                <span>Guardar datos</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main 2-column Grid -->
+    <div class="edit-emp-grid">
+        <!-- Left Column: Profile Card -->
+        <div class="edit-emp-profile-column">
+            <div class="dashboard-card profile-upload-card">
+                <!-- Interactive Avatar Box for Photo Upload -->
+                <div class="avatar-upload-box" style="position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center;" title="Haga clic para subir foto del empleado">
+                    <InputFile id="employeePhotoInput" OnChange="UploadEmployeePhoto" accept="image/*" 
+                               style="position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; z-index: 10;" />
+                    
+                    @if (!string.IsNullOrEmpty(AvatarImageData))
+                    {
+                        <img src="@AvatarImageData" style="width: 100%; height: 100%; object-fit: cover; border-radius: 18px;" alt="Foto del empleado" />
+                    }
+                    else if (IsEditMode && !string.IsNullOrWhiteSpace(Nombre))
+                    {
+                        <div class="avatar-uploaded-circle">
+                            <span class="material-symbols-rounded">support_agent</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="avatar-upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <span class="material-symbols-rounded" style="font-size: 32px;">add</span>
+                        </div>
+                    }
+                </div>
+
+                <span class="profile-card-name">@(IsEditMode && !string.IsNullOrWhiteSpace(Nombre) ? Nombre : "---------")</span>
+                
+                <div class="profile-card-badge-container">
+                    <span class="profile-card-status-badge @(IsEditMode ? (Estado == "ACTIVO" ? "badge-active" : "badge-rest") : "badge-unregistered")">
+                        <span class="badge-dot"></span>
+                        <span>@(IsEditMode ? Estado : "SIN REGISTRO")</span>
+                    </span>
+                </div>
+
+                <div class="profile-card-divider"></div>
+
+                <div class="profile-card-meta-row">
+                    <span class="meta-label">ID EMPLEADO</span>
+                    <span class="meta-val">@(IsEditMode ? (string.IsNullOrWhiteSpace(Codigo) ? $"EMP-{Id:D2}" : Codigo) : "-------")</span>
+                </div>
+                <div class="profile-card-meta-row">
+                    <span class="meta-label">ÚLTIMO ACCESO</span>
+                    <span class="meta-val">@(IsEditMode ? UltimoAcceso : "---------")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Forms Column -->
+        <div class="edit-emp-forms-column">
+            <!-- Card 1: Credenciales de Acceso -->
+            <div class="dashboard-card form-section-card">
+                <div class="section-header-custom">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">lock</span>
+                    </div>
+                    <h3 class="section-title-custom">Credenciales de Acceso</h3>
+                </div>
+
+                <div class="form-inputs-grid-2x2">
+                    <div class="form-input-group">
+                        <label class="form-input-label">NOMBRE DE USUARIO</label>
+                        <div class="form-input-wrapper">
+                            <input type="text" class="form-input-field no-icon" @bind="Usuario" placeholder="Inserte nombre" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">ROL DE SISTEMA</label>
+                        <div class="form-input-wrapper">
+                            <select class="form-input-field no-icon select-field" @bind="Rol">
+                                <option value="">Elija rol</option>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Recepcionista">Recepcionista</option>
+                                <option value="Lavadero">Lavadero</option>
+                                <option value="Supervisor">Supervisor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">CONTRASEÑA</label>
+                        <div class="form-input-wrapper action-input">
+                            <input type="password" class="form-input-field no-icon" value="@PasswordDisplay" placeholder="••••••••••" readonly />
+                            <button class="btn-change-password" @onclick="AbrirModalCambiarPassword">Cambiar</button>
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">NUMERO DE TELEFONO</label>
+                        <div class="form-input-wrapper">
+                            <input type="text" class="form-input-field no-icon" @bind="Telefono" placeholder="Inserte teléfono" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">CORREO ELECTRÓNICO</label>
+                        <div class="form-input-wrapper">
+                            <input type="email" class="form-input-field no-icon" @bind="Correo" placeholder="@@gmail.com" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">EDAD</label>
+                        <div class="form-input-wrapper">
+                            <input type="number" class="form-input-field no-icon" @bind="Edad" placeholder="19" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Información Contractual -->
+            <div class="dashboard-card form-section-card">
+                <div class="section-header-custom">
+                    <div class="section-icon-wrapper bg-blue-tint" style="color: #15803D; background: #E8F8F0;">
+                        <span class="material-symbols-rounded">description</span>
+                    </div>
+                    <h3 class="section-title-custom">Información Contractual</h3>
+                </div>
+
+                <div class="form-inputs-grid-2x2">
+                    <div class="form-input-group">
+                        <label class="form-input-label">TIPO DE CONTRATO Y TURNO</label>
+                        <div class="form-input-wrapper">
+                            <select class="form-input-field no-icon select-field" @bind="Turno">
+                                <option value="">Seleccione turno y contrato</option>
+                                <option value="Matutino - Tiempo Completo">Matutino - Tiempo Completo</option>
+                                <option value="Vespertino - Tiempo Completo">Vespertino - Tiempo Completo</option>
+                                <option value="Matutino - Medio Tiempo">Matutino - Medio Tiempo</option>
+                                <option value="Vespertino - Medio Tiempo">Vespertino - Medio Tiempo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">FECHA DE INCORPORACIÓN</label>
+                        <div class="form-input-wrapper">
+                            <input type="text" class="form-input-field no-icon" @bind="FechaContrato" placeholder="00/01/0000" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">SALARIO BASE (ANUAL BRUTO)</label>
+                        <div class="form-input-wrapper">
+                            <span class="currency-indicator">$</span>
+                            <input type="text" class="form-input-field currency-input" @bind="SalarioAnual" placeholder="0.00" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">SUCURSAL ASIGNADA</label>
+                        <div class="form-input-wrapper">
+                            <select class="form-input-field no-icon select-field" @bind="Sucursal">
+                                <option value="">Elija sucursal</option>
+                                <option value="Sucursal Norte">Sucursal Norte</option>
+                                <option value="Sucursal Sur">Sucursal Sur</option>
+                                <option value="Sucursal Centro">Sucursal Centro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Interactivo para Cambiar Contraseña (Acceso Administrador) -->
+@if (ShowChangePasswordModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowChangePasswordModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">lock_reset</span>
+                    </div>
+                    <div>
+                        <h3 class="section-title-custom">Cambiar Contraseña</h3>
+                        <span style="font-size: 12px; color: #0056C6; font-weight: 700;">Panel de Administrador</span>
+                    </div>
+                </div>
+                <button @onclick="() => ShowChangePasswordModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- New Password Input -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 16px;">
+                <label class="form-input-label">NUEVA CONTRASEÑA</label>
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">key</span>
+                    <input type="@(ShowNewPasswordToggle ? "text" : "password")" class="form-input-field" @bind="NewPasswordInput" placeholder="Ingrese nueva contraseña..." />
+                    <span class="material-symbols-rounded" style="cursor: pointer; color: #64748B; margin-right: 12px;" @onclick="() => ShowNewPasswordToggle = !ShowNewPasswordToggle">
+                        @(ShowNewPasswordToggle ? "visibility_off" : "visibility")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Confirm Password Input -->
+            <div class="form-input-group" style="width: 100%; margin-bottom: 24px;">
+                <label class="form-input-label">CONFIRMAR NUEVA CONTRASEÑA</label>
+                <div class="form-input-wrapper">
+                    <span class="material-symbols-rounded form-input-icon">lock</span>
+                    <input type="@(ShowNewPasswordToggle ? "text" : "password")" class="form-input-field" @bind="ConfirmPasswordInput" placeholder="Repita la nueva contraseña..." />
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div style="display: flex; gap: 14px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #0056C6;" @onclick="GuardarNuevaContrasena">
+                    GUARDAR CONTRASEÑA
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => ShowChangePasswordModal = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool IsEditMode => Id > 0 || NavManager.Uri.Contains("/editar/");
+
+    private string Nombre = "";
+    private string Codigo = "";
+    private string Estado = "ACTIVO";
+    private string Usuario = "";
+    private string Rol = "";
+    private string Password = "password123";
+    private string PasswordDisplay => string.IsNullOrEmpty(Password) ? "password123" : Password;
+    private string Telefono = "";
+    private string Correo = "";
+    private int? Edad = 19;
+    private string Turno = "";
+    private string FechaContrato = "";
+    private string SalarioAnual = "0.00";
+    private string Sucursal = "";
+    private string UltimoAcceso = "Hace 10 horas";
+    private string? AvatarImageData;
+
+    // Variables para el modal de cambio de contraseña
+    private bool ShowChangePasswordModal = false;
+    private string NewPasswordInput = "";
+    private string ConfirmPasswordInput = "";
+    private bool ShowNewPasswordToggle = false;
+
+    protected override void OnInitialized()
+    {
+        if (Id > 0)
+        {
+            var user = UsuarioRepo.ObtenerPorId(Id);
+            if (user != null)
+            {
+                Nombre = user.Nombre;
+                Usuario = user.NombreUsuario;
+                Password = user.Password;
+                Rol = string.IsNullOrEmpty(user.Rol) ? "Recepcionista" : user.Rol;
+                Estado = "ACTIVO";
+                Codigo = $"EMP-{user.IdUsuario:D2}";
+                UltimoAcceso = "Hace 10 horas";
+            }
+        }
+        else
+        {
+            Nombre = "";
+            Usuario = "";
+            Rol = "";
+            Codigo = "-------";
+            Estado = "SIN REGISTRO";
+        }
+    }
+
+    private async Task UploadEmployeePhoto(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                var resizedFile = await file.RequestImageFileAsync("image/png", 300, 300);
+                using var stream = resizedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                using var ms = new System.IO.MemoryStream();
+                await stream.CopyToAsync(ms);
+                byte[] buffer = ms.ToArray();
+                AvatarImageData = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
+                StateHasChanged();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            CustomMessageBox.Show("Error de Carga", $"Error al cargar la foto: {ex.Message}", "warning");
+        }
+    }
+
+    private void AbrirModalCambiarPassword()
+    {
+        NewPasswordInput = "";
+        ConfirmPasswordInput = "";
+        ShowNewPasswordToggle = false;
+        ShowChangePasswordModal = true;
+    }
+
+    private void GuardarNuevaContrasena()
+    {
+        if (string.IsNullOrWhiteSpace(NewPasswordInput))
+        {
+            CustomMessageBox.Show("Campo Requerido", "Por favor, ingrese la nueva contraseña.", "warning");
+            return;
+        }
+
+        if (NewPasswordInput != ConfirmPasswordInput)
+        {
+            CustomMessageBox.Show("Contraseñas No Coinciden", "Las contraseñas ingresadas no coinciden. Por favor, verifique.", "warning");
+            return;
+        }
+
+        Password = NewPasswordInput;
+
+        if (IsEditMode && Id > 0)
+        {
+            var user = UsuarioRepo.ObtenerPorId(Id);
+            if (user != null)
+            {
+                user.Password = NewPasswordInput;
+                UsuarioRepo.Actualizar(user);
+            }
+        }
+
+        ShowChangePasswordModal = false;
+        CustomMessageBox.Show("Contraseña Actualizada", "La contraseña del empleado ha sido actualizada exitosamente con permisos de Administrador.", "success");
+    }
+
+    private void GoToEmployees()
+    {
+        NavManager.NavigateTo("/empleados");
+    }
+
+    private void GuardarDatos()
+    {
+        if (string.IsNullOrWhiteSpace(Usuario))
+        {
+            CustomMessageBox.Show("Campo Requerido", "Por favor, ingrese el nombre de usuario.", "warning");
+            return;
+        }
+
+        string nombreGuardar = string.IsNullOrWhiteSpace(Nombre) ? Usuario : Nombre;
+
+        if (IsEditMode && Id > 0)
+        {
+            var user = new Usuario
+            {
+                IdUsuario = Id,
+                Nombre = nombreGuardar,
+                NombreUsuario = Usuario,
+                Password = string.IsNullOrWhiteSpace(Password) ? "123" : Password,
+                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol
+            };
+            UsuarioRepo.Actualizar(user);
+            CustomMessageBox.Show("Éxito", $"Empleado '{nombreGuardar}' guardado exitosamente.", "success", () => NavManager.NavigateTo("/empleados"));
+        }
+        else
+        {
+            var user = new Usuario
+            {
+                Nombre = nombreGuardar,
+                NombreUsuario = Usuario,
+                Password = string.IsNullOrWhiteSpace(Password) ? "123" : Password,
+                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol
+            };
+            UsuarioRepo.Guardar(user);
+            CustomMessageBox.Show("Éxito", $"Empleado '{nombreGuardar}' registrado exitosamente.", "success", () => NavManager.NavigateTo("/empleados"));
+        }
+    }
+}

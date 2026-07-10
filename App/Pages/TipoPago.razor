@@ -1,0 +1,57 @@
+@page "/tipo-pago"
+@page "/tipo-pago/{Id:int}"
+@using System.Windows
+@using LavanderiaApp.Servicios
+@using LavanderiaApp.Modelos
+@inject NavigationManager NavManager
+
+<div class="tipo-pago-page-container">
+    <div class="tipo-pago-backdrop" @onclick="CerrarModal">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation>
+            <!-- Icon Container with live green dot -->
+            <div class="payment-icon-wrapper" style="margin-bottom: 24px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon">local_laundry_service</span>
+                    <span class="online-status-dot"></span>
+                </div>
+            </div>
+
+            <!-- Titulo -->
+            <h2 class="tipo-pago-title">Desea Pagar en?</h2>
+
+            <!-- botón de acción Row -->
+            <div class="tipo-pago-buttons-row">
+                <button class="btn-pago-efectivo" @onclick="SeleccionarEfectivo">
+                    EFECTIVO
+                </button>
+                <button class="btn-pago-tarjeta" @onclick="SeleccionarTarjeta">
+                    TARJETA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private PagoServicio _pagoServicio = new();
+
+    private void SeleccionarEfectivo()
+    {
+        int orderId = Id > 0 ? Id : 2;
+        NavManager.NavigateTo($"/cobro/{orderId}");
+    }
+
+    private void SeleccionarTarjeta()
+    {
+        int orderId = Id > 0 ? Id : 2;
+        NavManager.NavigateTo($"/cobro/tarjeta/{orderId}");
+    }
+
+    private void CerrarModal()
+    {
+        NavManager.NavigateTo("/pedidos");
+    }
+}

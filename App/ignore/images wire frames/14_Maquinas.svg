@@ -1,0 +1,270 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C6FF"/>
+      <stop offset="100%" stop-color="#0072FF"/>
+    </linearGradient>
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#002B66" flood-opacity="0.05"/>
+    </filter>
+    <filter id="btnShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0058BC" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap');
+    
+    text { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-outfit { font-family: 'Outfit', sans-serif; }
+  </style>
+
+  <!-- APP BACKGROUND CANVAS -->
+  <rect width="1440" height="900" fill="#F4F7FC"/>
+
+  <!-- SIDEBAR (WIDTH 260px) -->
+  <g id="Sidebar">
+    <rect width="260" height="900" fill="#F8FAFC"/>
+    <line x1="260" y1="0" x2="260" y2="900" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- LOGO AREA -->
+    <g transform="translate(24, 24)">
+      <rect width="40" height="40" rx="12" fill="#0058BC"/>
+      <!-- Washing Machine Icon SVG -->
+      <g transform="translate(10, 10)">
+        <rect x="2" y="2" width="16" height="16" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+        <circle cx="10" cy="11" r="4.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/>
+        <circle cx="6" cy="5" r="1" fill="#FFFFFF"/>
+      </g>
+      <text x="52" y="20" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A">Lavanderias</text>
+      <text x="52" y="34" class="font-outfit" font-size="11" font-weight="600" fill="#0058BC">villas del sur</text>
+    </g>
+
+    <!-- NAV ITEMS -->
+    <g transform="translate(16, 96)">
+      <!-- General -->
+      <g transform="translate(0, 0)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <path d="M 16 14 H 26 V 24 H 16 Z M 28 14 H 38 V 24 H 28 Z M 16 26 H 26 V 36 H 16 Z M 28 26 H 38 V 36 H 28 Z" fill="#5B6B7C" opacity="0.9"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">General</text>
+      </g>
+
+      <!-- Pedidos -->
+      <g transform="translate(0, 50)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <path d="M 16 14 H 38 V 34 H 16 Z M 20 18 H 34" stroke="#5B6B7C" stroke-width="2" fill="none"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">Pedidos</text>
+      </g>
+
+      <!-- Clientes -->
+      <g transform="translate(0, 100)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <circle cx="23" cy="20" r="4" fill="#5B6B7C"/>
+        <path d="M 16 32 C 16 26 30 26 30 32" stroke="#5B6B7C" stroke-width="2" fill="none"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">Clientes</text>
+      </g>
+
+      <!-- Empleados -->
+      <g transform="translate(0, 150)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <circle cx="27" cy="20" r="4" fill="#5B6B7C"/>
+        <path d="M 20 32 C 20 26 34 26 34 32" stroke="#5B6B7C" stroke-width="2" fill="none"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">Empleados</text>
+      </g>
+
+      <!-- Finanzas -->
+      <g transform="translate(0, 200)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <rect x="16" y="16" width="22" height="16" rx="3" stroke="#5B6B7C" stroke-width="2" fill="none"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">Finanzas</text>
+      </g>
+
+      <!-- Inventario -->
+      <g transform="translate(0, 250)">
+        <rect width="228" height="42" rx="10" fill="transparent"/>
+        <rect x="16" y="16" width="22" height="18" rx="2" stroke="#5B6B7C" stroke-width="2" fill="none"/>
+        <text x="46" y="26" font-size="14" fill="#5B6B7C" font-weight="500">Inventario</text>
+      </g>
+    </g>
+
+    <!-- LOGOUT BUTTON -->
+    <g transform="translate(20, 830)">
+      <path d="M 24 12 H 14 V 28 H 24 M 20 20 H 32 M 28 15 L 33 20 L 28 25" stroke="#E53935" stroke-width="2" fill="none"/>
+      <text x="42" y="25" font-size="14" font-weight="700" fill="#E53935">Cerrar Sesión</text>
+    </g>
+  </g>
+
+  <!-- TOP NAVBAR -->
+  <g id="TopNavbar" transform="translate(260, 0)">
+    <rect width="1180" height="64" fill="#F8FAFC"/>
+    <line x1="0" y1="64" x2="1180" y2="64" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Search Box -->
+    <g transform="translate(32, 12)">
+      <rect width="360" height="40" rx="20" fill="#EDF2F7"/>
+      <circle cx="24" cy="20" r="5" stroke="#64748B" stroke-width="1.8" fill="none"/>
+      <line x1="28" y1="24" x2="33" y2="29" stroke="#64748B" stroke-width="1.8"/>
+      <text x="42" y="25" font-size="13" fill="#64748B">Buscar pedidos, máquinas o clientes...</text>
+    </g>
+
+    <!-- Right Controls -->
+    <g transform="translate(950, 14)">
+      <!-- Bell -->
+      <path d="M 18 10 C 18 6 24 6 24 10 V 18 L 14 22 H 28 L 24 18 V 10" stroke="#475569" stroke-width="2" fill="none"/>
+      <circle cx="25" cy="8" r="4" fill="#EF4444"/>
+
+      <!-- Clock -->
+      <g transform="translate(48, 0)">
+        <circle cx="18" cy="16" r="8" stroke="#475569" stroke-width="2" fill="none"/>
+        <path d="M 18 12 V 16 L 21 19" stroke="#475569" stroke-width="2"/>
+      </g>
+
+      <line x1="96" y1="4" x2="96" y2="32" stroke="#CBD5E1" stroke-width="1"/>
+
+      <text x="112" y="16" font-size="13" font-weight="700" fill="#0F172A">Administrador</text>
+      <text x="112" y="30" font-size="11" font-weight="600" fill="#64748B">ADMIN</text>
+      <circle cx="196" cy="18" r="16" fill="#E2E8F0"/>
+    </g>
+  </g>
+
+  <!-- MAIN CONTENT AREA -->
+  <g id="MainContent" transform="translate(292, 88)">
+    
+<text x="0" y="24" class="font-outfit" font-size="24" font-weight="800" fill="#0F172A">Máquinas y Mantenimiento Preventivo</text>
+<text x="0" y="44" font-size="13" fill="#64748B">Gestión de estados, conteo de ciclos operados y alertas de servicio técnico</text>
+
+<g transform="translate(720, 0)">
+  <rect width="110" height="40" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="55" y="25" font-size="13" font-weight="600" fill="#475569" text-anchor="middle">Cancelar</text>
+
+  <g transform="translate(124, 0)">
+    <rect width="160" height="40" rx="10" fill="#0058BC"/>
+    <text x="80" y="25" class="font-outfit" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">Guardar cambios</text>
+  </g>
+</g>
+
+<g transform="translate(0, 68)">
+  <!-- Top 3 Stat Cards (Exact Captura 145449) -->
+  <g transform="translate(0, 0)">
+    <rect width="260" height="96" rx="16" fill="#FFFFFF" stroke="#34A853" stroke-width="2" filter="url(#softShadow)"/>
+    <text x="20" y="30" class="font-outfit" font-size="10" font-weight="700" fill="#64748B">MÁQUINAS SALUDABLES</text>
+    <text x="20" y="66" class="font-outfit" font-size="28" font-weight="800" fill="#0F172A">6 <tspan font-size="14" font-weight="500" fill="#34A853">/ 6 de alta</tspan></text>
+  </g>
+
+  <g transform="translate(276, 0)">
+    <rect width="260" height="96" rx="16" fill="#FFFFFF" stroke="#EF4444" stroke-width="2" filter="url(#softShadow)"/>
+    <text x="20" y="30" class="font-outfit" font-size="10" font-weight="700" fill="#64748B">MANTENIMIENTO REQUERIDO</text>
+    <text x="20" y="66" class="font-outfit" font-size="28" font-weight="800" fill="#DC2626">0 <tspan font-size="14" font-weight="500" fill="#DC2626">unidades</tspan></text>
+  </g>
+
+  <g transform="translate(552, 0)">
+    <rect width="260" height="96" rx="16" fill="#FFFFFF" stroke="#0058BC" stroke-width="2" filter="url(#softShadow)"/>
+    <text x="20" y="30" class="font-outfit" font-size="10" font-weight="700" fill="#64748B">TOTAL CICLOS OPERADOS</text>
+    <text x="20" y="66" class="font-outfit" font-size="28" font-weight="800" fill="#0F172A">711 <tspan font-size="14" font-weight="500" fill="#64748B">ciclos</tspan></text>
+  </g>
+
+  <!-- Machine Grid Card (Exact 6 units from Captura 145449) -->
+  <g transform="translate(0, 116)">
+    <rect width="1080" height="260" rx="20" fill="#FFFFFF" filter="url(#softShadow)"/>
+    <text x="24" y="36" class="font-outfit" font-size="16" font-weight="700" fill="#0F172A">Estado de Unidades y Ciclos</text>
+    <text x="24" y="54" font-size="12" fill="#64748B">Seleccione una unidad para cambiar estado o registrar servicio técnico</text>
+
+    <g transform="translate(24, 76)">
+      <!-- Unit 12 -->
+      <g transform="translate(0, 0)">
+        <rect width="160" height="150" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="80" cy="40" r="22" fill="#E6F4EA"/>
+        <circle cx="92" cy="48" r="5" fill="#34A853"/>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">Unidad #12</text>
+        <text x="80" y="98" font-size="11" font-weight="700" fill="#34A853" text-anchor="middle">Activa • 12m rest.</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">142 ciclos • Próx: 18</text>
+      </g>
+
+      <!-- Unit 22 -->
+      <g transform="translate(176, 0)">
+        <rect width="160" height="150" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="80" cy="40" r="22" fill="#E6F4EA"/>
+        <circle cx="92" cy="48" r="5" fill="#34A853"/>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">Unidad #22</text>
+        <text x="80" y="98" font-size="11" font-weight="700" fill="#34A853" text-anchor="middle">Activa • 4m rest.</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">98 ciclos • Próx: 42</text>
+      </g>
+
+      <!-- Unit 42 (Selected) -->
+      <g transform="translate(352, 0)">
+        <rect width="160" height="150" rx="14" fill="#EFF6FF" stroke="#0058BC" stroke-width="2"/>
+        <circle cx="80" cy="40" r="22" fill="#FEE2E2"/>
+        <text x="80" y="45" font-size="14" font-weight="800" fill="#EF4444" text-anchor="middle">!</text>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">Unidad #42</text>
+        <text x="80" y="98" font-size="11" font-weight="800" fill="#DC2626" text-anchor="middle">Requiere Mantenimiento</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">210 ciclos • Próx: 0</text>
+      </g>
+
+      <!-- Unit 52 -->
+      <g transform="translate(528, 0)">
+        <rect width="160" height="150" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="80" cy="40" r="22" fill="#F1F5F9"/>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle">Unidad #52</text>
+        <text x="80" y="98" font-size="11" fill="#64748B" text-anchor="middle">Inactiva</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">64 ciclos • Próx: 76</text>
+      </g>
+
+      <!-- Unit 32 -->
+      <g transform="translate(704, 0)">
+        <rect width="160" height="150" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="80" cy="40" r="22" fill="#E6F4EA"/>
+        <circle cx="92" cy="48" r="5" fill="#34A853"/>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">Unidad #32</text>
+        <text x="80" y="98" font-size="11" font-weight="700" fill="#34A853" text-anchor="middle">Activa • 08m rest.</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">115 ciclos • Próx: 25</text>
+      </g>
+
+      <!-- Unit 62 -->
+      <g transform="translate(880, 0)">
+        <rect width="160" height="150" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="80" cy="40" r="22" fill="#E6F4EA"/>
+        <circle cx="92" cy="48" r="5" fill="#34A853"/>
+        <text x="80" y="80" class="font-outfit" font-size="15" font-weight="800" fill="#0F172A" text-anchor="middle">Unidad #62</text>
+        <text x="80" y="98" font-size="11" font-weight="700" fill="#34A853" text-anchor="middle">Activa • 5m rest.</text>
+        <text x="80" y="120" font-size="10" fill="#64748B" text-anchor="middle">82 ciclos • Próx: 58</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Change State Card -->
+  <g transform="translate(0, 396)">
+    <rect width="1080" height="280" rx="20" fill="#FFFFFF" filter="url(#softShadow)"/>
+    <text x="24" y="36" class="font-outfit" font-size="16" font-weight="700" fill="#0F172A">Cambiar estado de la máquina #04</text>
+    <text x="24" y="54" font-size="12" fill="#64748B">Ciclos actuales: <tspan font-weight="700" fill="#0F172A">210</tspan> | Próximo mantenimiento en: <tspan font-weight="700" fill="#0F172A">0 ciclos</tspan></text>
+
+    <g transform="translate(24, 76)">
+      <g transform="translate(0, 0)">
+        <rect width="1032" height="52" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="30" cy="26" r="12" fill="#E2E8F0"/>
+        <text x="56" y="31" font-size="14" font-weight="600" fill="#0F172A">Unidad inactiva</text>
+        <rect x="930" y="14" width="80" height="24" rx="12" fill="#E2E8F0"/>
+        <text x="970" y="30" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">INACTIVA</text>
+      </g>
+
+      <g transform="translate(0, 64)">
+        <rect width="1032" height="52" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <circle cx="30" cy="26" r="12" fill="#E6F4EA"/>
+        <text x="56" y="31" font-size="14" font-weight="600" fill="#0F172A">Unidad activa</text>
+        <rect x="930" y="14" width="80" height="24" rx="12" fill="#E6F4EA"/>
+        <text x="970" y="30" font-size="10" font-weight="700" fill="#137333" text-anchor="middle">ACTIVA</text>
+      </g>
+
+      <g transform="translate(0, 128)">
+        <rect width="1032" height="52" rx="14" fill="#EFF6FF" stroke="#0058BC" stroke-width="1.5"/>
+        <circle cx="30" cy="26" r="12" fill="#FEE2E2"/>
+        <text x="30" y="31" font-size="12" font-weight="800" fill="#EF4444" text-anchor="middle">!</text>
+        <text x="56" y="31" font-size="14" font-weight="700" fill="#0F172A">Fuera de servicio (Mantenimiento)</text>
+        <rect x="910" y="14" width="100" height="24" rx="12" fill="#FEE2E2"/>
+        <text x="960" y="30" font-size="10" font-weight="800" fill="#DC2626" text-anchor="middle">MANTENIMIENTO</text>
+      </g>
+    </g>
+  </g>
+</g>
+
+  </g>
+</svg>

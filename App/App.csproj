@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -10,8 +10,46 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Wpf" Version="9.0.0" />
       <PackageReference Include="Microsoft.Data.Sqlite" Version="11.0.0-preview.4.26230.115" />
       <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="11.0.0-preview.4.26230.115" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ignore\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="ignore\IMAGES mockpups\01_Login.svg" />
+      <None Include="ignore\IMAGES mockpups\02_Dashboard_General.svg" />
+      <None Include="ignore\IMAGES mockpups\03_Pedidos.svg" />
+      <None Include="ignore\IMAGES mockpups\04_EditarPedido_Nuevo.svg" />
+      <None Include="ignore\IMAGES mockpups\08_Clientes.svg" />
+      <None Include="ignore\IMAGES mockpups\09_EditarCliente_Formulario.svg" />
+      <None Include="ignore\IMAGES mockpups\10_Empleados.svg" />
+      <None Include="ignore\IMAGES mockpups\11_EditarEmpleado_Formulario.svg" />
+      <None Include="ignore\IMAGES mockpups\13_Inventario.svg" />
+      <None Include="ignore\IMAGES mockpups\14_Maquinas.svg" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145155.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145228.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145236.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145242.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145300.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145354.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145411.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145418.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145431.png" />
+      <None Include="ignore\IMAGES muestras\Captura de pantalla 2026-07-05 145449.png" />
+      <None Include="ignore\images wire frames\01_Login.svg" />
+      <None Include="ignore\images wire frames\02_Dashboard_General.svg" />
+      <None Include="ignore\images wire frames\03_Pedidos.svg" />
+      <None Include="ignore\images wire frames\04_EditarPedido_Nuevo.svg" />
+      <None Include="ignore\images wire frames\08_Clientes.svg" />
+      <None Include="ignore\images wire frames\09_EditarCliente_Formulario.svg" />
+      <None Include="ignore\images wire frames\10_Empleados.svg" />
+      <None Include="ignore\images wire frames\11_EditarEmpleado_Formulario.svg" />
+      <None Include="ignore\images wire frames\13_Inventario.svg" />
+      <None Include="ignore\images wire frames\14_Maquinas.svg" />
     </ItemGroup>
 
 </Project>

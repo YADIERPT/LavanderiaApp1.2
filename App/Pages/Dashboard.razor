@@ -1,0 +1,554 @@
+@page "/dashboard"
+@using System.Windows
+@using System.Diagnostics
+@using System.IO
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Repositorios
+@inject PedidoRepositorio PedidoRepo
+@inject ClienteRepositorio ClienteRepo
+@inject PagoRepositorio PagoRepo
+@inject NavigationManager NavManager
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1 class="header-title">Resumen del dia</h1>
+            <p class="header-subtitle">Estado en tiempo real de su ecosistema de lavandería.</p>
+        </div>
+        <div class="header-right">
+            <div class="system-status-badge">
+                <span class="status-dot-blink"></span>
+                <span>Estado del Sistema en Vivo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 1: Sales and Active Capacity -->
+    <div class="dashboard-row">
+        <!-- Sales Card -->
+        <div class="dashboard-card card-sales">
+            <div class="card-header-custom">
+                <div>
+                    <h3 class="card-title-custom">Ritmo de Ventas</h3>
+                    <p class="card-subtitle-custom">Flujo de ingresos registrados en la base de datos</p>
+                </div>
+            </div>
+            <div class="sales-value-container">
+                <span class="sales-value">@SalesTotal.ToString("$#,##0.00")</span>
+                <span class="sales-trend">
+                    <span class="material-symbols-rounded">trending_up</span>
+                    <span>En tiempo real</span>
+                </span>
+            </div>
+            <div class="sales-chart-container">
+                <svg viewBox="0 0 600 160" class="sales-svg">
+                    <defs>
+                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.00"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Area -->
+                    <path d="M 0 140 Q 60 135 120 120 T 240 100 T 360 70 T 480 40 T 600 20 L 600 160 L 0 160 Z" fill="url(#salesGradient)" />
+                    <!-- Line -->
+                    <path d="M 0 140 Q 60 135 120 120 T 240 100 T 360 70 T 480 40 T 600 20" fill="none" stroke="#1E88E5" stroke-width="3" stroke-linecap="round" />
+                    <!-- Endpoint glow -->
+                    <circle cx="600" cy="20" r="6" fill="#1E88E5" />
+                    <circle cx="600" cy="20" r="12" fill="#1E88E5" fill-opacity="0.2" class="glow-pulse" />
+                </svg>
+            </div>
+            <div class="chart-labels">
+                <span>06:00</span>
+                <span>10:00</span>
+                <span>14:00</span>
+                <span>18:00</span>
+                <span>22:00</span>
+                <span>02:00</span>
+            </div>
+        </div>
+
+        <!-- Active Capacity Card -->
+        <div class="dashboard-card card-capacity">
+            <h3 class="card-title-custom">Capacidad Activa</h3>
+            <div class="capacity-gauge-container">
+                <svg viewBox="0 0 120 120" class="capacity-gauge">
+                    <defs>
+                        <linearGradient id="gaugeGradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#1E3A8A"/>
+                            <stop offset="100%" stop-color="#3B82F6"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Background circle -->
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="#E5E7EB" stroke-width="10" />
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="url(#gaugeGradient)" stroke-width="10" 
+                            stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="52" 
+                            transform="rotate(-90 60 60)" />
+                </svg>
+                <div class="gauge-center-text">
+                    <span class="gauge-number">@CapacityCount</span>
+                    <span class="gauge-unit">PEDIDOS</span>
+                </div>
+            </div>
+            <div class="capacity-stats">
+                <div class="capacity-stat-badge in-progress">
+                    <span class="stat-label">EN CURSO</span>
+                    <span class="stat-val">@EnCursoCount</span>
+                </div>
+                <div class="capacity-stat-badge pending">
+                    <span class="stat-label">PENDIENTES</span>
+                    <span class="stat-val">@PendientesCount</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Machine Status -->
+    <div class="dashboard-card machine-status-card">
+        <div class="machine-status-header">
+            <div>
+                <h3 class="card-title-custom" style="margin-bottom: 2px;">Estado de Máquinas</h3>
+                <p class="card-subtitle-custom">Estado de las unidades</p>
+            </div>
+            <a href="/maquinas" class="view-all-link">Ver Todas las Máquinas <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">arrow_forward</span></a>
+        </div>
+        <div class="machines-grid">
+            @if (DashboardMachines.Count == 0)
+            {
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; color: #64748B; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px;">
+                    <span class="material-symbols-rounded" style="font-size: 40px; color: #94A3B8; margin-bottom: 8px;">local_laundry_service</span>
+                    <p style="font-size: 13px; font-weight: 600; margin: 0; color: #334155;">No hay máquinas registradas</p>
+                    <p style="font-size: 11px; color: #64748B; margin: 4px 0 0 0;">Agrega tus unidades de lavado y secado en Configuración.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var m in DashboardMachines)
+                {
+                    <div class="machine-item-custom" @onclick='() => NavManager.NavigateTo("/maquinas")' style="cursor: pointer;">
+                        <div class="machine-circle @(m.Status.ToUpper() == "ACTIVA" ? "active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "alert" : "inactive")">
+                            @if (m.Status.ToUpper() == "ACTIVA")
+                            {
+                                <span class="material-symbols-rounded">local_laundry_service</span>
+                                <div class="check-badge">
+                                    <span class="material-symbols-rounded">check</span>
+                                </div>
+                            }
+                            else if (m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT")
+                            {
+                                <span class="material-symbols-rounded">error</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-rounded">dry_cleaning</span>
+                            }
+                        </div>
+                        <span class="machine-name">@m.Name</span>
+                        <span class="machine-status @(m.Status.ToUpper() == "ACTIVA" ? "status-active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "status-alert" : "status-inactive")">
+                            @(m.Status.ToUpper() == "ACTIVA" ? $"Activa • {m.TimeRemainingText}" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "Requiere Mantenimiento" : "Inactiva")
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Row 3: Recent Activity (With scrollbar when >= 5 items) -->
+    <div class="dashboard-card recent-activity-card">
+        <div class="activity-header">
+            <h3 class="card-title-custom">Actividad Reciente</h3>
+            <span class="activity-today-badge">Hoy (@ActividadesDinamicas.Count)</span>
+        </div>
+        
+        <!-- Scrollable container for recent activities -->
+        <div class="activity-list" style="max-height: 380px; overflow-y: auto; padding-right: 6px;">
+            @if (ActividadesDinamicas.Any())
+            {
+                @foreach (var act in ActividadesDinamicas)
+                {
+                    <div class="activity-item-custom @(SelectedActivity?.Id == act.Id ? "selected" : "")" @onclick='() => AbrirDetalleDinamico(act)' style="cursor: pointer;">
+                        <div class="activity-icon-container @act.IconBgClass">
+                            <span class="material-symbols-rounded">@act.Icon</span>
+                        </div>
+                        <div class="activity-details">
+                            <span class="activity-title">@act.Title</span>
+                            <span class="activity-subtitle">@act.Subtitle</span>
+                        </div>
+                        <div class="activity-meta">
+                            <span class="activity-tag @act.TagClass">@act.Tag</span>
+                            <span class="activity-time">@act.TimeAgo</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; color: #64748B; padding: 20px;">
+                    No hay actividad reciente registrada.
+                </div>
+            }
+        </div>
+
+        <div class="activity-footer-banner">
+            <a href="#" class="pdf-download-link" @onclick="IniciarDescargaReporte" @onclick:preventDefault>
+                <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">picture_as_pdf</span>
+                Descargar Registro de Actividad Detallado (PDF)
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle de Actividad -->
+@if (MostrarModalActividad && SelectedActivity != null)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalActividad = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 520px; padding: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="activity-icon-container @SelectedActivity.IconBgClass" style="width: 44px; height: 44px;">
+                        <span class="material-symbols-rounded">@SelectedActivity.Icon</span>
+                    </div>
+                    <div>
+                        <h3 class="section-title-custom" style="font-size: 18px; margin: 0;">@SelectedActivity.Title</h3>
+                        <span class="activity-tag @SelectedActivity.TagClass" style="margin-top: 4px; display: inline-block;">@SelectedActivity.Tag</span>
+                    </div>
+                </div>
+                <button @onclick="() => MostrarModalActividad = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div class="form-inputs-grid-2x2" style="grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+                <div style="background: #F8FAFC; padding: 12px 14px; border-radius: 10px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">CLIENTE</span>
+                    <strong style="font-size: 13px; color: #0F172A;">@SelectedActivity.Cliente</strong>
+                </div>
+                <div style="background: #F8FAFC; padding: 12px 14px; border-radius: 10px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">MÁQUINA</span>
+                    <strong style="font-size: 13px; color: #0F172A;">@SelectedActivity.Maquina</strong>
+                </div>
+                <div style="background: #F8FAFC; padding: 12px 14px; border-radius: 10px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">IMPORTE TOTAL</span>
+                    <strong style="font-size: 13px; color: #059669;">@SelectedActivity.Costo</strong>
+                </div>
+                <div style="background: #F8FAFC; padding: 12px 14px; border-radius: 10px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">FECHA Y HORA</span>
+                    <strong style="font-size: 13px; color: #0F172A;">@SelectedActivity.TimeAgo</strong>
+                </div>
+            </div>
+
+            <div style="background: #F8FAFC; padding: 14px; border-radius: 10px; margin-bottom: 24px;">
+                <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase; margin-bottom: 4px;">OBSERVACIONES / DETALLE</span>
+                <p style="font-size: 13px; color: #334155; margin: 0; line-height: 1.4;">@SelectedActivity.Observaciones</p>
+            </div>
+
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #0056C6; flex: 1;" @onclick="IrAModuloActividad">
+                    @(SelectedActivity.IsMachineEvent ? "IR A MÁQUINAS" : "IR A PEDIDOS")
+                </button>
+                <button class="btn-payment-cancel" style="flex: 1;" @onclick="() => MostrarModalActividad = false">
+                    CERRAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Descarga de Reporte PDF -->
+@if (MostrarModalReporte)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalReporte = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 440px; padding: 36px; text-align: center;">
+            @if (EstadoReporte == "descargando")
+            {
+                <div style="margin-bottom: 20px;">
+                    <span class="material-symbols-rounded spin-icon" style="font-size: 48px; color: #0056C6;">sync</span>
+                </div>
+                <h3 class="section-title-custom" style="font-size: 18px; margin-bottom: 8px;">Generando Reporte PDF Real...</h3>
+                <p style="font-size: 13px; color: #64748B;">Compilando órdenes y actividades en PDF en segundo plano.</p>
+            }
+            else
+            {
+                <div style="margin-bottom: 16px;">
+                    <span class="material-symbols-rounded" style="font-size: 48px; color: #10B981;">picture_as_pdf</span>
+                </div>
+                <h3 class="section-title-custom" style="font-size: 19px; margin-bottom: 8px; color: #0F172A;">¡Reporte PDF Generado!</h3>
+                <p style="font-size: 13.5px; color: #475569; margin-bottom: 24px; line-height: 1.5;">
+                    El reporte de actividad se ha compilado exitosamente.<br/>¿Deseas abrir el archivo PDF en tu visor o elegir en qué carpeta guardarlo?
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                    <button class="btn-payment-submit" style="background: #0058BC; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" @onclick="AbrirVisorPdf">
+                        <span class="material-symbols-rounded" style="font-size: 20px;">visibility</span>
+                        <span>VER REPORTE EN PDF</span>
+                    </button>
+                    <button class="btn-payment-submit" style="background: #059669; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" @onclick="GuardarComoPdf">
+                        <span class="material-symbols-rounded" style="font-size: 20px;">save</span>
+                        <span>ELEGIR DÓNDE GUARDAR...</span>
+                    </button>
+                    <button class="btn-payment-cancel" style="width: 100%; margin-top: 4px;" @onclick="VerReporte">
+                        CERRAR
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private class ActivityDetailModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Subtitle { get; set; } = "";
+        public string TimeAgo { get; set; } = "";
+        public string Tag { get; set; } = "";
+        public string TagClass { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string IconBgClass { get; set; } = "";
+        public string Cliente { get; set; } = "";
+        public string Asunto { get; set; } = "";
+        public string Telefono { get; set; } = "";
+        public string Maquina { get; set; } = "";
+        public string Costo { get; set; } = "";
+        public string Operador { get; set; } = "";
+        public string Observaciones { get; set; } = "";
+        public string TargetPage { get; set; } = "/pedidos";
+        public bool IsMachineEvent => TargetPage == "/maquinas";
+    }
+
+    private decimal SalesTotal = 0m;
+    private int CapacityCount = 0;
+    private int EnCursoCount = 0;
+    private int PendientesCount = 0;
+
+    private List<ActivityDetailModel> ActividadesDinamicas = new();
+    private ActivityDetailModel? SelectedActivity;
+    private bool MostrarModalActividad = false;
+
+    private bool MostrarModalReporte = false;
+    private string EstadoReporte = "descargando";
+    private string GeneradoPdfPath = "";
+    private List<Maquinas.MachineItem> DashboardMachines => Maquinas.SharedMachines;
+
+    protected override void OnInitialized()
+    {
+        CargarMetricasYActividad();
+    }
+
+    private void CargarMetricasYActividad()
+    {
+        var pedidos = PedidoRepo.ObtenerTodos();
+        var clientes = ClienteRepo.ListarTodo();
+        var pagos = PagoRepo.ObtenerTodos();
+        var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
+
+        SalesTotal = pagos.Sum(p => p.MontoPago);
+        CapacityCount = pedidos.Count;
+        EnCursoCount = pedidos.Count(p => p.Estado.Equals("Lavando", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Secando", StringComparison.OrdinalIgnoreCase));
+        PendientesCount = pedidos.Count(p => p.Estado.Equals("En espera", StringComparison.OrdinalIgnoreCase));
+
+        ActividadesDinamicas.Clear();
+        int currentId = 1;
+
+        // Cargar actividades recientes dinámicamente desde los pedidos registrados en SQLite
+        var recents = pedidos.OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).ToList();
+
+        foreach (var p in recents)
+        {
+            var cliente = clientes.FirstOrDefault(c => c.IdCliente == p.IdCliente);
+            string nombreCliente = cliente?.Nombre ?? $"Cliente #{p.IdCliente}";
+            string estadoUpper = p.Estado.ToUpper();
+
+            string tagClass = estadoUpper switch
+            {
+                "ENTREGADO" or "PAGADO" => "tag-completado",
+                "LAVANDO" => "tag-lavando",
+                "SECANDO" => "tag-alerta",
+                _ => "tag-lavando"
+            };
+
+            string iconBg = estadoUpper switch
+            {
+                "ENTREGADO" or "PAGADO" => "bg-green",
+                "LAVANDO" => "bg-blue",
+                "SECANDO" => "bg-red",
+                _ => "bg-blue"
+            };
+
+            string iconSymbol = estadoUpper switch
+            {
+                "ENTREGADO" or "PAGADO" => "check",
+                _ => "shopping_basket"
+            };
+
+            // Asignar máquina dinámicamente según las máquinas reales en la base de datos
+            string machineName = "Sin Asignar";
+            if (maquinasDb.Count > 0)
+            {
+                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
+                machineName = assignedMachine.Nombre;
+            }
+
+            ActividadesDinamicas.Add(new ActivityDetailModel
+            {
+                Id = currentId++,
+                Title = $"Nuevo Pedido #{p.IdPedido} ({p.Estado})",
+                Subtitle = $"Cliente: {nombreCliente}",
+                TimeAgo = p.FechaRecepcion.ToString("dd/MM/yyyy hh:mm tt"),
+                Tag = estadoUpper,
+                TagClass = tagClass,
+                Icon = iconSymbol,
+                IconBgClass = iconBg,
+                Cliente = nombreCliente,
+                Asunto = $"Servicio de lavandería ({p.Estado})",
+                Telefono = cliente?.Telefono ?? "N/A",
+                Maquina = machineName,
+                Costo = p.Total.ToString("$#,##0.00 MXN"),
+                Operador = "Operador de Recepción",
+                Observaciones = $"Pedido registrado en la base de datos con un importe de {p.Total:C2} MXN. Estado actual: {p.Estado}.",
+                TargetPage = "/pedidos"
+            });
+        }
+
+        // Agregar alertas de máquinas dinámicamente desde la base de datos
+        foreach (var m in maquinasDb.Where(m => m.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || m.Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)))
+        {
+            ActividadesDinamicas.Add(new ActivityDetailModel
+            {
+                Id = currentId++,
+                Title = $"Estado {m.Nombre} ({m.Status.ToUpper()})",
+                Subtitle = string.IsNullOrWhiteSpace(m.Observacion) ? "Requiere revisión técnica" : m.Observacion,
+                TimeAgo = "Hoy",
+                Tag = m.Status.ToUpper(),
+                TagClass = "tag-alerta",
+                Icon = "warning",
+                IconBgClass = "bg-red",
+                Cliente = "Sistema de Control",
+                Asunto = "Monitoreo de Máquinas",
+                Telefono = "N/A",
+                Maquina = $"{m.Nombre} ({m.Status})",
+                Costo = "N/A",
+                Operador = "Mantenimiento",
+                Observaciones = string.IsNullOrWhiteSpace(m.Observacion) ? "Verificación de máquina por alerta técnica." : m.Observacion,
+                TargetPage = "/maquinas"
+            });
+        }
+    }
+
+    private void AbrirDetalleDinamico(ActivityDetailModel act)
+    {
+        SelectedActivity = act;
+        MostrarModalActividad = true;
+    }
+
+    private void IrAModuloActividad()
+    {
+        MostrarModalActividad = false;
+        if (SelectedActivity != null)
+        {
+            NavManager.NavigateTo(SelectedActivity.TargetPage);
+        }
+    }
+
+    private async Task IniciarDescargaReporte()
+    {
+        MostrarModalReporte = true;
+        EstadoReporte = "descargando";
+        StateHasChanged();
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
+                if (!File.Exists(scriptPath))
+                {
+                    scriptPath = @"C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\generar_pdf_actividad.py";
+                }
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                using var proc = Process.Start(psi);
+                proc?.WaitForExit(5000); // Esperar que termine de generarse
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("Error al generar PDF", $"Error: {ex.Message}", "warning");
+            }
+        });
+
+        await Task.Delay(1000);
+
+        string pdfPath = Path.Combine(Path.GetDirectoryName(Config.DbPath) ?? AppDomain.CurrentDomain.BaseDirectory, "Registro_Actividad_Lavanderia.pdf");
+        GeneradoPdfPath = pdfPath;
+        EstadoReporte = "completo";
+        StateHasChanged();
+    }
+
+    private void AbrirVisorPdf()
+    {
+        MostrarModalReporte = false;
+        try
+        {
+            if (File.Exists(GeneradoPdfPath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = GeneradoPdfPath,
+                    UseShellExecute = true
+                });
+            }
+            else
+            {
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF no se encontró en la ruta especificada.", "warning");
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Abrir Reporte", $"Error al abrir el reporte PDF: {ex.Message}", "warning");
+        }
+    }
+
+    private void GuardarComoPdf()
+    {
+        MostrarModalReporte = false;
+        try
+        {
+            if (File.Exists(GeneradoPdfPath))
+            {
+                var sfd = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Guardar Reporte de Actividad PDF",
+                    Filter = "Archivo PDF (*.pdf)|*.pdf",
+                    FileName = $"Registro_Actividad_Lavanderia_{DateTime.Now:yyyyMMdd}.pdf",
+                    DefaultExt = ".pdf"
+                };
+
+                if (sfd.ShowDialog() == true)
+                {
+                    File.Copy(GeneradoPdfPath, sfd.FileName, true);
+                    CustomMessageBox.Show("Reporte Guardado", $"El reporte PDF fue guardado exitosamente en:\n{sfd.FileName}", "success");
+                }
+            }
+            else
+            {
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF original no se encontró para guardar.", "warning");
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error al Guardar", $"No se pudo guardar el archivo: {ex.Message}", "warning");
+        }
+    }
+
+    private void VerReporte()
+    {
+        MostrarModalReporte = false;
+    }
+}

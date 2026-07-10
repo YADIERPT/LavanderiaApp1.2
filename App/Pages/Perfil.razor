@@ -1,0 +1,175 @@
+@page "/perfil"
+@using System.Windows
+@using LavanderiaApp.Servicios
+@using LavanderiaApp.Repositorios
+@using LavanderiaApp.Modelos
+
+<div class="edit-order-page-container" style="animation: fadeIn 0.4s ease-out;">
+    <!-- Header -->
+    <div class="edit-order-header">
+        <div class="header-left">
+            <h1 class="header-title">Mi Perfil</h1>
+            <p class="header-subtitle">Gestión de tu cuenta de usuario, credenciales y estado de tu sesión</p>
+        </div>
+        <div class="header-actions">
+            <!-- Botón de Cerrar Sesión principal colocado aquí -->
+            <button class="btn-submit" @onclick="CerrarSesion" style="background: #FFF5F5; border: 1px solid #FEB2B2; color: #C53030; box-shadow: none; margin-top: 0; padding: 0 20px; height: 42px; font-size: 13.5px; text-transform: uppercase;">
+                <span class="material-symbols-rounded" style="font-size: 18px;">logout</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; width: 100%;">
+        <!-- Left: Card Info -->
+        <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px;">
+            <div style="position: relative;">
+                <!-- Avatar circle -->
+                <div style="width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, #EBF8FF 0%, #DCE7F6 100%); border: 3px solid #0058BC; display: flex; align-items: center; justify-content: center; font-size: 38px; color: #00418F; font-weight: 800; box-shadow: 0 8px 16px rgba(0, 88, 188, 0.1);">
+                    @ObtenerIniciales()
+                </div>
+                <div style="position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #22C55E; border: 3px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Usuario Activo"></div>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <h3 class="card-title-custom" style="font-size: 22px;">@(SessionManager.UsuarioActual?.Nombre ?? "Administrador")</h3>
+                <span style="display: inline-block; background: #EBF8FF; color: #2B6CB0; font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 12px; margin-top: 6px; letter-spacing: 0.5px;">
+                    @(SessionManager.UsuarioActual?.Rol ?? "Administrador")
+                </span>
+            </div>
+
+            <div style="width: 100%; border-top: 1px solid #F1F5F9; padding-top: 20px; margin-top: 10px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                    <span style="color: #727784; font-weight: 500;">Nombre de Usuario:</span>
+                    <strong style="color: #151C28;">@(SessionManager.UsuarioActual?.NombreUsuario ?? "admin")</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                    <span style="color: #727784; font-weight: 500;">ID de Usuario:</span>
+                    <strong style="color: #151C28;">#@(SessionManager.UsuarioActual?.IdUsuario.ToString() ?? "1")</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                    <span style="color: #727784; font-weight: 500;">Tipo de Acceso:</span>
+                    <strong style="color: #151C28;">Acceso Local</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Change Password -->
+        <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 20px;">
+            <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+                <span class="material-symbols-rounded" style="color: #0058BC;">lock_reset</span>
+                <span>Cambiar Contraseña</span>
+            </h3>
+
+            <!-- Contraseña Anterior -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Contraseña Actual</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">lock_open</span>
+                    <input type="password" class="form-input" @bind="ClaveActual" placeholder="Ingresa tu contraseña actual" />
+                </div>
+            </div>
+
+            <!-- Nueva Contraseña -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Nueva Contraseña</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">lock</span>
+                    <input type="password" class="form-input" @bind="ClaveNueva" placeholder="Mínimo 4 caracteres" />
+                </div>
+            </div>
+
+            <!-- Confirmar Nueva Contraseña -->
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Confirmar Nueva Contraseña</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">lock_outline</span>
+                    <input type="password" class="form-input" @bind="ClaveNuevaConfirmar" placeholder="Repite la nueva contraseña" />
+                </div>
+            </div>
+
+            <button class="btn-submit" @onclick="GuardarNuevaContraseña" style="margin-top: 10px; height: 46px;">
+                <span class="material-symbols-rounded" style="font-size: 18px;">key</span>
+                <span>Actualizar Contraseña</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string ClaveActual = "";
+    private string ClaveNueva = "";
+    private string ClaveNuevaConfirmar = "";
+
+    private readonly UsuarioRepositorio _usuarioRepo = new();
+
+    private string ObtenerIniciales()
+    {
+        string nombre = SessionManager.UsuarioActual?.Nombre ?? "Administrador";
+        var parts = nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        }
+        return nombre.Substring(0, Math.Min(2, nombre.Length)).ToUpper();
+    }
+
+    private void GuardarNuevaContraseña()
+    {
+        var usuario = SessionManager.UsuarioActual;
+        if (usuario == null)
+        {
+            ToastService.Show("Error", "No hay una sesión activa.", "danger");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(ClaveActual) || string.IsNullOrEmpty(ClaveNueva) || string.IsNullOrEmpty(ClaveNuevaConfirmar))
+        {
+            ToastService.Show("Campos Incompletos", "Por favor completa todos los campos de contraseña.", "danger");
+            return;
+        }
+
+        if (ClaveActual != usuario.Password)
+        {
+            ToastService.Show("Contraseña Incorrecta", "La contraseña actual no coincide con tus credenciales actuales.", "danger");
+            return;
+        }
+
+        if (ClaveNueva.Length < 4)
+        {
+            ToastService.Show("Contraseña Muy Corta", "La nueva contraseña debe tener al menos 4 caracteres.", "danger");
+            return;
+        }
+
+        if (ClaveNueva != ClaveNuevaConfirmar)
+        {
+            ToastService.Show("Error de Confirmación", "La nueva contraseña y su confirmación no coinciden.", "danger");
+            return;
+        }
+
+        // Actualizamos en la base de datos
+        usuario.Password = ClaveNueva;
+        _usuarioRepo.Actualizar(usuario);
+
+        // Limpiamos campos
+        ClaveActual = "";
+        ClaveNueva = "";
+        ClaveNuevaConfirmar = "";
+
+        ToastService.Show("Contraseña Actualizada", "Tu contraseña se ha cambiado exitosamente.", "success");
+    }
+
+    private void CerrarSesion()
+    {
+        SessionManager.Logout();
+        
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            Inicio loginWindow = new Inicio();
+            loginWindow.Show();
+            
+            var activeWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+            activeWindow?.Close();
+        });
+    }
+}

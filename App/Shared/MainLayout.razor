@@ -1,0 +1,781 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@using System.Windows
+@using LavanderiaApp.Repositorios
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
+@inject NavigationManager NavManager
+
+@if (IsLoginPage)
+{
+    @Body
+}
+else
+{
+    <div class="app-layout @GetThemeClass()">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <!-- Sidebar Logo -->
+            <div class="sidebar-logo-area">
+                <div class="logo-box">
+                    <span class="material-symbols-rounded">local_laundry_service</span>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title-villas">@ObtenerNombreNegocioLinea1()</span>
+                    <span class="logo-subtitle-villas">@ObtenerNombreNegocioLinea2()</span>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <NavLink href="/dashboard" class="nav-item" ActiveClass="active" Match="NavLinkMatch.All">
+                    <span class="material-symbols-rounded">grid_view</span>
+                    <span>General</span>
+                </NavLink>
+                <NavLink href="/pedidos" class="nav-item" ActiveClass="active">
+                    <span class="material-symbols-rounded">local_laundry_service</span>
+                    <span>Pedidos</span>
+                </NavLink>
+                <NavLink href="/clientes" class="nav-item" ActiveClass="active">
+                    <span class="material-symbols-rounded">group</span>
+                    <span>Clientes</span>
+                </NavLink>
+                <NavLink href="/empleados" class="nav-item" ActiveClass="active">
+                    <span class="material-symbols-rounded">engineering</span>
+                    <span>Empleados</span>
+                </NavLink>
+                <NavLink href="/finanzas" class="nav-item" ActiveClass="active">
+                    <span class="material-symbols-rounded">payments</span>
+                    <span>Finanzas</span>
+                </NavLink>
+                <NavLink href="/inventario" class="nav-item" ActiveClass="active">
+                    <span class="material-symbols-rounded">inventory_2</span>
+                    <span>Inventario</span>
+                </NavLink>
+            </nav>
+
+            <!-- Operaciones de Caja Chica siempre visibles -->
+            <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(194, 198, 213, 0.3); margin-top: auto; width: 100%; box-sizing: border-box;">
+                <span style="font-size: 10px; font-weight: 700; color: #5A6A85; letter-spacing: 0.5px; text-transform: uppercase;">Caja Chica</span>
+                <button class="btn-sidebar-action" @onclick="AbrirModalGasto" style="display: flex; align-items: center; gap: 8px; background: rgba(0, 88, 188, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #0058BC; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px;">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">price_change</span>
+                    <span>Registrar Gasto</span>
+                </button>
+                <button class="btn-sidebar-action" @onclick="AbrirModalCorte" style="display: flex; align-items: center; gap: 8px; background: rgba(220, 38, 38, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #DC2626; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px; margin-top: 2px;">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">lock</span>
+                    <span>Cerrar Turno</span>
+                </button>
+            </div>
+
+            <!-- Sidebar Footer (Configuraciones) -->
+            <div class="sidebar-footer" style="padding: 12px 16px; border-top: 1px solid rgba(194, 198, 213, 0.3); width: 100%; box-sizing: border-box;">
+                <NavLink href="/configuraciones" class="nav-item" ActiveClass="active" style="margin: 0; width: 100%;">
+                    <span class="material-symbols-rounded">settings</span>
+                    <span>Configuraciones</span>
+                </NavLink>
+            </div>
+        </aside>
+
+        <!-- MAIN BODY -->
+        <div class="main-container">
+            <!-- TOP NAVBAR -->
+            <header class="top-navbar">
+                <div class="navbar-left">
+                    <form @onsubmit="EjecutarBusquedaGlobal" class="search-bar-container">
+                        <span class="material-symbols-rounded search-icon">search</span>
+                        <input type="text" placeholder="Buscar pedidos, máquinas o clientes..." 
+                               class="search-input" @bind="GlobalSearchQuery" />
+                    </form>
+                </div>
+                <div class="navbar-right">
+                    <!-- Action Icons -->
+                    <button class="nav-action-btn-custom" title="Notificaciones" @onclick="() => { ActualizarNotificacionesYHistorial(); ShowNotificationsModal = true; }">
+                        <span class="material-symbols-rounded">notifications</span>
+                        @if (DynamicNotifications.Any(n => n.Severity == "danger" || n.Severity == "warning"))
+                        {
+                            <span class="notification-badge-dot"></span>
+                        }
+                    </button>
+                    
+                    <button class="nav-action-btn-custom" title="Historial" @onclick="() => { ActualizarNotificacionesYHistorial(); ShowHistoryModal = true; }">
+                        <span class="material-symbols-rounded">history</span>
+                    </button>
+
+                    <div class="navbar-divider"></div>
+
+                    <!-- Profile Area Link -->
+                    <NavLink href="/perfil" class="user-profile-link" title="Mi Perfil">
+                        <!-- Profile Info -->
+                        <div class="user-profile-info">
+                            <span class="profile-name">@(SessionManager.UsuarioActual?.Nombre ?? "Leyva chan")</span>
+                            <span class="profile-role">@(SessionManager.UsuarioActual?.Rol ?? "Recepcionista")</span>
+                        </div>
+
+                        <!-- Profile Avatar -->
+                        <div class="user-avatar-custom">
+                            <div class="avatar-circle">
+                                <span class="avatar-initials">@ObtenerIniciales()</span>
+                            </div>
+                        </div>
+                    </NavLink>
+                </div>
+            </header>
+
+            <!-- CONTENT AREA -->
+            <main class="content-area">
+                @Body
+            </main>
+        </div>
+    </div>
+}
+
+<!-- Modal Notificaciones -->
+@if (ShowNotificationsModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowNotificationsModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 36px;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 20px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">notifications</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 18px;">Notificaciones del Sistema</h3>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowNotificationsModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 4px; text-align: left;">
+                @foreach (var notif in DynamicNotifications)
+                {
+                    <div style="background: #F8FAFC; padding: 12px 16px; border-radius: 12px; border-left: 4px solid @(notif.Severity == "danger" ? "#EF4444" : notif.Severity == "warning" ? "#F59E0B" : notif.Severity == "success" ? "#10B981" : "#3B82F6"); display: flex; align-items: flex-start; gap: 12px;">
+                        <span class="material-symbols-rounded" style="color: @(notif.Severity == "danger" ? "#EF4444" : notif.Severity == "warning" ? "#F59E0B" : notif.Severity == "success" ? "#10B981" : "#3B82F6"); font-size: 20px; margin-top: 2px;">@notif.Icon</span>
+                        <div>
+                            <strong style="display: block; font-size: 13.5px; color: #0F172A;">@notif.Title</strong>
+                            <span style="font-size: 12px; color: #64748B;">@notif.Description</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button class="btn-payment-submit" @onclick="() => ShowNotificationsModal = false" style="width: 100%;">
+                ENTENDIDO
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Modal Historial -->
+@if (ShowHistoryModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowHistoryModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 36px;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 20px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">history</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 18px;">Historial Reciente</h3>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowHistoryModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 4px; text-align: left;">
+                @if (DynamicHistory.Any())
+                {
+                    @foreach (var log in DynamicHistory)
+                    {
+                        <div style="font-size: 13px; color: #475569; padding: 10px 0; border-bottom: 1px solid #F1F5F9; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="material-symbols-rounded" style="font-size: 18px; color: #0058BC;">@log.Icon</span>
+                                <span>@log.Text</span>
+                            </div>
+                            <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">@log.TimeText</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; color: #94A3B8; padding: 24px 0; font-size: 13px;">
+                        No hay actividad reciente en el sistema.
+                    </div>
+                }
+            </div>
+
+            <button class="btn-payment-submit" @onclick="() => ShowHistoryModal = false" style="width: 100%;">
+                CERRAR
+            </button>
+        </div>
+    </div>
+}
+
+<!-- GLOBAL TOAST NOTIFICATION POPUP -->
+@if (CurrentToast != null)
+{
+    <div class="toast-container-global">
+        <div class="toast-popup-card toast-@CurrentToast.Type">
+            <div class="toast-icon-box">
+                <span class="material-symbols-rounded">
+                    @(CurrentToast.Type == "success" ? "check_circle" : CurrentToast.Type == "warning" ? "warning" : CurrentToast.Type == "danger" ? "error" : "info")
+                </span>
+            </div>
+            <div class="toast-content">
+                <span class="toast-title">@CurrentToast.Title</span>
+                <span class="toast-message">@CurrentToast.Message</span>
+            </div>
+            <button style="background: none; border: none; cursor: pointer; color: #94A3B8;" @onclick="DismissToast">
+                <span class="material-symbols-rounded" style="font-size: 18px;">close</span>
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Modal Registrar Gasto -->
+@if (MostrarModalGasto)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalGasto = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px; text-align: left;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 24px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint" style="background: rgba(0, 88, 188, 0.08); color: #0058BC;">
+                        <span class="material-symbols-rounded">price_change</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 19px; color: #01579B;">Registrar Gasto de Caja</h3>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <div class="form-input-group">
+                    <label class="form-input-label" style="font-weight: 700; color: #1E293B;">Monto del Gasto ($)</label>
+                    <div class="form-input-wrapper" style="border-color: #CBD5E1; background: #F8FAFC;">
+                        <span class="material-symbols-rounded form-input-icon" style="color: #0058BC;">attach_money</span>
+                        <input type="number" step="1" min="1" class="form-input-field" style="padding-left: 48px; font-weight: 700; color: #1E293B;" @bind="MontoGasto" placeholder="0.00" />
+                    </div>
+                </div>
+
+                <div class="form-input-group">
+                    <label class="form-input-label" style="font-weight: 700; color: #1E293B;">Concepto / Descripción</label>
+                    <div class="form-input-wrapper" style="border-color: #CBD5E1; background: #F8FAFC;">
+                        <span class="material-symbols-rounded form-input-icon" style="color: #0058BC;">rate_review</span>
+                        <input type="text" class="form-input-field" style="padding-left: 48px; color: #1E293B;" @bind="ConceptoGasto" placeholder="Ej. Garrafón de Agua, Cloro urgente, etc." />
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 32px;">
+                <button class="btn-payment-submit" style="background: #0058BC;" @onclick="GuardarGasto">
+                    REGISTRAR GASTO
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalGasto = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Cerrar Turno (Corte Ciego) -->
+@if (MostrarModalCorte)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalCorte = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px; text-align: left;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 24px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint" style="background: rgba(220, 38, 38, 0.08); color: #DC2626;">
+                        <span class="material-symbols-rounded">lock</span>
+                    </div>
+                    <h3 class="section-title-custom" style="font-size: 19px; color: #991B1B;">Cerrar Turno (Corte de Caja)</h3>
+                </div>
+            </div>
+
+            <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                Por favor, realice el arqueo físico del cajón de dinero. Cuente todo el efectivo disponible e ingrese el total a continuación.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <div class="form-input-group">
+                    <label class="form-input-label" style="font-weight: 700; color: #1E293B;">Efectivo Contado en Caja ($)</label>
+                    <div class="form-input-wrapper" style="border-color: #CBD5E1; background: #F8FAFC; height: 50px;">
+                        <span class="material-symbols-rounded form-input-icon" style="color: #DC2626; font-size: 24px;">payments</span>
+                        <input type="number" step="1" min="0" class="form-input-field" style="padding-left: 48px; font-weight: 800; font-size: 18px; color: #1E293B;" @bind="EfectivoContado" placeholder="0.00" />
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; margin-top: 32px;">
+                <button class="btn-payment-submit" style="background: #DC2626;" @onclick="ConfirmarCorteCaja">
+                    CERRAR CAJA Y SALIR
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalCorte = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Custom MessageBox Modal (Glassmorphism Styled Overlay) -->
+@if (ShowCustomModal)
+{
+    <div class="tipo-pago-backdrop" style="z-index: 9999;" @onclick="CloseCustomModal">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 32px; text-align: center;">
+            <div style="margin-bottom: 20px; display: inline-flex; align-items: center; justify-content: center;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                     background: @(CustomModalType.ToLower() == "success" ? "rgba(5, 150, 105, 0.1)" : CustomModalType.ToLower() == "warning" ? "rgba(217, 119, 6, 0.1)" : CustomModalType.ToLower() == "error" ? "rgba(220, 38, 38, 0.1)" : "rgba(0, 88, 188, 0.1)");
+                     color: @(CustomModalType.ToLower() == "success" ? "#059669" : CustomModalType.ToLower() == "warning" ? "#D97706" : CustomModalType.ToLower() == "error" ? "#DC2626" : "#0058BC");">
+                    <span class="material-symbols-rounded" style="font-size: 36px;">@GetModalIcon()</span>
+                </div>
+            </div>
+            
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-weight: 800;">@CustomModalTitle</h2>
+            
+            <p style="font-size: 14.5px; color: #475569; line-height: 1.6; margin: 0 0 28px 0; white-space: pre-line; text-align: left;">@CustomModalMessage</p>
+            
+            <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
+                <button class="btn-payment-submit" style="background: @GetModalButtonBg(); font-weight: 700; height: 42px; padding: 0 28px; width: auto;" @onclick="ConfirmCustomModal">
+                    ACEPTAR
+                </button>
+                @if (CustomModalCallback != null)
+                {
+                    <button class="btn-payment-cancel" style="height: 42px; padding: 0 28px; width: auto;" @onclick="CloseCustomModal">
+                        CANCELAR
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string GetThemeClass()
+    {
+        string t = BusinessConfig.Current.Tema;
+        if (t == "Oscuro") return "dark-theme";
+        if (t == "MonocromicoClaro") return "monochrome-theme";
+        if (t == "MonocromicoOscuro") return "dark-theme monochrome-theme";
+        return "";
+    }
+
+    private class ToastMessageModel
+    {
+        public string Title { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "success";
+    }
+
+    private ToastMessageModel? CurrentToast;
+    private System.Threading.Timer? ToastTimer;
+
+    private string GlobalSearchQuery = "";
+
+    // Variables de Registro de Gastos
+    private bool MostrarModalGasto = false;
+    private decimal MontoGasto = 0m;
+    private string ConceptoGasto = "";
+
+    // Variables de Corte de Caja
+    private bool MostrarModalCorte = false;
+    private decimal EfectivoContado = 0m;
+
+    private void AbrirModalGasto()
+    {
+        MontoGasto = 0m;
+        ConceptoGasto = "";
+        MostrarModalGasto = true;
+    }
+
+    private void GuardarGasto()
+    {
+        if (MontoGasto <= 0m || string.IsNullOrWhiteSpace(ConceptoGasto))
+        {
+            CustomMessageBox.Show("Datos incompletos", "Por favor ingrese un monto válido y un concepto para el gasto.", "warning");
+            return;
+        }
+
+        try
+        {
+            var gasto = new Gasto
+            {
+                Monto = MontoGasto,
+                Concepto = ConceptoGasto,
+                Fecha = DateTime.Now
+            };
+            new GastoRepositorio().Guardar(gasto);
+            
+            ToastService.Show("Gasto Registrado", $"Se registraron {MontoGasto.ToString("$#,##0.00")} por concepto de '{ConceptoGasto}' correctamente.", "success");
+            
+            MostrarModalGasto = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error", $"Error al guardar gasto: {ex.Message}", "error");
+        }
+    }
+
+    private void AbrirModalCorte()
+    {
+        EfectivoContado = 0m;
+        MostrarModalCorte = true;
+    }
+
+    private void ConfirmarCorteCaja()
+    {
+        try
+        {
+            decimal fondoInicial = 500.00m;
+            
+            // Pagos en efectivo hoy
+            var pagos = new PagoRepositorio().ObtenerTodos();
+            decimal pagosEfectivoHoy = pagos
+                .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Efectivo)
+                .Sum(p => p.MontoPago);
+                
+            // Gastos hoy
+            var gastos = new GastoRepositorio().ObtenerTodos();
+            decimal gastosHoy = gastos
+                .Where(g => g.Fecha.Date == DateTime.Today)
+                .Sum(g => g.Monto);
+                
+            decimal efectivoEsperado = fondoInicial + pagosEfectivoHoy - gastosHoy;
+            decimal diferencia = EfectivoContado - efectivoEsperado;
+            
+            var corte = new CorteCaja
+            {
+                Fecha = DateTime.Now,
+                EfectivoReportado = EfectivoContado,
+                EfectivoEsperado = efectivoEsperado,
+                Diferencia = diferencia,
+                Empleado = SessionManager.UsuarioActual?.Nombre ?? "Empleado Turno"
+            };
+            
+            new CorteCajaRepositorio().Guardar(corte);
+            
+            CustomMessageBox.Show("Corte Registrado", "Corte de caja registrado con éxito. La sesión se cerrará automáticamente.", "success", () => {
+                MostrarModalCorte = false;
+                SessionManager.Logout();
+                NavManager.NavigateTo("/");
+            });
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error", $"Error al guardar corte de caja: {ex.Message}", "error");
+        }
+    }
+    private bool ShowNotificationsModal = false;
+    private bool ShowHistoryModal = false;
+
+    private bool IsLoginPage => NavManager.ToBaseRelativePath(NavManager.Uri) == "" || NavManager.ToBaseRelativePath(NavManager.Uri).StartsWith("login", StringComparison.OrdinalIgnoreCase);
+
+    // Variables del cuadro de mensaje personalizado (Custom MessageBox)
+    private bool ShowCustomModal = false;
+    private string CustomModalTitle = "";
+    private string CustomModalMessage = "";
+    private string CustomModalType = "info";
+    private Action? CustomModalCallback;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShowToast += HandleShowToast;
+        CustomMessageBox.OnShow += HandleShowCustomModal;
+        BusinessConfig.OnConfigUpdated += HandleConfigUpdated;
+    }
+
+    private void HandleConfigUpdated()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShowToast -= HandleShowToast;
+        CustomMessageBox.OnShow -= HandleShowCustomModal;
+        BusinessConfig.OnConfigUpdated -= HandleConfigUpdated;
+    }
+
+    private void HandleShowCustomModal(string title, string message, string type, Action? onConfirm)
+    {
+        InvokeAsync(() =>
+        {
+            CustomModalTitle = title;
+            CustomModalMessage = message;
+            CustomModalType = type;
+            CustomModalCallback = onConfirm;
+            ShowCustomModal = true;
+            StateHasChanged();
+        });
+    }
+
+    private void ConfirmCustomModal()
+    {
+        ShowCustomModal = false;
+        var callback = CustomModalCallback;
+        CustomModalCallback = null;
+        callback?.Invoke();
+        StateHasChanged();
+    }
+
+    private void CloseCustomModal()
+    {
+        ShowCustomModal = false;
+        CustomModalCallback = null;
+        StateHasChanged();
+    }
+
+    private string GetModalIcon()
+    {
+        return CustomModalType.ToLower() switch
+        {
+            "success" => "check_circle",
+            "warning" => "warning",
+            "error" => "error",
+            _ => "info"
+        };
+    }
+
+    private string GetModalButtonBg()
+    {
+        return CustomModalType.ToLower() switch
+        {
+            "success" => "#059669",
+            "warning" => "#D97706",
+            "error" => "#DC2626",
+            _ => "#0058BC"
+        };
+    }
+
+    private void HandleShowToast(string title, string message, string type)
+    {
+        InvokeAsync(() =>
+        {
+            CurrentToast = new ToastMessageModel { Title = title, Message = message, Type = type };
+            StateHasChanged();
+
+            ToastTimer?.Dispose();
+            ToastTimer = new System.Threading.Timer(_ =>
+            {
+                InvokeAsync(() =>
+                {
+                    CurrentToast = null;
+                    StateHasChanged();
+                });
+            }, null, 3500, System.Threading.Timeout.Infinite);
+        });
+    }
+
+    private void DismissToast()
+    {
+        CurrentToast = null;
+    }
+
+    private void EjecutarBusquedaGlobal()
+    {
+        if (!string.IsNullOrWhiteSpace(GlobalSearchQuery))
+        {
+            NavManager.NavigateTo("/pedidos");
+        }
+    }
+
+    private string ObtenerNombreNegocioLinea1()
+    {
+        var parts = BusinessConfig.Current.NombreNegocio.Split(' ', 2);
+        return parts.Length > 0 ? parts[0] : "Lavanderías";
+    }
+
+    private string ObtenerNombreNegocioLinea2()
+    {
+        var parts = BusinessConfig.Current.NombreNegocio.Split(' ', 2);
+        return parts.Length > 1 ? parts[1] : "villas del sur";
+    }
+
+    private string ObtenerIniciales()
+    {
+        string nombre = SessionManager.UsuarioActual?.Nombre ?? "Leyva chan";
+        var parts = nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        }
+        return nombre.Substring(0, Math.Min(2, nombre.Length)).ToUpper();
+    }
+
+    public class NotificationItem
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "info";
+        public string Severity { get; set; } = "info"; // "warning", "success", "danger", "info"
+    }
+
+    public class HistoryLogItem
+    {
+        public string Text { get; set; } = "";
+        public string TimeText { get; set; } = "";
+        public string Icon { get; set; } = "info";
+    }
+
+    private List<NotificationItem> DynamicNotifications = new();
+    private List<HistoryLogItem> DynamicHistory = new();
+
+    protected override void OnParametersSet()
+    {
+        ActualizarNotificacionesYHistorial();
+    }
+
+    private void ActualizarNotificacionesYHistorial()
+    {
+        DynamicNotifications = ObtenerNotificacionesDinamicas();
+        DynamicHistory = ObtenerHistorialDinamico();
+    }
+
+    private List<NotificationItem> ObtenerNotificacionesDinamicas()
+    {
+        var list = new List<NotificationItem>();
+
+        // 1. Revisar estado y advertencias de mantenimiento en máquinas
+        try
+        {
+            var machines = LavanderiaApp.Pages.Maquinas.SharedMachines;
+            foreach (var m in machines)
+            {
+                if (m.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase))
+                {
+                    list.Add(new NotificationItem
+                    {
+                        Title = $"{m.Name} en Mantenimiento",
+                        Description = string.IsNullOrEmpty(m.Observacion) ? "Reportado por técnico" : m.Observacion,
+                        Icon = "build",
+                        Severity = "warning"
+                    });
+                }
+                else if (m.CiclosOperados >= m.ProxMantenimientoCiclos)
+                {
+                    list.Add(new NotificationItem
+                    {
+                        Title = $"{m.Name} requiere revisión",
+                        Description = $"Ha operado {m.CiclosOperados} ciclos (Límite: {m.ProxMantenimientoCiclos})",
+                        Icon = "warning",
+                        Severity = "warning"
+                    });
+                }
+            }
+        }
+        catch {}
+
+        // 2. Revisar insumos con bajo stock en inventario
+        try
+        {
+            var insumos = new InventarioRepositorio().ObtenerTodos();
+            foreach (var insumo in insumos)
+            {
+                if (insumo.EstaEnAlertaStock)
+                {
+                    list.Add(new NotificationItem
+                    {
+                        Title = $"Bajo stock: {insumo.Nombre}",
+                        Description = $"Quedan solo {insumo.Cantidad} {insumo.UnidadMedida} (Min: {insumo.StockMinimo})",
+                        Icon = "inventory_2",
+                        Severity = "danger"
+                    });
+                }
+            }
+        }
+        catch {}
+
+        // 3. Revisar pedidos pendientes
+        try
+        {
+            var pedidos = new PedidoRepositorio().ObtenerTodos();
+            int pedidosEnEspera = pedidos.Count(p => p.Estado.Equals("En espera", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Pendiente", StringComparison.OrdinalIgnoreCase));
+            if (pedidosEnEspera > 0)
+            {
+                list.Add(new NotificationItem
+                {
+                    Title = $"{pedidosEnEspera} Pedidos en Espera",
+                    Description = "Hay pedidos pendientes de iniciar lavado.",
+                    Icon = "hourglass_empty",
+                    Severity = "info"
+                });
+            }
+        }
+        catch {}
+
+        // Valor por defecto si no hay notificaciones
+        if (list.Count == 0)
+        {
+            list.Add(new NotificationItem
+            {
+                Title = "Sistema Operando Normal",
+                Description = "No hay alertas pendientes de atención.",
+                Icon = "check_circle",
+                Severity = "success"
+            });
+        }
+
+        return list;
+    }
+
+    private List<HistoryLogItem> ObtenerHistorialDinamico()
+    {
+        var list = new List<HistoryLogItem>();
+
+        // 1. Pedidos recientes
+        try
+        {
+            var pedidos = new PedidoRepositorio().ObtenerTodos();
+            var clientes = new ClienteRepositorio().ListarTodo();
+            var recentOrders = pedidos.OrderByDescending(p => p.FechaRecepcion).Take(5).ToList();
+            foreach (var p in recentOrders)
+            {
+                var cli = clientes.FirstOrDefault(c => c.IdCliente == p.IdCliente);
+                list.Add(new HistoryLogItem
+                {
+                    Text = $"Pedido #{p.IdPedido} de {cli?.Nombre ?? "Cliente"} registrado ({p.Estado})",
+                    TimeText = p.FechaRecepcion.ToString("dd/MM hh:mm tt"),
+                    Icon = "receipt_long"
+                });
+            }
+        }
+        catch {}
+
+        // 2. Pagos recientes
+        try
+        {
+            var pagos = new PagoRepositorio().ObtenerTodos();
+            var recentPayments = pagos.OrderByDescending(p => p.FechaPago).Take(3).ToList();
+            foreach (var pg in recentPayments)
+            {
+                list.Add(new HistoryLogItem
+                {
+                    Text = $"Pago de {pg.MontoPago.ToString("$#,##0.00")} ({pg.Metodo}) recibido",
+                    TimeText = pg.FechaPago.ToString("dd/MM hh:mm tt"),
+                    Icon = "payments"
+                });
+            }
+        }
+        catch {}
+
+        // 3. Gastos recientes
+        try
+        {
+            var gastos = new GastoRepositorio().ObtenerTodos();
+            var recentGastos = gastos.OrderByDescending(g => g.Fecha).Take(3).ToList();
+            foreach (var g in recentGastos)
+            {
+                list.Add(new HistoryLogItem
+                {
+                    Text = $"Gasto de {g.Monto.ToString("$#,##0.00")} por '{g.Concepto}'",
+                    TimeText = g.Fecha.ToString("dd/MM hh:mm tt"),
+                    Icon = "price_change"
+                });
+            }
+        }
+        catch {}
+
+        // Devolver una lista combinada ordenada con los 10 registros más recientes
+        return list.Take(10).ToList();
+    }
+}

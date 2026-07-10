@@ -1,0 +1,170 @@
+@page "/clientes/editar"
+@page "/clientes/editar/{id:int}"
+@page "/clientes/agregar"
+@using System.Windows
+@using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
+@inject ClienteRepositorio ClienteRepo
+@inject NavigationManager NavManager
+
+<div class="edit-client-page-container">
+    <!-- Header -->
+    <div class="edit-client-header">
+        <div class="header-left">
+            <h1 class="header-title">@(IsEditMode ? "Editar datos del Cliente" : "Registrar nuevo Cliente")</h1>
+            <p class="header-subtitle">
+                @if (IsEditMode)
+                {
+                    <span>Cliente #@ClientId.ToString("D2")</span>
+                }
+                else
+                {
+                    <span>Nuevo Cliente</span>
+                }
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
+            <button class="btn-guardar" @onclick="GuardarCambios">Guardar cambios</button>
+        </div>
+    </div>
+
+    <!-- Main Content Form -->
+    <div class="edit-client-form-container">
+        <div class="dashboard-card form-section-card" style="max-width: 800px; width: 100%;">
+            <div class="section-header-custom">
+                <div class="section-icon-wrapper bg-blue-tint">
+                    <span class="material-symbols-rounded">person</span>
+                </div>
+                <h3 class="section-title-custom">Informacion de Cliente</h3>
+            </div>
+
+            <div class="form-inputs-grid-2x2">
+                <div class="form-input-group">
+                    <label class="form-input-label">ID de Cliente <span class="label-aside">(automático)</span></label>
+                    <div class="form-input-wrapper disabled">
+                        <span class="material-symbols-rounded form-input-icon">fingerprint</span>
+                        <input type="text" class="form-input-field" value="@(IsEditMode ? ClientId.ToString("D2") : "Nuevo")" readonly />
+                    </div>
+                </div>
+                <div class="form-input-group">
+                    <label class="form-input-label">Nombre Completo</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">assignment_ind</span>
+                        <input type="text" class="form-input-field" @bind="Nombre" placeholder="Ej. Julio Vera" />
+                    </div>
+                </div>
+                <div class="form-input-group">
+                    <label class="form-input-label">Número de teléfono</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">phone</span>
+                        <input type="text" class="form-input-field" @bind="Telefono" placeholder="Ej. 9888346747" />
+                    </div>
+                </div>
+                <div class="form-input-group">
+                    <label class="form-input-label">Dirección / Ubicación</label>
+                    <div class="form-input-wrapper">
+                        <span class="material-symbols-rounded form-input-icon">home</span>
+                        <input type="text" class="form-input-field" @bind="Direccion" placeholder="Ej. Calle 12 x 15, Villas del Sur" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool IsEditMode => Id > 0 || NavManager.Uri.Contains("/editar/");
+    private bool ReturnToOrder => NavManager.Uri.Contains("returnToOrder=true");
+
+    private int ClientId = 0;
+    private string Nombre = "";
+    private string Telefono = "";
+    private string Direccion = "";
+
+    protected override void OnInitialized()
+    {
+        if (Id > 0)
+        {
+            var cliente = ClienteRepo.ObtenerPorId(Id);
+            if (cliente != null)
+            {
+                ClientId = cliente.IdCliente;
+                Nombre = cliente.Nombre;
+                Telefono = cliente.Telefono;
+                Direccion = cliente.Direccion;
+            }
+        }
+    }
+
+    private void Cancelar()
+    {
+        if (ReturnToOrder)
+        {
+            NavManager.NavigateTo("/pedidos/agregar");
+        }
+        else
+        {
+            NavManager.NavigateTo("/clientes");
+        }
+    }
+
+    private void GuardarCambios()
+    {
+        if (string.IsNullOrWhiteSpace(Nombre))
+        {
+            CustomMessageBox.Show("Campo Requerido", "Por favor, ingrese el nombre del cliente.", "warning");
+            return;
+        }
+
+        if (IsEditMode && ClientId > 0)
+        {
+            var cliente = new Cliente
+            {
+                IdCliente = ClientId,
+                Nombre = Nombre,
+                Telefono = Telefono,
+                Direccion = Direccion
+            };
+            ClienteRepo.Actualizar(cliente);
+            
+            CustomMessageBox.Show("Cliente Actualizado", $"Cliente #{ClientId:D2} actualizado correctamente.", "success", () => {
+                if (ReturnToOrder)
+                {
+                    NavManager.NavigateTo($"/pedidos/agregar?selectedClientId={ClientId}");
+                }
+                else
+                {
+                    NavManager.NavigateTo("/clientes");
+                }
+            });
+        }
+        else
+        {
+            var nuevoCliente = new Cliente
+            {
+                Nombre = Nombre,
+                Telefono = Telefono,
+                Direccion = Direccion
+            };
+            ClienteRepo.Guardar(nuevoCliente);
+            
+            var clienteGuardado = ClienteRepo.ListarTodo().LastOrDefault();
+            int idNuevoCliente = clienteGuardado?.IdCliente ?? 1;
+
+            CustomMessageBox.Show("Cliente Registrado", $"Cliente '{Nombre}' guardado correctamente.", "success", () => {
+                if (ReturnToOrder)
+                {
+                    NavManager.NavigateTo($"/pedidos/agregar?selectedClientId={idNuevoCliente}");
+                }
+                else
+                {
+                    NavManager.NavigateTo("/clientes");
+                }
+            });
+        }
+    }
+}

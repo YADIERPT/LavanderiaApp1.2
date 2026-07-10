@@ -12,7 +12,18 @@ public static class Config
     {
         get 
         {
-            string folder = AppDomain.CurrentDomain.BaseDirectory;
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            if (baseDir.Contains("App.Tests", StringComparison.OrdinalIgnoreCase) || 
+                AppDomain.CurrentDomain.FriendlyName.Contains("testhost", StringComparison.OrdinalIgnoreCase))
+            {
+                return Path.Combine(baseDir, "lavanderia.db");
+            }
+            
+            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LavanderiaApp");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
             return Path.Combine(folder, "lavanderia.db");
         }
     }
