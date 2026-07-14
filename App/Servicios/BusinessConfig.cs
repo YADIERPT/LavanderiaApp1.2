@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -13,6 +14,8 @@ public class BusinessConfigData
     public double Iva { get; set; } = 16.0;
     public string Moneda { get; set; } = "$";
     public string Tema { get; set; } = "Claro";
+    public decimal FondoCaja { get; set; } = 500.00m;
+    public List<string> Sucursales { get; set; } = new List<string> { "Sucursal Principal", "Sucursal Norte", "Sucursal Sur", "Sucursal Centro" };
 }
 
 public static class BusinessConfig

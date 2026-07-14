@@ -489,6 +489,7 @@
 
         await Task.Run(() =>
         {
+            string pdfPath = Path.Combine(Path.GetDirectoryName(Config.DbPath) ?? AppDomain.CurrentDomain.BaseDirectory, "Registro_Actividad_Lavanderia.pdf");
             try
             {
                 string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
@@ -497,27 +498,32 @@
                     scriptPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "generar_pdf_actividad.py"));
                 }
 
-                var psi = new ProcessStartInfo
+                if (File.Exists(scriptPath))
                 {
-                    FileName = "python",
-                    Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(5000); // Esperar que termine de generarse
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    using var proc = Process.Start(psi);
+                    proc?.WaitForExit(4000);
+                }
             }
-            catch (Exception ex)
+            catch { }
+
+            if (File.Exists(pdfPath))
             {
-                CustomMessageBox.Show("Error al generar PDF", $"Error: {ex.Message}", "warning");
+                GeneradoPdfPath = pdfPath;
+            }
+            else
+            {
+                GeneradoPdfPath = ReporteGeneradorNativo.GenerarReporteActividad();
             }
         });
 
-        await Task.Delay(1000);
-
-        string pdfPath = Path.Combine(Path.GetDirectoryName(Config.DbPath) ?? AppDomain.CurrentDomain.BaseDirectory, "Registro_Actividad_Lavanderia.pdf");
-        GeneradoPdfPath = pdfPath;
         EstadoReporte = "completo";
         StateHasChanged();
     }
@@ -537,12 +543,12 @@
             }
             else
             {
-                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF no se encontró en la ruta especificada.", "warning");
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo de reporte no se encontró en la ruta especificada.", "warning");
             }
         }
         catch (Exception ex)
         {
-            CustomMessageBox.Show("Abrir Reporte", $"Error al abrir el reporte PDF: {ex.Message}", "warning");
+            CustomMessageBox.Show("Abrir Reporte", $"Error al abrir el reporte: {ex.Message}", "warning");
         }
     }
 
@@ -553,23 +559,27 @@
         {
             if (File.Exists(GeneradoPdfPath))
             {
+                string ext = Path.GetExtension(GeneradoPdfPath);
+                string filter = ext.Equals(".html", StringComparison.OrdinalIgnoreCase) ? "Reporte HTML (*.html)|*.html" : "Archivo PDF (*.pdf)|*.pdf";
+                string defaultExt = ext;
+
                 var sfd = new Microsoft.Win32.SaveFileDialog
                 {
-                    Title = "Guardar Reporte de Actividad PDF",
-                    Filter = "Archivo PDF (*.pdf)|*.pdf",
-                    FileName = $"Registro_Actividad_Lavanderia_{DateTime.Now:yyyyMMdd}.pdf",
-                    DefaultExt = ".pdf"
+                    Title = "Guardar Reporte de Actividad",
+                    Filter = filter,
+                    FileName = $"Registro_Actividad_Lavanderia_{DateTime.Now:yyyyMMdd}{defaultExt}",
+                    DefaultExt = defaultExt
                 };
 
                 if (sfd.ShowDialog() == true)
                 {
                     File.Copy(GeneradoPdfPath, sfd.FileName, true);
-                    CustomMessageBox.Show("Reporte Guardado", $"El reporte PDF fue guardado exitosamente en:\n{sfd.FileName}", "success");
+                    CustomMessageBox.Show("Reporte Guardado", $"El reporte fue guardado exitosamente en:\n{sfd.FileName}", "success");
                 }
             }
             else
             {
-                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF original no se encontró para guardar.", "warning");
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo original no se encontró para guardar.", "warning");
             }
         }
         catch (Exception ex)

@@ -82,18 +82,22 @@ public class MaquinaRepositorio
         conexion.Open();
 
         string query = @"
-            INSERT INTO Maquinas (IdMaquina, Nombre, Status, CiclosOperados, ProxMantenimientoCiclos, Observacion)
-            VALUES (@IdMaquina, @Nombre, @Status, @CiclosOperados, @ProxMantenimientoCiclos, @Observacion)";
+            INSERT INTO Maquinas (Nombre, Status, CiclosOperados, ProxMantenimientoCiclos, Observacion)
+            VALUES (@Nombre, @Status, @CiclosOperados, @ProxMantenimientoCiclos, @Observacion);
+            SELECT last_insert_rowid();";
             
         using var cmd = new SqliteCommand(query, conexion);
-        cmd.Parameters.AddWithValue("@IdMaquina", maquina.IdMaquina);
         cmd.Parameters.AddWithValue("@Nombre", maquina.Nombre);
         cmd.Parameters.AddWithValue("@Status", maquina.Status ?? "INACTIVA");
         cmd.Parameters.AddWithValue("@CiclosOperados", maquina.CiclosOperados);
         cmd.Parameters.AddWithValue("@ProxMantenimientoCiclos", maquina.ProxMantenimientoCiclos);
         cmd.Parameters.AddWithValue("@Observacion", maquina.Observacion ?? "");
         
-        cmd.ExecuteNonQuery();
+        var result = cmd.ExecuteScalar();
+        if (result != null && int.TryParse(result.ToString(), out int newId))
+        {
+            maquina.IdMaquina = newId;
+        }
     }
 
     public void Eliminar(int idMaquina)

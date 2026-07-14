@@ -25,7 +25,14 @@ public class DatabaseInitializer
                 Nombre TEXT NOT NULL,
                 NombreUsuario TEXT NOT NULL UNIQUE,
                 Password TEXT NOT NULL,
-                Rol TEXT NOT NULL
+                Rol TEXT NOT NULL,
+                Telefono TEXT DEFAULT '',
+                Correo TEXT DEFAULT '',
+                Turno TEXT DEFAULT '',
+                FechaContrato TEXT DEFAULT '',
+                Salario DECIMAL DEFAULT 0.0,
+                Sucursal TEXT DEFAULT '',
+                Edad INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS Pedidos (
@@ -125,6 +132,15 @@ public class DatabaseInitializer
                 Clave TEXT PRIMARY KEY,
                 Valor TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS Notificaciones (
+                IdNotificacion INTEGER PRIMARY KEY AUTOINCREMENT,
+                Titulo TEXT NOT NULL,
+                Mensaje TEXT NOT NULL,
+                Tipo TEXT NOT NULL,
+                Fecha TEXT NOT NULL,
+                Leida INTEGER DEFAULT 0
+            );
         ";
 
         using (var cmd = new SqliteCommand(baseSchema, conexion))
@@ -163,6 +179,27 @@ public class DatabaseInitializer
             cmdAlter.ExecuteNonQuery();
         } catch { }
 
+        // Migraciones para la tabla Usuarios
+        string[] alterUsuarios = new[]
+        {
+            "ALTER TABLE Usuarios ADD COLUMN Telefono TEXT DEFAULT '';",
+            "ALTER TABLE Usuarios ADD COLUMN Correo TEXT DEFAULT '';",
+            "ALTER TABLE Usuarios ADD COLUMN Turno TEXT DEFAULT '';",
+            "ALTER TABLE Usuarios ADD COLUMN FechaContrato TEXT DEFAULT '';",
+            "ALTER TABLE Usuarios ADD COLUMN Salario DECIMAL DEFAULT 0.0;",
+            "ALTER TABLE Usuarios ADD COLUMN Sucursal TEXT DEFAULT '';",
+            "ALTER TABLE Usuarios ADD COLUMN Edad INTEGER DEFAULT 0;"
+        };
+        foreach (var queryAlter in alterUsuarios)
+        {
+            try
+            {
+                using var cmdAlterU = new SqliteCommand(queryAlter, conexion);
+                cmdAlterU.ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         // 3. VERIFICAR Y REGISTRAR SEMILLA INICIALIZADA (Para no reinsertar máquinas borradas al reiniciar)
         bool semillaInicializada = false;
         try
@@ -191,7 +228,8 @@ public class DatabaseInitializer
                 INSERT OR IGNORE INTO Usuarios (IdUsuario, Nombre, NombreUsuario, Password, Rol)
                 VALUES 
                 (1, 'Administrador General', 'admin', 'admin123', 'Admin'),
-                (2, 'Empleado General', 'empleado', 'empleado123', 'Empleado');
+                (2, 'Empleado General', 'empleado', 'empleado123', 'Empleado'),
+                (3, 'Cuenta Master', 'master', 'master123', 'Master');
             ";
             using var cmdRoles = new SqliteCommand(cleanAndSeedUsers, conexion);
             cmdRoles.ExecuteNonQuery();

@@ -360,6 +360,17 @@
         var resultado = _pagoServicio.ProcesarPago(OrderId, SaldoDeudor, metodo);
         if (resultado == "Éxito")
         {
+            try
+            {
+                new LavanderiaApp.Repositorios.NotificacionRepositorio().Agregar(new LavanderiaApp.Modelos.Notificacion
+                {
+                    Titulo = $"Pago Recibido: ORD-{OrderId:D4}",
+                    Mensaje = $"Cobro registrado por ${SaldoDeudor:N2} en {(EsTarjeta ? "Tarjeta/Digital" : "Efectivo")}.",
+                    Tipo = "Exito",
+                    Fecha = DateTime.Now
+                });
+            }
+            catch {}
             MostrarModalExitoPago = true;
         }
         else

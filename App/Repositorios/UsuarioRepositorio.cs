@@ -18,14 +18,7 @@ public class UsuarioRepositorio
         using var reader = command.ExecuteReader();
         if (reader.Read())
         {
-            return new Usuario
-            {
-                IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-                NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario")),
-                Password = reader.GetString(reader.GetOrdinal("Password")),
-                Rol = reader.GetString(reader.GetOrdinal("Rol"))
-            };
+            return MapearUsuario(reader);
         }
         return null;
     }
@@ -42,14 +35,7 @@ public class UsuarioRepositorio
         using var reader = command.ExecuteReader();
         if (reader.Read())
         {
-            return new Usuario
-            {
-                IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-                NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario")),
-                Password = reader.GetString(reader.GetOrdinal("Password")),
-                Rol = reader.GetString(reader.GetOrdinal("Rol"))
-            };
+            return MapearUsuario(reader);
         }
         return null;
     }
@@ -66,16 +52,31 @@ public class UsuarioRepositorio
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            lista.Add(new Usuario
-            {
-                IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-                NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario")),
-                Password = reader.GetString(reader.GetOrdinal("Password")),
-                Rol = reader.GetString(reader.GetOrdinal("Rol"))
-            });
+            lista.Add(MapearUsuario(reader));
         }
         return lista;
+    }
+
+    private Usuario MapearUsuario(SqliteDataReader reader)
+    {
+        var u = new Usuario
+        {
+            IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+            Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+            NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario")),
+            Password = reader.GetString(reader.GetOrdinal("Password")),
+            Rol = reader.GetString(reader.GetOrdinal("Rol"))
+        };
+
+        try { u.Telefono = !reader.IsDBNull(reader.GetOrdinal("Telefono")) ? reader.GetString(reader.GetOrdinal("Telefono")) : ""; } catch { }
+        try { u.Correo = !reader.IsDBNull(reader.GetOrdinal("Correo")) ? reader.GetString(reader.GetOrdinal("Correo")) : ""; } catch { }
+        try { u.Turno = !reader.IsDBNull(reader.GetOrdinal("Turno")) ? reader.GetString(reader.GetOrdinal("Turno")) : ""; } catch { }
+        try { u.FechaContrato = !reader.IsDBNull(reader.GetOrdinal("FechaContrato")) ? reader.GetString(reader.GetOrdinal("FechaContrato")) : ""; } catch { }
+        try { u.Salario = !reader.IsDBNull(reader.GetOrdinal("Salario")) ? reader.GetDecimal(reader.GetOrdinal("Salario")) : 0m; } catch { }
+        try { u.Sucursal = !reader.IsDBNull(reader.GetOrdinal("Sucursal")) ? reader.GetString(reader.GetOrdinal("Sucursal")) : ""; } catch { }
+        try { u.Edad = !reader.IsDBNull(reader.GetOrdinal("Edad")) ? reader.GetInt32(reader.GetOrdinal("Edad")) : 0; } catch { }
+
+        return u;
     }
 
     public void Guardar(Usuario usuario)
@@ -83,13 +84,20 @@ public class UsuarioRepositorio
         using var conexion = new SqliteConnection(Config.ConnectionString);
         conexion.Open();
 
-        string query = @"INSERT OR IGNORE INTO Usuarios (Nombre, NombreUsuario, Password, Rol) 
-                         VALUES (@Nombre, @NombreUsuario, @Password, @Rol)";
+        string query = @"INSERT OR IGNORE INTO Usuarios (Nombre, NombreUsuario, Password, Rol, Telefono, Correo, Turno, FechaContrato, Salario, Sucursal, Edad) 
+                         VALUES (@Nombre, @NombreUsuario, @Password, @Rol, @Telefono, @Correo, @Turno, @FechaContrato, @Salario, @Sucursal, @Edad)";
         using var command = new SqliteCommand(query, conexion);
-        command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
-        command.Parameters.AddWithValue("@NombreUsuario", usuario.NombreUsuario);
-        command.Parameters.AddWithValue("@Password", usuario.Password);
+        command.Parameters.AddWithValue("@Nombre", usuario.Nombre ?? "");
+        command.Parameters.AddWithValue("@NombreUsuario", usuario.NombreUsuario ?? "");
+        command.Parameters.AddWithValue("@Password", usuario.Password ?? "");
         command.Parameters.AddWithValue("@Rol", string.IsNullOrEmpty(usuario.Rol) ? "Empleado" : usuario.Rol);
+        command.Parameters.AddWithValue("@Telefono", usuario.Telefono ?? "");
+        command.Parameters.AddWithValue("@Correo", usuario.Correo ?? "");
+        command.Parameters.AddWithValue("@Turno", usuario.Turno ?? "");
+        command.Parameters.AddWithValue("@FechaContrato", usuario.FechaContrato ?? "");
+        command.Parameters.AddWithValue("@Salario", usuario.Salario);
+        command.Parameters.AddWithValue("@Sucursal", usuario.Sucursal ?? "");
+        command.Parameters.AddWithValue("@Edad", usuario.Edad);
 
         command.ExecuteNonQuery();
     }
@@ -100,15 +108,24 @@ public class UsuarioRepositorio
         conexion.Open();
 
         string query = @"UPDATE Usuarios 
-                         SET Nombre = @Nombre, NombreUsuario = @NombreUsuario, Password = @Password, Rol = @Rol 
+                         SET Nombre = @Nombre, NombreUsuario = @NombreUsuario, Password = @Password, Rol = @Rol,
+                             Telefono = @Telefono, Correo = @Correo, Turno = @Turno, FechaContrato = @FechaContrato,
+                             Salario = @Salario, Sucursal = @Sucursal, Edad = @Edad
                          WHERE IdUsuario = @IdUsuario";
 
         using var command = new SqliteCommand(query, conexion);
         command.Parameters.AddWithValue("@IdUsuario", usuario.IdUsuario);
-        command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
-        command.Parameters.AddWithValue("@NombreUsuario", usuario.NombreUsuario);
-        command.Parameters.AddWithValue("@Password", usuario.Password);
+        command.Parameters.AddWithValue("@Nombre", usuario.Nombre ?? "");
+        command.Parameters.AddWithValue("@NombreUsuario", usuario.NombreUsuario ?? "");
+        command.Parameters.AddWithValue("@Password", usuario.Password ?? "");
         command.Parameters.AddWithValue("@Rol", string.IsNullOrEmpty(usuario.Rol) ? "Empleado" : usuario.Rol);
+        command.Parameters.AddWithValue("@Telefono", usuario.Telefono ?? "");
+        command.Parameters.AddWithValue("@Correo", usuario.Correo ?? "");
+        command.Parameters.AddWithValue("@Turno", usuario.Turno ?? "");
+        command.Parameters.AddWithValue("@FechaContrato", usuario.FechaContrato ?? "");
+        command.Parameters.AddWithValue("@Salario", usuario.Salario);
+        command.Parameters.AddWithValue("@Sucursal", usuario.Sucursal ?? "");
+        command.Parameters.AddWithValue("@Edad", usuario.Edad);
 
         command.ExecuteNonQuery();
     }

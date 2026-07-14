@@ -89,6 +89,17 @@
                     </div>
                 </div>
             </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Fondo / Dinero en Caja -->
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label">Dinero Inicial en Caja (Fondo)</label>
+                    <div class="input-container">
+                        <span class="material-symbols-rounded input-icon-left">account_balance_wallet</span>
+                        <input type="number" step="10" class="form-input" @bind="configData.FondoCaja" style="padding-left: 48px;" />
+                    </div>
+                </div>
+            </div>
         }
 
         <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px; margin-top: 10px;">
@@ -199,6 +210,64 @@
                 </table>
             </div>
         </div>
+
+        <!-- Gestión de Sucursales -->
+        <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+                <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                    <span class="material-symbols-rounded" style="color: #0891B2;">storefront</span>
+                    <span>Gestión de Sucursales y Sedes</span>
+                </h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" class="form-input" @bind="nuevaSucursalInput" placeholder="Nombre de nueva sucursal..." style="height: 40px; padding: 0 14px; font-size: 13px; width: 220px;" />
+                    <button class="btn-guardar" style="padding: 8px 16px; font-size: 13px; background: #0891B2; display: flex; align-items: center; gap: 6px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;" @onclick="AgregarSucursal">
+                        <span class="material-symbols-rounded" style="font-size: 16px;">add</span>
+                        <span>Agregar</span>
+                    </button>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto; width: 100%;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #E2E8F0; color: #475569;">
+                            <th style="padding: 12px 8px; font-weight: 600;">Nombre de la Sucursal</th>
+                            <th style="padding: 12px 8px; font-weight: 600; text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (configData.Sucursales == null || configData.Sucursales.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="2" style="text-align: center; padding: 32px; color: #94A3B8;">
+                                    No hay sucursales configuradas.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var suc in configData.Sucursales)
+                            {
+                                <tr style="border-bottom: 1px solid #F1F5F9; color: #1E293B;">
+                                    <td style="padding: 12px 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-rounded" style="color: #0891B2;">store</span>
+                                        <span>@suc</span>
+                                    </td>
+                                    <td style="padding: 12px 8px; text-align: right;">
+                                        <button style="background: none; border: none; color: #0891B2; cursor: pointer; margin-right: 16px; font-weight: 600; font-size: 13px;" @onclick="() => AbrirModalEditarSucursal(suc)">
+                                            Editar
+                                        </button>
+                                        <button style="background: none; border: none; color: #DC2626; cursor: pointer; font-weight: 600; font-size: 13px;" @onclick="() => EliminarSucursal(suc)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     }
 </div>
 
@@ -216,17 +285,14 @@
                 </button>
             </div>
 
-            <!-- Número de Máquina (solo para nueva máquina) -->
-            @if (esNuevaMaquina)
-            {
-                <div class="input-group" style="margin-bottom: 0; width: 100%;">
-                    <label class="input-label" style="font-weight: 600;">Número de Máquina (ID)</label>
-                    <div class="input-container">
-                        <span class="material-symbols-rounded input-icon-left">tag</span>
-                        <input type="number" min="1" class="form-input" @bind="maquinaEdicion.IdMaquina" placeholder="Ej. 1" />
-                    </div>
+            <!-- Número de Máquina (ID Automático) -->
+            <div class="input-group" style="margin-bottom: 0; width: 100%;">
+                <label class="input-label" style="font-weight: 600;">Número de Máquina (ID Automático)</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">tag</span>
+                    <input type="text" class="form-input" value="#@maquinaEdicion.IdMaquina @(esNuevaMaquina ? "(Generado automáticamente)" : "(ID Asignado)")" disabled style="opacity: 0.75; cursor: not-allowed; font-weight: 700;" />
                 </div>
-            }
+            </div>
 
             <!-- Nombre de Máquina -->
             <div class="input-group" style="margin-bottom: 0; width: 100%;">
@@ -244,8 +310,8 @@
                     <span class="material-symbols-rounded input-icon-left">traffic</span>
                     <select class="form-input" @bind="maquinaEdicion.Status" style="padding-left: 48px; height: 52px; border-radius: 12px; outline: none;">
                         <option value="INACTIVA">Inactiva </option>
-                        <option value="ACTIVA">Activa ⚡</option>
-                        <option value="MANTENIMIENTO">En Mantenimiento 🔧</option>
+                        <option value="ACTIVA">Activa </option>
+                        <option value="MANTENIMIENTO">En Mantenimiento</option>
                     </select>
                 </div>
             </div>
@@ -289,6 +355,41 @@
     </div>
 }
 
+<!-- Modal para Editar Sucursal -->
+@if (mostrarModalEditarSucursal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => mostrarModalEditarSucursal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 420px; padding: 32px; display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 18px; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #0891B2;">edit</span>
+                    <span>Editar Sucursal</span>
+                </h3>
+                <button @onclick="() => mostrarModalEditarSucursal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label">Nombre de la Sucursal</label>
+                <div class="input-container">
+                    <span class="material-symbols-rounded input-icon-left">store</span>
+                    <input type="text" class="form-input" @bind="sucursalEditandoNombre" style="padding-left: 48px;" />
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 10px;">
+                <button class="btn-payment-submit" style="background: #0891B2; color: white; width: 100%;" @onclick="GuardarEdicionSucursal">
+                    GUARDAR CAMBIOS
+                </button>
+                <button class="btn-payment-cancel" style="width: 100%;" @onclick="() => mostrarModalEditarSucursal = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private BusinessConfigData configData = new();
     private string originalTema = "Claro";
@@ -300,6 +401,11 @@
     private bool esNuevaMaquina = false;
     private Maquina maquinaEdicion = new();
     private bool EsAdmin => SessionManager.UsuarioActual?.EsAdmin ?? true;
+
+    private string nuevaSucursalInput = "";
+    private bool mostrarModalEditarSucursal = false;
+    private string sucursalOriginalNombre = "";
+    private string sucursalEditandoNombre = "";
 
     protected override void OnInitialized()
     {
@@ -313,7 +419,9 @@
             MensajeTicket = BusinessConfig.Current.MensajeTicket,
             Iva = BusinessConfig.Current.Iva,
             Moneda = BusinessConfig.Current.Moneda,
-            Tema = BusinessConfig.Current.Tema
+            Tema = BusinessConfig.Current.Tema,
+            FondoCaja = BusinessConfig.Current.FondoCaja,
+            Sucursales = BusinessConfig.Current.Sucursales != null ? new List<string>(BusinessConfig.Current.Sucursales) : new List<string> { "Sucursal Principal", "Sucursal Norte", "Sucursal Sur", "Sucursal Centro" }
         };
 
         CargarDatosBase();
@@ -321,7 +429,11 @@
 
     private void CargarDatosBase()
     {
-        serviciosList = new ServicioRepositorio().ObtenerTodos();
+        serviciosList = new ServicioRepositorio().ObtenerTodos()
+            .Where(s => s.IdServicio != 2 && s.IdServicio != 3 &&
+                        !s.Nombre.Contains("Secado", StringComparison.OrdinalIgnoreCase) &&
+                        !s.Nombre.Contains("Planchado", StringComparison.OrdinalIgnoreCase))
+            .ToList();
         maquinasList = new MaquinaRepositorio().ObtenerTodas();
     }
 
@@ -358,6 +470,11 @@
         BusinessConfig.Current.Iva = configData.Iva;
         BusinessConfig.Current.Moneda = configData.Moneda;
         BusinessConfig.Current.Tema = configData.Tema;
+        BusinessConfig.Current.FondoCaja = configData.FondoCaja;
+        if (configData.Sucursales != null)
+        {
+            BusinessConfig.Current.Sucursales = new List<string>(configData.Sucursales);
+        }
         
         originalTema = configData.Tema;
         BusinessConfig.Guardar();
@@ -383,10 +500,11 @@
 
     private void AbrirModalAgregarMaquina()
     {
+        int nextId = maquinasList.Any() ? maquinasList.Max(x => x.IdMaquina) + 1 : 1;
         maquinaEdicion = new Maquina
         {
-            IdMaquina = 0,
-            Nombre = "",
+            IdMaquina = nextId,
+            Nombre = $"Unidad #{nextId:02}",
             Status = "INACTIVA",
             CiclosOperados = 0,
             ProxMantenimientoCiclos = 100,
@@ -423,24 +541,23 @@
         {
             if (esNuevaMaquina)
             {
-                if (maquinaEdicion.IdMaquina <= 0)
+                if (string.IsNullOrWhiteSpace(maquinaEdicion.Nombre))
                 {
-                    ToastService.Show("Error", "El número de máquina debe ser mayor a 0.", "danger");
-                    return;
-                }
-                
-                var existentes = repo.ObtenerTodas();
-                if (existentes.Any(x => x.IdMaquina == maquinaEdicion.IdMaquina))
-                {
-                    ToastService.Show("Error", $"Ya existe una máquina con el número #{maquinaEdicion.IdMaquina:02}.", "danger");
+                    ToastService.Show("Error", "El nombre de la máquina no puede estar vacío.", "danger");
                     return;
                 }
 
                 repo.Insertar(maquinaEdicion);
-                ToastService.Show("Máquina Registrada", "La máquina se ha agregado exitosamente al catálogo.", "success");
+                ToastService.Show("Máquina Registrada", $"La máquina #{maquinaEdicion.IdMaquina:02} se ha agregado exitosamente al catálogo.", "success");
             }
             else
             {
+                if (string.IsNullOrWhiteSpace(maquinaEdicion.Nombre))
+                {
+                    ToastService.Show("Error", "El nombre de la máquina no puede estar vacío.", "danger");
+                    return;
+                }
+
                 repo.Guardar(maquinaEdicion);
                 ToastService.Show("Máquina Actualizada", "Los datos de la máquina se han guardado correctamente.", "success");
             }
@@ -465,6 +582,68 @@
         {
             ToastService.Show("Error", $"No se pudo eliminar la máquina: {ex.Message}", "danger");
         }
+    }
+
+    private void AgregarSucursal()
+    {
+        if (string.IsNullOrWhiteSpace(nuevaSucursalInput))
+        {
+            CustomMessageBox.Show("Atención", "Escribe un nombre para la nueva sucursal.", "warning");
+            return;
+        }
+
+        configData.Sucursales ??= new List<string>();
+        if (configData.Sucursales.Any(s => s.Equals(nuevaSucursalInput.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            CustomMessageBox.Show("Atención", "Esta sucursal ya existe.", "warning");
+            return;
+        }
+
+        configData.Sucursales.Add(nuevaSucursalInput.Trim());
+        nuevaSucursalInput = "";
+        BusinessConfig.Current.Sucursales = new List<string>(configData.Sucursales);
+        BusinessConfig.Guardar();
+        ToastService.Show("Sucursal agregada", "La sucursal se ha añadido correctamente.", "success");
+    }
+
+    private void AbrirModalEditarSucursal(string nombre)
+    {
+        sucursalOriginalNombre = nombre;
+        sucursalEditandoNombre = nombre;
+        mostrarModalEditarSucursal = true;
+    }
+
+    private void GuardarEdicionSucursal()
+    {
+        if (string.IsNullOrWhiteSpace(sucursalEditandoNombre))
+        {
+            CustomMessageBox.Show("Atención", "El nombre de la sucursal no puede estar vacío.", "warning");
+            return;
+        }
+
+        int idx = configData.Sucursales.IndexOf(sucursalOriginalNombre);
+        if (idx >= 0)
+        {
+            configData.Sucursales[idx] = sucursalEditandoNombre.Trim();
+            BusinessConfig.Current.Sucursales = new List<string>(configData.Sucursales);
+            BusinessConfig.Guardar();
+            mostrarModalEditarSucursal = false;
+            ToastService.Show("Sucursal actualizada", "La sucursal se ha modificado correctamente.", "success");
+        }
+    }
+
+    private void EliminarSucursal(string nombre)
+    {
+        if (configData.Sucursales.Count <= 1)
+        {
+            CustomMessageBox.Show("Acción No Permitida", "Debe existir al menos una sucursal en el sistema.", "warning");
+            return;
+        }
+
+        configData.Sucursales.Remove(nombre);
+        BusinessConfig.Current.Sucursales = new List<string>(configData.Sucursales);
+        BusinessConfig.Guardar();
+        ToastService.Show("Sucursal eliminada", $"La sucursal '{nombre}' ha sido eliminada.", "info");
     }
 
     public void Dispose()

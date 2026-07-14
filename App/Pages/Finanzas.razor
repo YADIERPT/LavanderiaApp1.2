@@ -75,7 +75,7 @@
         </div>
 
         <!-- Row 2, Card 1: Total Recaudado Hoy -->
-        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #F59E0B;">
+        <div class="dashboard-card" style="padding: 20px 24px; border-top: 4px solid #0891B2;">
             <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Recaudado Hoy</span>
             <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 4px 0 2px 0;">
                 @RecaudadoHoy.ToString("$#,##0.00")
@@ -89,7 +89,7 @@
             <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0058BC; margin: 4px 0 2px 0;">
                 @EfectivoEnCajon.ToString("$#,##0.00")
             </div>
-            <span style="font-size: 12px; color: #64748B; font-weight: 700;">Fondo ($500) + Efectivo - Gastos</span>
+            <span style="font-size: 12px; color: #64748B; font-weight: 700;">Fondo (@BusinessConfig.Current.FondoCaja.ToString("$0")) + Efectivo - Gastos</span>
         </div>
 
         <!-- Row 2, Card 3: Tarjetas / Transferencias Neto Hoy -->
@@ -423,11 +423,11 @@
         // 2. Gastos Hoy
         GastosHoyTotal = gastos.Where(g => g.Fecha.Date == DateTime.Today).Sum(g => g.Monto);
 
-        // 3. Efectivo en Cajón (Fondo inicial de $500 + Pagos efectivo hoy - Gastos hoy)
+        // 3. Efectivo en Cajón (Fondo inicial configurado + Pagos efectivo hoy - Gastos hoy)
         decimal pagosEfectivoHoy = pagos
             .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Efectivo)
             .Sum(p => p.MontoPago);
-        EfectivoEnCajon = 500.00m + pagosEfectivoHoy - GastosHoyTotal;
+        EfectivoEnCajon = BusinessConfig.Current.FondoCaja + pagosEfectivoHoy - GastosHoyTotal;
 
         // 4. Tarjetas / Transferencias Neto Hoy (restar comisión del 3.6% en pagos con tarjeta)
         decimal pagosTarjetaHoy = pagos
@@ -541,38 +541,53 @@
     {
         try
         {
-            string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
-            if (!File.Exists(scriptPath))
-            {
-                scriptPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "generar_pdf_actividad.py"));
-            }
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = "python",
-                Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
-            using var proc = Process.Start(psi);
-            proc?.WaitForExit(5000); // Esperar que termine de generarse
-
             string pdfPath = Path.Combine(Path.GetDirectoryName(Config.DbPath) ?? AppDomain.CurrentDomain.BaseDirectory, "Registro_Actividad_Lavanderia.pdf");
+            try
+            {
+                string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
+                if (!File.Exists(scriptPath))
+                {
+                    scriptPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "generar_pdf_actividad.py"));
+                }
+
+                if (File.Exists(scriptPath))
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"\"{scriptPath}\" \"{Path.GetDirectoryName(Config.DbPath)}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    using var proc = Process.Start(psi);
+                    proc?.WaitForExit(4000);
+                }
+            }
+            catch { }
+
             if (File.Exists(pdfPath))
             {
                 GeneradoPdfPathFinanzas = pdfPath;
+            }
+            else
+            {
+                GeneradoPdfPathFinanzas = ReporteGeneradorNativo.GenerarReporteActividad();
+            }
+
+            if (File.Exists(GeneradoPdfPathFinanzas))
+            {
                 MostrarModalPdfFinanzas = true;
                 StateHasChanged();
             }
             else
             {
-                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF no se encontró en la ruta especificada.", "warning");
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo de reporte no se encontró en la ruta especificada.", "warning");
             }
         }
         catch (Exception ex)
         {
-            CustomMessageBox.Show("Exportar Reporte", $"Error al generar el reporte PDF: {ex.Message}", "warning");
+            CustomMessageBox.Show("Exportar Reporte", $"Error al generar el reporte: {ex.Message}", "warning");
         }
     }
 
@@ -592,7 +607,7 @@
         }
         catch (Exception ex)
         {
-            CustomMessageBox.Show("Error", $"No se pudo abrir el visor PDF: {ex.Message}", "warning");
+            CustomMessageBox.Show("Error", $"No se pudo abrir el visor: {ex.Message}", "warning");
         }
     }
 
@@ -603,12 +618,16 @@
         {
             if (File.Exists(GeneradoPdfPathFinanzas))
             {
+                string ext = Path.GetExtension(GeneradoPdfPathFinanzas);
+                string filter = ext.Equals(".html", StringComparison.OrdinalIgnoreCase) ? "Reporte HTML (*.html)|*.html" : "Archivo PDF (*.pdf)|*.pdf";
+                string defaultExt = ext;
+
                 var sfd = new Microsoft.Win32.SaveFileDialog
                 {
-                    Title = "Guardar Reporte Financiero PDF",
-                    Filter = "Archivo PDF (*.pdf)|*.pdf",
-                    FileName = $"Reporte_Financiero_Lavanderia_{DateTime.Now:yyyyMMdd}.pdf",
-                    DefaultExt = ".pdf"
+                    Title = "Guardar Reporte Financiero",
+                    Filter = filter,
+                    FileName = $"Reporte_Financiero_Lavanderia_{DateTime.Now:yyyyMMdd}{defaultExt}",
+                    DefaultExt = defaultExt
                 };
 
                 if (sfd.ShowDialog() == true)
@@ -619,7 +638,7 @@
             }
             else
             {
-                CustomMessageBox.Show("Archivo no encontrado", "El archivo PDF original no se encontró para guardar.", "warning");
+                CustomMessageBox.Show("Archivo no encontrado", "El archivo original no se encontró para guardar.", "warning");
             }
         }
         catch (Exception ex)

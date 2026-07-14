@@ -134,7 +134,7 @@
                     <div class="emp-grid-row">
                         <div class="emp-grid-cell">
                             <span class="prop-label">PAGO / MES:</span>
-                            <span class="prop-val val-payment">@SelectedEmployee.PagoMes.ToString("$#,##0")</span>
+                            <span class="prop-val val-payment">@SelectedEmployee.PagoMes.ToString("$#,##0.00")</span>
                         </div>
                         <div class="emp-grid-cell">
                             <span class="prop-label">TELÉFONO:</span>
@@ -142,7 +142,19 @@
                         </div>
                     </div>
 
-                    <!-- Row 4: Correo Electronico (full row width style) -->
+                    <!-- Row 4: Sucursal and Edad -->
+                    <div class="emp-grid-row">
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">SUCURSAL:</span>
+                            <span class="prop-val font-bold" style="color: #0891B2;">@SelectedEmployee.Sucursal</span>
+                        </div>
+                        <div class="emp-grid-cell">
+                            <span class="prop-label">EDAD:</span>
+                            <span class="prop-val">@(SelectedEmployee.Edad > 0 ? $"{SelectedEmployee.Edad} años" : "N/A")</span>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Correo Electronico (full row width style) -->
                     <div class="emp-grid-row full-width-row">
                         <div class="emp-grid-cell">
                             <span class="prop-label">CORREO ELECTRÓNICO:</span>
@@ -150,11 +162,11 @@
                         </div>
                     </div>
 
-                    <!-- Row 5: Rol Sistema and Usuario -->
+                    <!-- Row 6: Rol Sistema and Usuario -->
                     <div class="emp-grid-row">
                         <div class="emp-grid-cell">
                             <span class="prop-label">ROL DE SISTEMA:</span>
-                            <span class="prop-val font-bold" style="color: #0056C6;">@SelectedEmployee.Rol</span>
+                            <span class="prop-val font-bold" style="color: #0891B2;">@SelectedEmployee.Rol</span>
                         </div>
                         <div class="emp-grid-cell">
                             <span class="prop-label">USUARIO:</span>
@@ -242,6 +254,7 @@
         public string Telefono { get; set; }
         public string Correo { get; set; }
         public int Edad { get; set; }
+        public string Sucursal { get; set; } = "";
         public string Rol { get; set; } = "Empleado";
         public string Usuario { get; set; }
         public bool HasAvatarImage { get; set; }
@@ -312,17 +325,18 @@
         {
             Id = u.IdUsuario.ToString("D2"),
             Codigo = $"EMP-{u.IdUsuario:D2}",
-            IdEmpleado = u.Nombre.Split(' ')[0] + $"_{u.IdUsuario:D2}",
+            IdEmpleado = (!string.IsNullOrEmpty(u.Nombre) ? u.Nombre.Split(' ')[0] : "EMP") + $"_{u.IdUsuario:D2}",
             Nombre = u.Nombre,
-            Posicion = u.Rol == "Admin" ? "Administrador" : "Empleado",
-            Rol = u.Rol == "Admin" ? "Admin" : "Empleado",
+            Posicion = u.Rol == "Admin" || u.Rol == "Administrador" || u.Rol == "Master" ? "Administrador" : "Empleado",
+            Rol = u.Rol,
             Estado = "ACTIVO",
-            FechaContrato = "N/A",
-            Turno = "N/A",
-            PagoMes = 0.00m,
-            Telefono = "N/A",
-            Correo = u.NombreUsuario.ToLower() + "@lavanderia.com",
-            Edad = 0,
+            FechaContrato = string.IsNullOrWhiteSpace(u.FechaContrato) ? "N/A" : u.FechaContrato,
+            Turno = string.IsNullOrWhiteSpace(u.Turno) ? "No Asignado" : u.Turno,
+            PagoMes = u.Salario,
+            Telefono = string.IsNullOrWhiteSpace(u.Telefono) ? "Sin registrar" : u.Telefono,
+            Correo = string.IsNullOrWhiteSpace(u.Correo) ? u.NombreUsuario.ToLower() + "@lavanderia.com" : u.Correo,
+            Sucursal = string.IsNullOrWhiteSpace(u.Sucursal) ? "Sucursal Principal" : u.Sucursal,
+            Edad = u.Edad,
             Usuario = $"@{u.NombreUsuario}",
             HasAvatarImage = false,
             Initials = string.IsNullOrEmpty(u.Nombre) ? "US" : string.Concat(u.Nombre.Split(' ').Select(w => w.FirstOrDefault()))

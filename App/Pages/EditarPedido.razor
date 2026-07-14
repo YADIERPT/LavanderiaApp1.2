@@ -204,9 +204,102 @@
                     <span class="status-text-val">@OrderStatus</span>
                 </div>
             </div>
+
+            @if (IsEditMode && !string.Equals(OrderStatus, "Cancelado", StringComparison.OrdinalIgnoreCase))
+            {
+                if (EsPedidoEnEspera)
+                {
+                    <!-- Card 3: Zona de Peligro / Cancelar Pedido (Solo disponible cuando el pedido está en espera) -->
+                    <div class="dashboard-card cancel-order-card-edit" style="border: 1px solid #FECACA; background: #FFF5F5; margin-top: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="material-symbols-rounded" style="color: #DC2626; font-size: 20px;">cancel</span>
+                            <span style="font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 800; color: #991B1B; letter-spacing: 0.5px; text-transform: uppercase;">
+                                CANCELAR / ELIMINAR PEDIDO
+                            </span>
+                        </div>
+                        <p style="font-size: 13px; color: #7F1D1D; margin-bottom: 16px; line-height: 1.4;">
+                            Si el pedido no se realizará o debe anularse, puedes cancelarlo y retirarlo de la operación activa. Se requerirá un motivo.
+                        </p>
+                        <button type="button" @onclick="AbrirModalCancelarPedido" class="btn-cancel-order-danger"
+                                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: #DC2626; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); transition: all 0.2s;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">delete_forever</span>
+                            <span>Cancelar Pedido (#@OrderId.ToString("D2"))</span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <!-- Card informativa: Bloqueada por estar en proceso o terminado -->
+                    <div class="dashboard-card cancel-order-card-edit" style="border: 1px solid #E2E8F0; background: #F8FAFC; margin-top: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="material-symbols-rounded" style="color: #64748B; font-size: 20px;">lock</span>
+                            <span style="font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 800; color: #475569; letter-spacing: 0.5px; text-transform: uppercase;">
+                                CANCELACIÓN BLOQUEADA
+                            </span>
+                        </div>
+                        <p style="font-size: 13px; color: #64748B; margin-bottom: 14px; line-height: 1.4;">
+                            El pedido ya está en proceso (<strong style="color: #1E293B;">@OrderStatus</strong>). Solo los pedidos en espera pueden ser cancelados.
+                        </p>
+                        <button type="button" disabled
+                                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: #E2E8F0; color: #94A3B8; border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: not-allowed; font-size: 14px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">block</span>
+                            <span>No disponible (@OrderStatus)</span>
+                        </button>
+                    </div>
+                }
+            }
         </div>
     </div>
 </div>
+
+<!-- Modal Interactivo para Confirmar Cancelación del Pedido y Solicitar Motivo -->
+@if (MostrarModalCancelarPedido)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalCancelarPedido = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 520px; padding: 36px;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper" style="background: #FEE2E2; color: #DC2626;">
+                        <span class="material-symbols-rounded">dangerous</span>
+                    </div>
+                    <h3 class="section-title-custom" style="color: #991B1B;">Cancelar y Eliminar Pedido</h3>
+                </div>
+                <button @onclick="() => MostrarModalCancelarPedido = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div style="width: 100%; margin-bottom: 24px;">
+                <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+                    Estás a punto de cancelar el <strong style="color: #0F172A;">Pedido #@OrderId.ToString("D2") (@ClientName)</strong>. Esta acción cambiará el estado del pedido a <strong>Cancelado</strong> y liberará los recursos asignados.
+                </p>
+                
+                <div class="form-input-group" style="width: 100%;">
+                    <label class="form-input-label" style="font-weight: 700; color: #1E293B; margin-bottom: 6px; display: block;">Motivo de la cancelación <span style="color: #DC2626;">*</span></label>
+                    <textarea class="form-input-field" rows="3" 
+                              placeholder="Ej: El cliente canceló el servicio, error en el registro de peso, prenda devuelta sin procesar..." 
+                              @bind="RazonCancelacion" @bind:event="oninput"
+                              style="width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #CBD5E1; font-family: 'Outfit', sans-serif; font-size: 14px; outline: none; resize: none;"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; width: 100%;">
+                <button type="button" @onclick="() => MostrarModalCancelarPedido = false" 
+                        style="padding: 10px 20px; border-radius: 12px; background: #F1F5F9; color: #475569; font-weight: 700; border: none; cursor: pointer; transition: background 0.2s;">
+                    Regresar
+                </button>
+                <button type="button" @onclick="ConfirmarCancelacionPedido" 
+                        style="padding: 10px 24px; border-radius: 12px; background: #DC2626; color: white; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+                    <span>Confirmar Cancelación</span>
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Modal Interactivo para Seleccionar / Crear Cliente -->
 @if (ShowSelectClientModal)
@@ -302,6 +395,8 @@
     private double SaldoPendiente => Math.Max(0.0, TotalCost - Anticipo);
 
     private bool ShowSelectClientModal = false;
+    private bool MostrarModalCancelarPedido = false;
+    private string RazonCancelacion = "";
     private string SearchClientText = "";
     private List<Cliente> ListaClientes = new();
     private List<Maquina> ListaMaquinas = new();
@@ -372,6 +467,11 @@
                 if (pedidoDb.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase))
                 {
                     CustomMessageBox.Show("Pedido Finalizado", "Este pedido ya fue entregado al cliente. Por seguridad no puede ser editado.", "warning", () => NavManager.NavigateTo("/pedidos"));
+                    return;
+                }
+                if (pedidoDb.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase))
+                {
+                    CustomMessageBox.Show("Pedido Cancelado", "Este pedido ya fue cancelado y no puede ser editado.", "warning", () => NavManager.NavigateTo("/pedidos"));
                     return;
                 }
                 RawClientId = pedidoDb.IdCliente;
@@ -457,6 +557,71 @@
     private void Cancelar()
     {
         NavManager.NavigateTo("/pedidos");
+    }
+
+    private bool EsPedidoEnEspera => string.Equals(OrderStatus, "En espera", StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(OrderStatus, "En espera de lavado", StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(OrderStatus, "En espera de entrega", StringComparison.OrdinalIgnoreCase);
+
+    private void AbrirModalCancelarPedido()
+    {
+        if (!EsPedidoEnEspera)
+        {
+            CustomMessageBox.Show("Operación Bloqueada", $"El pedido está actualmente en '{OrderStatus}'. Los pedidos que ya comenzaron a procesarse no pueden ser cancelados.", "warning");
+            return;
+        }
+
+        RazonCancelacion = "";
+        MostrarModalCancelarPedido = true;
+    }
+
+    private void ConfirmarCancelacionPedido()
+    {
+        if (!EsPedidoEnEspera)
+        {
+            CustomMessageBox.Show("Operación Bloqueada", "Solo los pedidos que están EN ESPERA pueden ser cancelados.", "warning");
+            MostrarModalCancelarPedido = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(RazonCancelacion))
+        {
+            CustomMessageBox.Show("Motivo Requerido", "Por favor ingresa la razón por la cual se cancela el pedido antes de continuar.", "warning");
+            return;
+        }
+
+        try
+        {
+            OrderStatus = "Cancelado";
+            PedidoRepo.ActualizarEstadoYMaquina(Id, "Cancelado", "");
+
+            try
+            {
+                new AuditoriaRepositorio().Guardar(new LavanderiaApp.Modelos.Auditoria
+                {
+                    Fecha = DateTime.Now,
+                    Usuario = SessionManager.UsuarioActual?.Nombre ?? "Empleado",
+                    Modulo = "Pedidos",
+                    Accion = "Cancelación",
+                    Detalle = $"Pedido #{Id} cancelado. Motivo: {RazonCancelacion.Trim()}"
+                });
+                new LavanderiaApp.Repositorios.NotificacionRepositorio().Agregar(new LavanderiaApp.Modelos.Notificacion
+                {
+                    Titulo = $"Pedido ORD-{Id:D4} Cancelado",
+                    Mensaje = $"Cancelado por '{SessionManager.UsuarioActual?.Nombre}'. Motivo: {RazonCancelacion.Trim()}",
+                    Tipo = "Peligro",
+                    Fecha = DateTime.Now
+                });
+            }
+            catch { }
+
+            MostrarModalCancelarPedido = false;
+            CustomMessageBox.Show("Pedido Cancelado", $"El pedido #{Id} ha sido cancelado y retirado exitosamente.\n\nMotivo: {RazonCancelacion.Trim()}", "success", () => NavManager.NavigateTo("/pedidos"));
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error", $"Ocurrió un error al cancelar el pedido: {ex.Message}", "error");
+        }
     }
 
     private void GuardarCambios()

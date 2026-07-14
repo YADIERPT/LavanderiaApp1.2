@@ -26,6 +26,13 @@
         </div>
         <div class="header-actions">
             <button class="btn-cancelar" @onclick="GoToEmployees">Descartar</button>
+            @if (IsEditMode)
+            {
+                <button class="btn-cancelar" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; display: flex; align-items: center; gap: 6px; font-weight: 600;" @onclick="IntentarEliminarEmpleado">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+                    <span>Eliminar Empleado</span>
+                </button>
+            }
             <button class="btn-guardar" @onclick="GuardarDatos">
                 <span class="material-symbols-rounded" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">save</span>
                 <span>Guardar datos</span>
@@ -96,9 +103,15 @@
 
                 <div class="form-inputs-grid-2x2">
                     <div class="form-input-group">
+                        <label class="form-input-label">NOMBRE COMPLETO</label>
+                        <div class="form-input-wrapper">
+                            <input type="text" class="form-input-field no-icon" @bind="Nombre" placeholder="Ej. Juan Pérez" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
                         <label class="form-input-label">NOMBRE DE USUARIO</label>
                         <div class="form-input-wrapper">
-                            <input type="text" class="form-input-field no-icon" @bind="Usuario" placeholder="Inserte nombre" />
+                            <input type="text" class="form-input-field no-icon" @bind="Usuario" placeholder="Inserte usuario" />
                         </div>
                     </div>
                     <div class="form-input-group">
@@ -110,6 +123,14 @@
                                 <option value="Recepcionista">Recepcionista</option>
                                 <option value="Lavadero">Lavadero</option>
                                 <option value="Supervisor">Supervisor</option>
+                                @if (SessionManager.UsuarioActual?.EsMaster == true || Rol == "Master")
+                                {
+                                    <option value="Master">Master</option>
+                                }
+                                @if (Rol == "Admin")
+                                {
+                                    <option value="Admin">Admin</option>
+                                }
                             </select>
                         </div>
                     </div>
@@ -166,7 +187,7 @@
                     <div class="form-input-group">
                         <label class="form-input-label">FECHA DE INCORPORACIÓN</label>
                         <div class="form-input-wrapper">
-                            <input type="text" class="form-input-field no-icon" @bind="FechaContrato" placeholder="00/01/0000" />
+                            <input type="text" class="form-input-field no-icon" @bind="FechaContrato" placeholder="dd/mm/yyyy" readonly="@(!IsEditMode)" />
                         </div>
                     </div>
                     <div class="form-input-group">
@@ -181,9 +202,13 @@
                         <div class="form-input-wrapper">
                             <select class="form-input-field no-icon select-field" @bind="Sucursal">
                                 <option value="">Elija sucursal</option>
-                                <option value="Sucursal Norte">Sucursal Norte</option>
-                                <option value="Sucursal Sur">Sucursal Sur</option>
-                                <option value="Sucursal Centro">Sucursal Centro</option>
+                                @if (BusinessConfig.Current.Sucursales != null)
+                                {
+                                    @foreach (var suc in BusinessConfig.Current.Sucursales)
+                                    {
+                                        <option value="@suc">@suc</option>
+                                    }
+                                }
                             </select>
                         </div>
                     </div>
@@ -247,6 +272,43 @@
     </div>
 }
 
+<!-- Modal de Confirmación de Eliminación de Empleado -->
+@if (MostrarModalConfirmarEliminar)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalConfirmarEliminar = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper" style="background: #FEE2E2; color: #DC2626;">
+                        <span class="material-symbols-rounded">warning</span>
+                    </div>
+                    <div>
+                        <h3 class="section-title-custom" style="color: #DC2626;">Eliminar Empleado</h3>
+                        <span style="font-size: 12px; color: #64748B; font-weight: 700;">Acción Irreversible</span>
+                    </div>
+                </div>
+                <button @onclick="() => MostrarModalConfirmarEliminar = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <p style="color: #334155; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                ¿Estás seguro de que deseas eliminar permanentemente al empleado <strong>@Nombre</strong> (<strong>@Usuario</strong>)? 
+                Esta acción retirará todos sus accesos al sistema.
+            </p>
+
+            <div style="display: flex; gap: 14px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #DC2626; color: white;" @onclick="ConfirmarEliminacion">
+                    CONFIRMAR ELIMINACIÓN
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalConfirmarEliminar = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
@@ -276,6 +338,8 @@
     private string ConfirmPasswordInput = "";
     private bool ShowNewPasswordToggle = false;
 
+    private bool MostrarModalConfirmarEliminar = false;
+
     protected override void OnInitialized()
     {
         if (Id > 0)
@@ -290,6 +354,22 @@
                 Estado = "ACTIVO";
                 Codigo = $"EMP-{user.IdUsuario:D2}";
                 UltimoAcceso = "Sesión registrada";
+                Telefono = user.Telefono ?? "";
+                Correo = user.Correo ?? "";
+                Turno = user.Turno ?? "";
+                FechaContrato = user.FechaContrato ?? "";
+                SalarioAnual = user.Salario > 0 ? user.Salario.ToString("0.00") : "0.00";
+                Sucursal = user.Sucursal ?? "";
+                Edad = user.Edad > 0 ? user.Edad : null;
+
+                if (string.IsNullOrEmpty(FechaContrato))
+                {
+                    FechaContrato = DateTime.Now.ToString("dd/MM/yyyy");
+                }
+                if (string.IsNullOrEmpty(Sucursal) && BusinessConfig.Current.Sucursales?.Count > 0)
+                {
+                    Sucursal = BusinessConfig.Current.Sucursales[0];
+                }
             }
         }
         else
@@ -299,6 +379,11 @@
             Rol = "";
             Codigo = "-------";
             Estado = "SIN REGISTRO";
+            FechaContrato = DateTime.Now.ToString("dd/MM/yyyy");
+            if (BusinessConfig.Current.Sucursales?.Count > 0)
+            {
+                Sucursal = BusinessConfig.Current.Sucursales[0];
+            }
         }
     }
 
@@ -377,6 +462,12 @@
 
         string nombreGuardar = string.IsNullOrWhiteSpace(Nombre) ? Usuario : Nombre;
 
+        decimal salarioVal = 0m;
+        if (!string.IsNullOrWhiteSpace(SalarioAnual))
+        {
+            decimal.TryParse(SalarioAnual.Replace("$", "").Replace(",", "").Trim(), out salarioVal);
+        }
+
         if (IsEditMode && Id > 0)
         {
             var user = new Usuario
@@ -385,7 +476,14 @@
                 Nombre = nombreGuardar,
                 NombreUsuario = Usuario,
                 Password = string.IsNullOrWhiteSpace(Password) ? "123" : Password,
-                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol
+                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol,
+                Telefono = Telefono ?? "",
+                Correo = Correo ?? "",
+                Turno = Turno ?? "",
+                FechaContrato = FechaContrato ?? "",
+                Salario = salarioVal,
+                Sucursal = Sucursal ?? "",
+                Edad = Edad ?? 0
             };
             UsuarioRepo.Actualizar(user);
             CustomMessageBox.Show("Éxito", $"Empleado '{nombreGuardar}' guardado exitosamente.", "success", () => NavManager.NavigateTo("/empleados"));
@@ -397,10 +495,89 @@
                 Nombre = nombreGuardar,
                 NombreUsuario = Usuario,
                 Password = string.IsNullOrWhiteSpace(Password) ? "123" : Password,
-                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol
+                Rol = string.IsNullOrWhiteSpace(Rol) ? "Empleado" : Rol,
+                Telefono = Telefono ?? "",
+                Correo = Correo ?? "",
+                Turno = Turno ?? "",
+                FechaContrato = FechaContrato ?? "",
+                Salario = salarioVal,
+                Sucursal = Sucursal ?? "",
+                Edad = Edad ?? 0
             };
             UsuarioRepo.Guardar(user);
             CustomMessageBox.Show("Éxito", $"Empleado '{nombreGuardar}' registrado exitosamente.", "success", () => NavManager.NavigateTo("/empleados"));
+        }
+    }
+
+    private void IntentarEliminarEmpleado()
+    {
+        if (SessionManager.UsuarioActual == null)
+        {
+            CustomMessageBox.Show("Sesión No Válida", "Debes iniciar sesión para realizar esta acción.", "warning");
+            return;
+        }
+
+        // 1. Asegurar que el admin no se pueda eliminar a sí mismo
+        if (Id == SessionManager.UsuarioActual.IdUsuario || 
+            string.Equals(Usuario, SessionManager.UsuarioActual.NombreUsuario, StringComparison.OrdinalIgnoreCase))
+        {
+            CustomMessageBox.Show("Acción no permitida", "No puedes eliminar tu propia cuenta de usuario mientras tienes la sesión activa.", "warning");
+            return;
+        }
+
+        var targetUser = UsuarioRepo.ObtenerPorId(Id);
+        if (targetUser == null)
+        {
+            CustomMessageBox.Show("Error", "No se encontró el usuario especificado en el sistema.", "danger");
+            return;
+        }
+
+        bool esObjetivoAdmin = targetUser.Rol.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
+                               targetUser.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+                               targetUser.Rol.Equals("Master", StringComparison.OrdinalIgnoreCase);
+
+        // 2. Solo la cuenta Master puede eliminar a administradores
+        if (esObjetivoAdmin && !SessionManager.UsuarioActual.EsMaster)
+        {
+            CustomMessageBox.Show("Permiso denegado", "Solo la cuenta Master tiene autorización para eliminar cuentas de Administrador.", "danger");
+            return;
+        }
+
+        // 3. Si es empleado normal, se requiere ser Administrador o Master
+        if (!esObjetivoAdmin && !SessionManager.UsuarioActual.EsAdmin && !SessionManager.UsuarioActual.EsMaster)
+        {
+            CustomMessageBox.Show("Permiso denegado", "No tienes permisos de Administrador para eliminar empleados.", "danger");
+            return;
+        }
+
+        MostrarModalConfirmarEliminar = true;
+    }
+
+    private void ConfirmarEliminacion()
+    {
+        MostrarModalConfirmarEliminar = false;
+        try
+        {
+            UsuarioRepo.Eliminar(Id);
+            
+            try
+            {
+                new NotificacionRepositorio().Agregar(new Notificacion
+                {
+                    Titulo = "Usuario Eliminado",
+                    Mensaje = $"El usuario '{Nombre}' ({Usuario} - {Rol}) fue eliminado del sistema por '{SessionManager.UsuarioActual?.Nombre}'.",
+                    Tipo = "Alerta",
+                    Fecha = DateTime.Now,
+                    Leida = false
+                });
+            }
+            catch { }
+
+            CustomMessageBox.Show("Empleado Eliminado", $"El empleado '{Nombre}' ha sido eliminado correctamente del sistema.", "success", () => NavManager.NavigateTo("/empleados"));
+        }
+        catch (Exception ex)
+        {
+            CustomMessageBox.Show("Error al eliminar", $"No se pudo eliminar el usuario: {ex.Message}", "danger");
         }
     }
 }

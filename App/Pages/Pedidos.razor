@@ -11,10 +11,16 @@
             <!-- Header -->
             <div class="orders-list-header">
                 <h1 class="header-title">Gestión de pedidos</h1>
-                <button class="filter-button @(SelectedStatusFilter != "TODOS" || !string.IsNullOrEmpty(SearchText) ? "filter-active" : "")" @onclick="ToggleFilters">
-                    <span class="material-symbols-rounded">filter_list</span>
-                    <span>Filtrar @(SelectedStatusFilter != "TODOS" ? $"({SelectedStatusFilter})" : "")</span>
-                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="filter-button @(OcultarCancelados ? "filter-active" : "")" @onclick="ToggleOcultarCancelados" title="@(OcultarCancelados ? "Haz clic para mostrar los pedidos cancelados" : "Haz clic para ocultar los pedidos cancelados")">
+                        <span class="material-symbols-rounded">@(OcultarCancelados ? "visibility_off" : "visibility")</span>
+                        <span>@(OcultarCancelados ? "Ocultando cancelados" : "Mostrar cancelados")</span>
+                    </button>
+                    <button class="filter-button @(SelectedStatusFilter != "TODOS" || !string.IsNullOrEmpty(SearchText) ? "filter-active" : "")" @onclick="ToggleFilters">
+                        <span class="material-symbols-rounded">filter_list</span>
+                        <span>Filtrar @(SelectedStatusFilter != "TODOS" ? $"({SelectedStatusFilter})" : "")</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Active Filter Badge Bar if filtering -->
@@ -175,6 +181,19 @@
                 </div>
             </div>
 
+            <!-- Option to hide/show cancelled inside filter modal -->
+            <div style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <div>
+                    <strong style="font-size: 13.5px; color: #1E293B; display: block;">Ocultar pedidos cancelados</strong>
+                    <span style="font-size: 12px; color: #64748B;">No mostrar órdenes anuladas en la lista</span>
+                </div>
+                <button type="button" @onclick="ToggleOcultarCancelados" style="background: none; border: none; cursor: pointer; display: flex; align-items: center;">
+                    <span class="material-symbols-rounded" style="font-size: 32px; color: @(OcultarCancelados ? "#0891B2" : "#CBD5E1"); transition: color 0.2s;">
+                        @(OcultarCancelados ? "toggle_on" : "toggle_off")
+                    </span>
+                </button>
+            </div>
+
             <!-- Filter by Status options -->
             <div style="width: 100%; margin-bottom: 24px;">
                 <label class="form-input-label" style="margin-bottom: 10px; display: block;">Estado del Pedido</label>
@@ -232,8 +251,8 @@
         <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 48px 40px;">
             <div class="payment-icon-wrapper" style="margin-bottom: 24px;">
                 <div class="payment-icon-bg">
-                    <span class="material-symbols-rounded payment-icon" style="color: #F59E0B;">warning</span>
-                    <span class="online-status-dot" style="background: #F59E0B;"></span>
+                    <span class="material-symbols-rounded payment-icon" style="color: #0891B2;">warning</span>
+                    <span class="online-status-dot" style="background: #0891B2;"></span>
                 </div>
             </div>
 
@@ -289,8 +308,8 @@
         <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 480px; padding: 36px; text-align: center;">
             <!-- Icon Wrapper -->
             <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
-                <div class="payment-icon-bg" style="background: @(ModalSaldoPendiente > 0m ? "#FEF3C7" : "#D1FAE5");">
-                    <span class="material-symbols-rounded payment-icon" style="color: @(ModalSaldoPendiente > 0m ? "#D97706" : "#059669");">
+                <div class="payment-icon-bg" style="background: @(ModalSaldoPendiente > 0m ? "#CFFAFE" : "#D1FAE5");">
+                    <span class="material-symbols-rounded payment-icon" style="color: @(ModalSaldoPendiente > 0m ? "#0891B2" : "#059669");">
                         @(ModalSaldoPendiente > 0m ? "payments" : "check_circle")
                     </span>
                 </div>
@@ -366,8 +385,9 @@
     private bool ShowFilterModal = false;
     private string SearchText = "";
     private string SelectedStatusFilter = "TODOS";
+    private bool OcultarCancelados = true;
 
-    private readonly string[] StatusOptions = new[] { "TODOS", "EN ESPERA", "EN LAVADO", "EN SECADO", "LISTO", "ENTREGADO" };
+    private readonly string[] StatusOptions = new[] { "TODOS", "EN ESPERA", "EN LAVADO", "EN SECADO", "LISTO", "ENTREGADO", "CANCELADO" };
 
     private List<OrderItem> Orders = new();
     private OrderItem SelectedOrder;
@@ -381,6 +401,15 @@
     private decimal ModalSaldoPendiente = 0m;
     private Pago.MetodoPago MetodoPagoEntrega = Pago.MetodoPago.Efectivo;
 
+    private void ToggleOcultarCancelados()
+    {
+        OcultarCancelados = !OcultarCancelados;
+        if (OcultarCancelados && SelectedStatusFilter == "CANCELADO")
+        {
+            SelectedStatusFilter = "TODOS";
+        }
+    }
+
     private bool CoincideEstado(string estadoPedido, string filtro)
     {
         if (filtro == "TODOS") return true;
@@ -388,10 +417,13 @@
         if (filtro == "EN LAVADO") return estadoPedido.Equals("En Lavado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Lavando", StringComparison.OrdinalIgnoreCase);
         if (filtro == "EN SECADO") return estadoPedido.Equals("En Secado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Secando", StringComparison.OrdinalIgnoreCase);
         if (filtro == "LISTO") return estadoPedido.Equals("Listo", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "ENTREGADO") return estadoPedido.Equals("Entregado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Finalizado", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "CANCELADO") return estadoPedido.Equals("Cancelado", StringComparison.OrdinalIgnoreCase);
         return estadoPedido.Equals(filtro, StringComparison.OrdinalIgnoreCase);
     }
 
     private IEnumerable<OrderItem> FilteredOrders => Orders.Where(o =>
+        (!OcultarCancelados || !o.Estado.Equals("CANCELADO", StringComparison.OrdinalIgnoreCase)) &&
         CoincideEstado(o.Estado, SelectedStatusFilter) &&
         (string.IsNullOrWhiteSpace(SearchText) ||
          o.Cliente.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
@@ -501,12 +533,17 @@
     private void SetStatusFilter(string status)
     {
         SelectedStatusFilter = status;
+        if (status == "CANCELADO")
+        {
+            OcultarCancelados = false;
+        }
     }
 
     private void LimpiarFiltros()
     {
         SearchText = "";
         SelectedStatusFilter = "TODOS";
+        OcultarCancelados = true;
         ShowFilterModal = false;
     }
 
@@ -605,10 +642,13 @@
     {
         return estado.ToUpper() switch
         {
-            "EN ESPERA DE ENTREGA" => "badge-espera",
-            "SECANDO" => "badge-secando",
-            "ENTREGADO" => "badge-entregado",
-            "LAVANDO" => "badge-lavando",
+            "EN ESPERA" or "EN ESPERA DE LAVADO" or "EN ESPERA DE ENTREGA" => "badge-espera",
+            "EN LAVADO" or "LAVANDO" => "badge-lavando",
+            "EN ESPERA DE SECADO" => "badge-espera-secado",
+            "EN SECADO" or "SECANDO" => "badge-secando",
+            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" => "badge-listo",
+            "ENTREGADO" or "FINALIZADO" => "badge-entregado",
+            "CANCELADO" => "badge-cancelado",
             _ => "badge-espera"
         };
     }
@@ -617,10 +657,13 @@
     {
         return estado.ToUpper() switch
         {
-            "EN ESPERA DE ENTREGA" => "icon-espera",
-            "SECANDO" => "icon-secando",
-            "ENTREGADO" => "icon-entregado",
-            "LAVANDO" => "icon-lavando",
+            "EN ESPERA" or "EN ESPERA DE LAVADO" or "EN ESPERA DE ENTREGA" => "icon-espera",
+            "EN LAVADO" or "LAVANDO" => "icon-lavando",
+            "EN ESPERA DE SECADO" => "icon-espera-secado",
+            "EN SECADO" or "SECANDO" => "icon-secando",
+            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" => "icon-listo",
+            "ENTREGADO" or "FINALIZADO" => "icon-entregado",
+            "CANCELADO" => "icon-cancelado",
             _ => "icon-espera"
         };
     }

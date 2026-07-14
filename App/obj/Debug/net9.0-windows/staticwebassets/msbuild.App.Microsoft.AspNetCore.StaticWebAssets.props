@@ -12,12 +12,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>kawbvlh12s</Fingerprint>
-      <Integrity>PLuyVbLoKsx73Nw9/GFrLychTxfgtRhy/nzSjgbzijg=</Integrity>
+      <Fingerprint>kj9v16a0ew</Fingerprint>
+      <Integrity>EFsEFAOzSBQaxYnHL04nZpBiN6xL3KNYpQJeGqstwhY=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>97215</FileLength>
-      <LastWriteTime>Tue, 14 Jul 2026 06:35:14 GMT</LastWriteTime>
+      <FileLength>100192</FileLength>
+      <LastWriteTime>Tue, 14 Jul 2026 16:02:36 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\google-fonts.css'))">

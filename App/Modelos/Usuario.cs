@@ -13,6 +13,11 @@ public class Usuario
     public string Rol { get; set; } = string.Empty;
     public string Correo { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
+    public string Turno { get; set; } = string.Empty;
+    public string FechaContrato { get; set; } = string.Empty;
+    public decimal Salario { get; set; } = 0.0m;
+    public string Sucursal { get; set; } = string.Empty;
+    public int Edad { get; set; } = 0;
     public DateTime FechaRegistro { get; set; } = DateTime.Now;
     public bool Activo { get; set; } = true;
 
@@ -38,11 +43,18 @@ public class Usuario
     }
 
     /// <summary>
-    /// Determina si el usuario posee rol de Administrador.
+    /// Determina si el usuario posee rol de Master.
+    /// </summary>
+    public bool EsMaster => !string.IsNullOrEmpty(Rol) && 
+        Rol.Equals("Master", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Determina si el usuario posee rol de Administrador o Master.
     /// </summary>
     public bool EsAdmin => !string.IsNullOrEmpty(Rol) && 
         (Rol.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
-         Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
+         Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+         Rol.Equals("Master", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Determina si el usuario es un Empleado.
