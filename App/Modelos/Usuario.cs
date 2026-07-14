@@ -49,6 +49,11 @@ public class Usuario
     /// </summary>
     public bool EsEmpleado => !EsAdmin;
 
+    public bool PuedeGestionarPedidos => true;
+    public bool PuedeOperarMaquinas => true;
+    public bool PuedeGestionarInventario => true;
+    public bool PuedeVerFinanzas => EsAdmin;
+
     /// <summary>
     /// Valida si el objeto cumple con las reglas básicas de negocio.
     /// </summary>

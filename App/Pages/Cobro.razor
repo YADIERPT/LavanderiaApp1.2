@@ -21,57 +21,52 @@
             </div>
 
             <!-- Details Body -->
-            <div class="cobro-details-body">
-                <!-- Section 1: Detalle de Cliente -->
-                <div class="cobro-section-title">DETALLES DE CLIENTE</div>
+            <div class="cobro-details-body" style="padding: 28px 26px;">
+                <!-- Section 1: Información del Cliente -->
+                <div class="cobro-section-title" style="font-size: 14.5px; letter-spacing: 0.5px; margin-bottom: 18px;">INFORMACIÓN DEL CLIENTE</div>
                 
-                <div class="cobro-property-row">
-                    <span class="prop-label-light">CLIENTE</span>
-                    <span class="prop-val-dark font-bold">@ClientName</span>
+                <div class="cobro-property-row" style="margin-bottom: 16px;">
+                    <span class="prop-label-light" style="font-size: 14px;">CLIENTE</span>
+                    <span class="prop-val-dark font-bold" style="font-size: 17px;">@ClientName</span>
                 </div>
-                <div class="cobro-property-row">
-                    <span class="prop-label-light">NUMERO</span>
-                    <span class="prop-val-dark">@ClientPhone</span>
+                <div class="cobro-property-row" style="margin-bottom: 16px;">
+                    <span class="prop-label-light" style="font-size: 14px;">TELÉFONO</span>
+                    <span class="prop-val-dark" style="font-size: 16.5px;">@ClientPhone</span>
                 </div>
-                <div class="cobro-property-row">
-                    <span class="prop-label-light">ID</span>
-                    <span class="prop-val-dark">@ClientId</span>
-                </div>
-                <div class="cobro-property-row">
-                    <span class="prop-label-light">MAQUINA ASIGNADA</span>
-                    <span class="prop-val-dark">@AssignedMachine</span>
+                <div class="cobro-property-row" style="margin-bottom: 16px;">
+                    <span class="prop-label-light" style="font-size: 14px;">MÁQUINA ASIGNADA</span>
+                    <span class="prop-val-dark font-bold" style="font-size: 16.5px;">@AssignedMachine</span>
                 </div>
 
-                <!-- Section 2: Detalles Pedido -->
-                <div class="cobro-section-title" style="margin-top: 24px;">DETALLES PEDIDO</div>
-                
+                <!-- Section 2: Detalles y Servicios -->
+                <div class="cobro-section-title" style="margin-top: 32px; font-size: 14.5px; letter-spacing: 0.5px; margin-bottom: 18px;">DESGLOSE DEL SERVICIO</div>
                 <div class="dotted-details-list">
-                    <div class="dotted-row">
-                        <span class="dotted-label">CLIENTE</span>
+                    <div class="dotted-row" style="margin-bottom: 16px; font-size: 16px;">
+                        <span class="dotted-label">FECHA DE RECEPCIÓN</span>
                         <span class="dotted-dots"></span>
-                        <span class="dotted-val">@ClientName</span>
+                        <span class="dotted-val font-bold">@FormattedDate</span>
                     </div>
-                    <div class="dotted-row">
-                        <span class="dotted-label">PESO</span>
+                    <div class="dotted-row" style="margin-bottom: 16px; font-size: 16px;">
+                        <span class="dotted-label">PESO DE ROPA</span>
                         <span class="dotted-dots"></span>
-                        <span class="dotted-val">@Weight.ToString("0.0")kg</span>
+                        <span class="dotted-val">@Weight.ToString("0.0") kg</span>
                     </div>
-                    <div class="dotted-row">
-                        <span class="dotted-label">PRECIO POR KG</span>
+                    <div class="dotted-row" style="margin-bottom: 16px; font-size: 16px;">
+                        <span class="dotted-label">TARIFA POR KG</span>
                         <span class="dotted-dots"></span>
-                        <span class="dotted-val">@PricePerKg.ToString("$ 0.00")</span>
+                        <span class="dotted-val">@PricePerKg.ToString("$#,##0.00") MXN</span>
                     </div>
-                    <div class="dotted-row">
+                    <div class="dotted-row" style="margin-bottom: 16px; font-size: 16px;">
                         <span class="dotted-label">OTROS SERVICIOS</span>
                         <span class="dotted-dots"></span>
-                        <span class="dotted-val">@OtherServices.ToString("$00.00")</span>
+                        <span class="dotted-val">@OtherServices.ToString("$#,##0.00") MXN</span>
                     </div>
                 </div>
 
-                <!-- Total Row -->
-                <div class="cobro-total-container">
-                    <span class="cobro-total-label">TOTAL</span>
-                    <span class="cobro-total-amount">@TotalAmount.ToString("$0.00")</span>
+                <!-- Total Row (Único y Grande) -->
+                <div class="cobro-total-container" style="margin-top: 28px; padding-top: 24px;">
+                    <span class="cobro-total-label" style="font-size: 17px;">VALOR DEL PEDIDO</span>
+                    <span class="cobro-total-amount" style="font-size: 30px; font-weight: 900;">@CostoTotalPedido.ToString("$#,##0.00")</span>
                 </div>
             </div>
         </div>
@@ -92,74 +87,103 @@
             <h2 class="payment-title">@(EsTarjeta ? "TARJETA" : "EFECTIVO")</h2>
 
             <!-- Inner White Payment Form Box -->
-            <div class="payment-form-box">
+            <div class="payment-form-box" style="padding: 28px 32px; border-radius: 20px; width: 100%;">
+                <!-- Desglose Financiero Destacado -->
+                <div class="desglose-box" style="padding: 20px 24px; margin-bottom: 24px; border-radius: 16px;">
+                    @if (MontoYaAbonado > 0)
+                    {
+                        <div class="desglose-row" style="font-size: 16px; margin-bottom: 10px;">
+                            <span class="desglose-label">COSTO TOTAL DEL PEDIDO</span>
+                            <span class="desglose-val font-bold">@CostoTotalPedido.ToString("$#,##0.00") MXN</span>
+                        </div>
+                        <div class="desglose-row desglose-abono" style="font-size: 16px; margin-bottom: 12px;">
+                            <span class="desglose-abono-label" style="font-size: 15px;">
+                                <span class="material-symbols-rounded" style="font-size: 20px;">check_circle</span>
+                                ABONADO ANTES (ANTICIPO)
+                            </span>
+                            <span class="desglose-abono-val" style="font-size: 18px;">@MontoYaAbonado.ToString("$#,##0.00") MXN</span>
+                        </div>
+                        <div class="desglose-divider"></div>
+                        <div class="desglose-row" style="margin-top: 12px;">
+                            <span class="desglose-saldo-label" style="font-size: 17px; font-weight: 800;">SALDO A COBRAR</span>
+                            <span class="desglose-saldo-val" style="font-size: 28px; font-weight: 900;">@SaldoDeudor.ToString("$#,##0.00") MXN</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="desglose-row" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="desglose-saldo-label" style="font-size: 18px; font-weight: 800;">TOTAL A LIQUIDAR</span>
+                            <span class="desglose-saldo-val" style="font-size: 28px; font-weight: 900; color: #0058BC;">@SaldoDeudor.ToString("$#,##0.00") MXN</span>
+                        </div>
+                    }
+                </div>
+
                 @if (EsTarjeta)
                 {
-                    <!-- Recreación exacta de 'pago targeta.png' (2 campos) -->
-                    <div class="payment-grid-2x2" style="margin-bottom: 48px;">
-                        <!-- Monto a pagar -->
+                    <div class="payment-grid-2x2" style="margin-bottom: 24px; gap: 16px;">
+                        <!-- Folio -->
                         <div class="payment-field-group">
-                            <label class="payment-field-label">Monto a pagar</label>
-                            <div class="payment-input-display">
-                                @TotalAmount.ToString("$0.00") MXN
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Folio de Comprobante</label>
+                            <div class="payment-input-display folio-display" style="font-size: 18px; padding: 14px 18px; border-radius: 14px; font-weight: 700;">
+                                @FolioText
                             </div>
                         </div>
 
-                        <!-- Folio -->
+                        <!-- Fecha de Procesamiento -->
                         <div class="payment-field-group">
-                            <label class="payment-field-label">Folio</label>
-                            <div class="payment-input-display">
-                                @FolioText MXN
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Día y Hora de Procesamiento</label>
+                            <div class="payment-input-display" style="font-size: 16px; padding: 14px 18px; border-radius: 14px;">
+                                @DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")
                             </div>
                         </div>
                     </div>
                 }
                 else
                 {
-                    <!-- Recreación exacta de 'COBRO.png' (4 campos) -->
-                    <div class="payment-grid-2x2">
-                        <!-- Monto a pagar -->
+                    <div class="payment-grid-2x2" style="margin-bottom: 24px; gap: 16px;">
+                        <!-- Recibido (Paga con) -->
                         <div class="payment-field-group">
-                            <label class="payment-field-label">Monto a pagar</label>
-                            <div class="payment-input-display">
-                                @TotalAmount.ToString("$0.00") MXN
-                            </div>
-                        </div>
-
-                        <!-- Pago con -->
-                        <div class="payment-field-group">
-                            <label class="payment-field-label">Pago con</label>
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Recibido del Cliente ($)</label>
                             <div class="payment-input-wrapper">
-                                <input type="number" step="0.5" class="payment-input-edit" 
+                                <input type="number" step="1" class="payment-input-edit font-bold" 
+                                       style="font-size: 22px; padding: 14px 18px; height: 52px; border-radius: 14px;"
                                        @bind="AmountPaid" @bind:event="oninput" 
                                        placeholder="0.00" />
                             </div>
                         </div>
 
-                        <!-- Cambio -->
+                        <!-- Cambio a devolver -->
                         <div class="payment-field-group">
-                            <label class="payment-field-label">Cambio</label>
-                            <div class="payment-input-display">
-                                @CalculatedChange.ToString("$0.00") MXN
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Cambio a devolver ($)</label>
+                            <div class="payment-input-display cambio-display font-bold" style="font-size: 22px; padding: 14px 18px; height: 52px; border-radius: 14px; color: #10B981;">
+                                @CalculatedChange.ToString("$#,##0.00") MXN
                             </div>
                         </div>
 
                         <!-- Folio -->
                         <div class="payment-field-group">
-                            <label class="payment-field-label">Folio</label>
-                            <div class="payment-input-display">
-                                @FolioText MXN
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Folio de Comprobante</label>
+                            <div class="payment-input-display folio-display" style="font-size: 18px; padding: 14px 18px; height: 52px; border-radius: 14px; font-weight: 700;">
+                                @FolioText
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Procesamiento Automático -->
+                        <div class="payment-field-group">
+                            <label class="payment-field-label" style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">Procesamiento Automático</label>
+                            <div class="payment-input-display" style="font-size: 16px; padding: 14px 18px; height: 52px; border-radius: 14px; font-weight: 600;">
+                                @DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")
                             </div>
                         </div>
                     </div>
                 }
 
                 <!-- Bottom Action Buttons -->
-                <div class="payment-actions-row">
-                    <button class="btn-payment-submit" @onclick="ProcesarPago">
-                        PAGAR
+                <div class="payment-actions-row" style="margin-top: 20px; gap: 16px;">
+                    <button class="btn-payment-submit" style="padding: 16px 28px; font-size: 16px; font-weight: 800; border-radius: 14px;" @onclick="ProcesarPago">
+                        REGISTRAR COBRO Y FINALIZAR
                     </button>
-                    <button class="btn-payment-cancel" @onclick="Cancelar">
+                    <button class="btn-payment-cancel" style="padding: 16px 28px; font-size: 15px; font-weight: 700; border-radius: 14px;" @onclick="Cancelar">
                         CANCELAR
                     </button>
                 </div>
@@ -236,17 +260,20 @@
     private string ClientPhone = "9888346747";
     private string ClientId = "01";
     private string AssignedMachine = "#2";
+    private string FormattedDate = DateTime.Now.ToString("dd MMM yyyy, hh:mm tt");
 
     private double Weight = 12.5;
     private decimal PricePerKg = 16.00m;
     private decimal OtherServices = 0.00m;
 
-    private decimal TotalAmount => (decimal)Weight * PricePerKg + OtherServices;
+    private decimal CostoTotalPedido = 0m;
+    private decimal TotalAmount => CostoTotalPedido > 0 ? CostoTotalPedido : ((decimal)Weight * PricePerKg + OtherServices);
 
     private decimal AmountPaid = 200.00m;
+    private decimal MontoYaAbonado = 0m;
     private decimal SaldoDeudor = 0m;
     private decimal CalculatedChange => AmountPaid > SaldoDeudor ? AmountPaid - SaldoDeudor : 0.00m;
-    private string FolioText => SaldoDeudor.ToString("$0.00");
+    private string FolioText => $"FOL-{DateTime.Now.Year}-{OrderId:D4}";
 
     private PagoServicio _pagoServicio = new();
     private PedidoRepositorio _pedidoRepo = new();
@@ -274,6 +301,14 @@
             var pedidoDb = _pedidoRepo.ObtenerPorId(OrderId);
             if (pedidoDb != null)
             {
+                if (!pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+                {
+                    ToastService.Show("Acceso Restringido", $"El pedido #{OrderId:D2} está en estado '{pedidoDb.Estado}'. Solo se pueden finalizar y cobrar pedidos que estén 'Listo para entregar'.", "warning");
+                    NavManager.NavigateTo("/pedidos");
+                    return;
+                }
+
+                FormattedDate = pedidoDb.FechaRecepcion.ToString("dd MMM yyyy, hh:mm tt");
                 var clienteDb = _clienteRepo.ObtenerPorId(pedidoDb.IdCliente);
                 ClientName = clienteDb?.Nombre ?? $"Cliente #{pedidoDb.IdCliente}";
                 ClientPhone = clienteDb?.Telefono ?? "";
@@ -281,36 +316,35 @@
                 
                 var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
                 string machineName = !string.IsNullOrEmpty(pedidoDb.MaquinaAsignada) ? pedidoDb.MaquinaAsignada : "Sin Asignar";
-                if (string.IsNullOrEmpty(pedidoDb.MaquinaAsignada) && maquinasDb.Count > 0)
-                {
-                    var assignedMachine = maquinasDb[(OrderId - 1) % maquinasDb.Count];
-                    machineName = assignedMachine.Nombre;
-                }
                 AssignedMachine = machineName;
 
                 var detallesRepo = new DetallePedidoRepositorio();
                 var detalles = detallesRepo.ObtenerPorPedido(OrderId);
                 var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
-                Weight = lavadoDetalle != null ? lavadoDetalle.Cantidad : 10.0;
+                Weight = lavadoDetalle != null ? lavadoDetalle.Cantidad : detalles.Sum(d => d.Cantidad);
                 PricePerKg = lavadoDetalle != null ? lavadoDetalle.PrecioUnitario : activePrice;
                 OtherServices = detalles.Where(d => d.IdServicio != 1).Sum(d => d.Subtotal);
 
                 var pagos = _pagoRepo.ObtenerTodos().Where(pg => pg.IdPedido == OrderId).ToList();
-                decimal yaPagado = pagos.Sum(pg => pg.MontoPago);
+                decimal yaPagado = Math.Abs(pagos.Sum(pg => pg.MontoPago));
+                MontoYaAbonado = yaPagado;
                 
-                SaldoDeudor = pedidoDb.Total - yaPagado;
+                CostoTotalPedido = pedidoDb.Total > 0 ? pedidoDb.Total : ((decimal)Weight * PricePerKg + OtherServices);
+                SaldoDeudor = Math.Max(0m, CostoTotalPedido - yaPagado);
                 AmountPaid = SaldoDeudor;
             }
             else
             {
-                SaldoDeudor = TotalAmount;
-                AmountPaid = TotalAmount;
+                CostoTotalPedido = (decimal)Weight * PricePerKg + OtherServices;
+                SaldoDeudor = CostoTotalPedido;
+                AmountPaid = CostoTotalPedido;
             }
         }
         else
         {
-            SaldoDeudor = TotalAmount;
-            AmountPaid = TotalAmount;
+            CostoTotalPedido = (decimal)Weight * PricePerKg + OtherServices;
+            SaldoDeudor = CostoTotalPedido;
+            AmountPaid = CostoTotalPedido;
         }
     }
 

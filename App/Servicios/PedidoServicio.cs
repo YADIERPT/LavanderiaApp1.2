@@ -1,5 +1,6 @@
 using LavanderiaApp.Modelos;
 using LavanderiaApp.Repositorios;
+using LavanderiaApp.Servicios;
 using System.Collections.Generic;
 
 namespace LavanderiaApp;
@@ -76,6 +77,7 @@ public class PedidoServicio
         try
         {
             _pedidoRepo.ActualizarEstado(idPedido, nuevoEstado);
+            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(idPedido, nuevoEstado);
             return "Éxito";
         }
         catch (System.Exception ex)

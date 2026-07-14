@@ -40,14 +40,14 @@
 
     private void SeleccionarEfectivo()
     {
-        int orderId = Id > 0 ? Id : 2;
-        NavManager.NavigateTo($"/cobro/{orderId}");
+        if (Id <= 0) { NavManager.NavigateTo("/pedidos"); return; }
+        NavManager.NavigateTo($"/cobro/{Id}");
     }
 
     private void SeleccionarTarjeta()
     {
-        int orderId = Id > 0 ? Id : 2;
-        NavManager.NavigateTo($"/cobro/tarjeta/{orderId}");
+        if (Id <= 0) { NavManager.NavigateTo("/pedidos"); return; }
+        NavManager.NavigateTo($"/cobro/tarjeta/{Id}");
     }
 
     private void CerrarModal()

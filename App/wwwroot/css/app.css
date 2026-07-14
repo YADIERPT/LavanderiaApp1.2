@@ -500,6 +500,33 @@ body {
     pointer-events: none;
 }
 
+.global-search-item-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    padding: 14px 18px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.global-search-item-title {
+    font-size: 14.5px;
+    color: #0F172A;
+    font-weight: 700;
+}
+
+.app-layout.dark-theme .global-search-item-card,
+.dark-mode .global-search-item-card {
+    background: #111E38 !important;
+    border-color: rgba(0, 140, 255, 0.25) !important;
+}
+
+.app-layout.dark-theme .global-search-item-title,
+.dark-mode .global-search-item-title {
+    color: #F1F5F9 !important;
+}
+
 .top-navbar .navbar-right {
     display: flex;
     align-items: center;
@@ -1486,14 +1513,14 @@ body {
 
 .btn-order-status {
     width: 100%;
-    height: 44px;
+    height: 52px;
     background: #00E5FF;
     color: #0F3F82;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
@@ -1509,14 +1536,14 @@ body {
 
 .btn-order-edit {
     width: 100%;
-    height: 44px;
+    height: 52px;
     background: #ECF2FA;
     color: #0F3F82;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-family: 'Outfit', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -1529,8 +1556,8 @@ body {
     background: #DCE7F6;
 }
 
-.btn-order-edit span {
-    font-size: 18px;
+.btn-order-edit .material-symbols-rounded {
+    font-size: 20px;
 }
 
 /* FINALIZE ORDER BUTTON */
@@ -1538,18 +1565,18 @@ body {
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 .btn-finalize-order {
-    width: 80%;
-    height: 46px;
+    width: 100%;
+    height: 52px;
     background: #7FFF00;
     color: #0F3F82;
     border: none;
-    border-radius: 20px;
+    border-radius: 14px;
     font-family: 'Outfit', sans-serif;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 800;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(127, 255, 0, 0.2);
@@ -3112,8 +3139,10 @@ body {
    ========================================== */
 .cobro-page-container {
     display: flex;
+    flex-wrap: wrap;
     gap: 24px;
     width: 100%;
+    max-width: 1400px;
     align-items: flex-start;
     animation: fadeIn 0.35s ease-out;
 }
@@ -3250,10 +3279,10 @@ body {
 
 .cobro-payment-card {
     width: 100%;
-    max-width: 680px;
+    max-width: 780px;
     background: #FFFFFF;
     border-radius: 24px;
-    padding: 40px 48px;
+    padding: 32px 36px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3311,6 +3340,60 @@ body {
     background: #FFFFFF;
 }
 
+.desglose-box {
+    background: rgba(30, 136, 229, 0.06);
+    border: 1px solid rgba(30, 136, 229, 0.18);
+    border-radius: 16px;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+}
+.desglose-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.desglose-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #475569;
+}
+.desglose-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1E293B;
+}
+.desglose-abono {
+    color: #059669;
+}
+.desglose-abono-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #059669;
+}
+.desglose-abono-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #059669;
+}
+.desglose-divider {
+    border-top: 1px dashed rgba(100, 116, 139, 0.35);
+    margin: 10px 0;
+}
+.desglose-saldo-label {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1E293B;
+}
+.desglose-saldo-val {
+    font-size: 20px;
+    font-weight: 900;
+    color: #0056C6;
+}
+
 .payment-grid-2x2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3338,6 +3421,24 @@ body {
     font-weight: 700;
     color: #1E293B;
     border: 1px solid transparent;
+}
+
+.payment-input-display.folio-display {
+    color: #0284C7;
+    font-family: monospace;
+}
+.app-layout.dark-theme .payment-input-display.folio-display,
+.dark-mode .payment-input-display.folio-display {
+    color: #38BDF8 !important;
+}
+
+.payment-input-display.cambio-display {
+    color: #059669;
+    font-weight: 800;
+}
+.app-layout.dark-theme .payment-input-display.cambio-display,
+.dark-mode .payment-input-display.cambio-display {
+    color: #34D399 !important;
 }
 
 .payment-input-wrapper {
@@ -3413,6 +3514,93 @@ body {
     box-shadow: 0 8px 22px rgba(100, 116, 139, 0.4);
 }
 
+/* Dark Theme & Dark Mode Overrides for Cobro & Payment UI */
+.app-layout.dark-theme .cobro-details-card,
+.app-layout.dark-theme .cobro-payment-card,
+.app-layout.dark-theme .payment-form-box,
+.dark-mode .cobro-details-card,
+.dark-mode .cobro-payment-card,
+.dark-mode .payment-form-box {
+    background: #0E172C !important;
+    border-color: rgba(0, 88, 188, 0.28) !important;
+    color: #F1F5F9 !important;
+}
+
+.app-layout.dark-theme .cobro-section-title,
+.app-layout.dark-theme .payment-field-label,
+.app-layout.dark-theme .dotted-label,
+.app-layout.dark-theme .prop-label-light,
+.app-layout.dark-theme .desglose-label,
+.app-layout.dark-theme .cobro-total-label,
+.dark-mode .cobro-section-title,
+.dark-mode .payment-field-label,
+.dark-mode .dotted-label,
+.dark-mode .prop-label-light,
+.dark-mode .desglose-label,
+.dark-mode .cobro-total-label {
+    color: #93C5FD !important;
+}
+
+.app-layout.dark-theme .prop-val-dark,
+.app-layout.dark-theme .dotted-val,
+.app-layout.dark-theme .dotted-row,
+.app-layout.dark-theme .cobro-total-amount,
+.app-layout.dark-theme .payment-title,
+.app-layout.dark-theme .cobro-header-banner h2,
+.app-layout.dark-theme .desglose-val,
+.app-layout.dark-theme .desglose-saldo-label,
+.dark-mode .prop-val-dark,
+.dark-mode .dotted-val,
+.dark-mode .dotted-row,
+.dark-mode .cobro-total-amount,
+.dark-mode .payment-title,
+.dark-mode .cobro-header-banner h2,
+.dark-mode .desglose-val,
+.dark-mode .desglose-saldo-label {
+    color: #F1F5F9 !important;
+}
+
+.app-layout.dark-theme .dotted-dots,
+.dark-mode .dotted-dots {
+    border-bottom: 2px dotted rgba(147, 197, 253, 0.35) !important;
+}
+
+.app-layout.dark-theme .desglose-box,
+.dark-mode .desglose-box {
+    background: rgba(0, 88, 188, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+.app-layout.dark-theme .desglose-saldo-val,
+.dark-mode .desglose-saldo-val {
+    color: #38BDF8 !important;
+}
+
+.app-layout.dark-theme .desglose-abono,
+.app-layout.dark-theme .desglose-abono-label,
+.app-layout.dark-theme .desglose-abono-val,
+.dark-mode .desglose-abono,
+.dark-mode .desglose-abono-label,
+.dark-mode .desglose-abono-val {
+    color: #34D399 !important;
+}
+
+.app-layout.dark-theme .payment-input-display,
+.app-layout.dark-theme .payment-input-edit,
+.dark-mode .payment-input-display,
+.dark-mode .payment-input-edit {
+    background: #0A1128 !important;
+    color: #F1F5F9 !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+.app-layout.dark-theme .payment-input-edit:focus,
+.dark-mode .payment-input-edit:focus {
+    border-color: #38BDF8 !important;
+    background: #0F1D38 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+}
+
 /* ==========================================
    MODAL TIPO DE PAGO (TIPO DE PAGO.PNG REPLICA)
    ========================================== */
@@ -3450,6 +3638,18 @@ body {
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.8);
     animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-layout.dark-theme .tipo-pago-modal-card,
+.dark-mode .tipo-pago-modal-card {
+    background: #0E172C !important;
+    border: 1px solid rgba(0, 88, 188, 0.28) !important;
+    color: #F1F5F9 !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+.app-layout.dark-theme .tipo-pago-title,
+.dark-mode .tipo-pago-title {
+    color: #F1F5F9 !important;
 }
 
 @keyframes modalPop {
@@ -3536,62 +3736,69 @@ body {
 .btn-status-option {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     padding: 18px 24px;
-    border-radius: 14px;
-    border: none;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-family: 'Outfit', sans-serif;
-    font-size: 14.5px;
-    font-weight: 700;
+    font-size: 16.5px;
+    font-weight: 800;
     color: #FFFFFF;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: left;
 }
 
 .btn-status-option:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    filter: brightness(1.08);
 }
 
 .btn-status-option.active {
-    box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #0056C6;
+    box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px #2563EB, 0 10px 25px rgba(37, 99, 235, 0.3);
+    transform: scale(1.02);
 }
 
 .status-option-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #22C55E;
+    background: #FFFFFF;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
     flex-shrink: 0;
 }
 
-/* Status colors */
+/* Status colors premium palette */
 .btn-status-option.status-lavado {
-    background: #0080FF;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    color: #FFFFFF;
 }
 
 .btn-status-option.status-espera-lavado {
-    background: #FFB800;
-    color: #1E293B;
+    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    color: #FFFFFF;
 }
 
 .btn-status-option.status-secado {
-    background: #FF8A3D;
+    background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+    color: #FFFFFF;
 }
 
 .btn-status-option.status-espera-secado {
-    background: #6366F1;
+    background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+    color: #FFFFFF;
 }
 
 .btn-status-option.status-listo {
-    background: #22D3EE;
-    color: #0F172A;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #FFFFFF;
 }
 
 .btn-status-option.status-espera {
-    background: #94A3B8;
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    color: #FFFFFF;
 }
 
 /* Right Card: Estado Actual */
@@ -4074,11 +4281,33 @@ table td {
     border-bottom: 1px solid rgba(0, 88, 188, 0.15) !important;
     backdrop-filter: blur(10px) !important;
 }
-.app-layout.dark-theme .search-input {
+.app-layout.dark-theme .search-input,
+.dark-mode .search-input {
+    background-color: #111E38 !important;
     color: #F1F5F9 !important;
+    border: 1px solid rgba(0, 140, 255, 0.3) !important;
+}
+.app-layout.dark-theme .search-input:focus,
+.dark-mode .search-input:focus {
+    background-color: #0A1428 !important;
+    border-color: #00E5FF !important;
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2) !important;
+    color: #FFFFFF !important;
+}
+.app-layout.dark-theme .search-input::placeholder,
+.dark-mode .search-input::placeholder {
+    color: #64748B !important;
 }
 .app-layout.dark-theme .nav-action-btn-custom {
     background: rgba(30, 136, 229, 0.1) !important;
+    color: #93C5FD !important;
+}
+.app-layout.dark-theme .profile-name,
+.dark-mode .profile-name {
+    color: #F1F5F9 !important;
+}
+.app-layout.dark-theme .profile-role,
+.dark-mode .profile-role {
     color: #93C5FD !important;
 }
 
@@ -4106,27 +4335,98 @@ table td {
 }
 
 /* Form Inputs Dark Theme overrides */
-.app-layout.dark-theme .form-input-wrapper {
-    background: #111E38 !important;
-    border-color: rgba(0, 88, 188, 0.25) !important;
+.app-layout.dark-theme .form-input-wrapper,
+.dark-mode .form-input-wrapper {
+    background-color: #111E38 !important;
+    border: 1px solid rgba(0, 140, 255, 0.3) !important;
 }
-.app-layout.dark-theme .form-input-wrapper.disabled {
+.app-layout.dark-theme .form-input-wrapper.disabled,
+.dark-mode .form-input-wrapper.disabled {
     background: #0A1128 !important;
     border-color: rgba(0, 88, 188, 0.1) !important;
     opacity: 0.6 !important;
 }
-.app-layout.dark-theme .form-input-field {
+.app-layout.dark-theme .form-input-field,
+.dark-mode .form-input-field {
+    background-color: transparent !important;
     color: #F1F5F9 !important;
 }
-.app-layout.dark-theme .form-input {
-    background: #111E38 !important;
-    border-color: rgba(0, 88, 188, 0.25) !important;
+.app-layout.dark-theme .form-input-field::placeholder,
+.dark-mode .form-input-field::placeholder {
+    color: #64748B !important;
+}
+.app-layout.dark-theme .form-input,
+.dark-mode .form-input,
+.app-layout.dark-theme input[type="text"],
+.dark-mode input[type="text"],
+.app-layout.dark-theme input[type="number"],
+.dark-mode input[type="number"],
+.app-layout.dark-theme select,
+.dark-mode select,
+.app-layout.dark-theme input[type="search"],
+.dark-mode input[type="search"] {
+    background-color: #111E38 !important;
+    border-color: rgba(0, 140, 255, 0.3) !important;
     color: #F1F5F9 !important;
 }
-.app-layout.dark-theme .form-input:focus {
-    background: #0A1128 !important;
-    border-color: #3B82F6 !important;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+.app-layout.dark-theme .form-input option,
+.dark-mode .form-input option {
+    background-color: #0E172C !important;
+    color: #F1F5F9 !important;
+}
+.app-layout.dark-theme .form-input:focus,
+.dark-mode .form-input:focus,
+.app-layout.dark-theme input[type="text"]:focus,
+.dark-mode input[type="text"]:focus,
+.app-layout.dark-theme input[type="number"]:focus,
+.dark-mode input[type="number"]:focus,
+.app-layout.dark-theme select:focus,
+.dark-mode select:focus {
+    background-color: #0A1128 !important;
+    border-color: #00E5FF !important;
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2) !important;
+    color: #FFFFFF !important;
+}
+
+.app-layout.dark-theme textarea,
+.dark-mode textarea {
+    background-color: #111E38 !important;
+    color: #F1F5F9 !important;
+    border-color: rgba(0, 88, 188, 0.3) !important;
+}
+
+.app-layout.dark-theme select,
+.app-layout.dark-theme select.form-input-field,
+.app-layout.dark-theme select.select-field,
+.dark-mode select,
+.dark-mode select.form-input-field,
+.dark-mode select.select-field {
+    background-color: #111E38 !important;
+    color: #F1F5F9 !important;
+}
+.app-layout.dark-theme select option,
+.dark-mode select option {
+    background-color: #0E172C !important;
+    color: #F1F5F9 !important;
+}
+
+.anticipo-card-widget {
+    margin-top: 20px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 18px;
+    color: #1E293B;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: left;
+}
+.app-layout.dark-theme .anticipo-card-widget,
+.dark-mode .anticipo-card-widget {
+    background: #0E1A35 !important;
+    border: 1px solid rgba(0, 88, 188, 0.2) !important;
+    color: #F1F5F9 !important;
 }
 
 /* Row Items (Pedidos, Clientes, Empleados) - Rich Indigo Blue */

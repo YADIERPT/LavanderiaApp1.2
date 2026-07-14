@@ -69,10 +69,16 @@ public class Pedido
     /// </summary>
     public TimeSpan TiempoTranscurrido => DateTime.Now - FechaRecepcion;
 
-    // Estados rápidos
-    public bool EsEnEspera => string.Equals(Estado, "En espera", StringComparison.OrdinalIgnoreCase);
-    public bool EsEnProceso => string.Equals(Estado, "En proceso", StringComparison.OrdinalIgnoreCase);
-    public bool EsListo => string.Equals(Estado, "Listo", StringComparison.OrdinalIgnoreCase);
+    // Estados rápidos coherentes en toda la aplicación
+    public bool EsEnEspera => string.Equals(Estado, "En espera", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(Estado, "En espera de lavado", StringComparison.OrdinalIgnoreCase);
+    public bool EsEnLavado => string.Equals(Estado, "En Lavado", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(Estado, "Lavando", StringComparison.OrdinalIgnoreCase);
+    public bool EsEnSecado => string.Equals(Estado, "En Secado", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(Estado, "Secando", StringComparison.OrdinalIgnoreCase);
+    public bool EsEnProceso => EsEnLavado || EsEnSecado || string.Equals(Estado, "En proceso", StringComparison.OrdinalIgnoreCase);
+    public bool EsListo => string.Equals(Estado, "Listo", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(Estado, "Listo para entregar", StringComparison.OrdinalIgnoreCase);
     public bool EsEntregado => string.Equals(Estado, "Entregado", StringComparison.OrdinalIgnoreCase);
     public bool EsCancelado => string.Equals(Estado, "Cancelado", StringComparison.OrdinalIgnoreCase);
 

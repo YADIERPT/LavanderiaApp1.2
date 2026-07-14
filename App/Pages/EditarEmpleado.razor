@@ -258,16 +258,16 @@
     private string Estado = "ACTIVO";
     private string Usuario = "";
     private string Rol = "";
-    private string Password = "password123";
-    private string PasswordDisplay => string.IsNullOrEmpty(Password) ? "password123" : Password;
+    private string Password = "";
+    private string PasswordDisplay => string.IsNullOrEmpty(Password) ? "(sin contraseña)" : "••••••••";
     private string Telefono = "";
     private string Correo = "";
-    private int? Edad = 19;
+    private int? Edad = null;
     private string Turno = "";
     private string FechaContrato = "";
     private string SalarioAnual = "0.00";
     private string Sucursal = "";
-    private string UltimoAcceso = "Hace 10 horas";
+    private string UltimoAcceso = "Sesión activa";
     private string? AvatarImageData;
 
     // Variables para el modal de cambio de contraseña
@@ -286,10 +286,10 @@
                 Nombre = user.Nombre;
                 Usuario = user.NombreUsuario;
                 Password = user.Password;
-                Rol = string.IsNullOrEmpty(user.Rol) ? "Recepcionista" : user.Rol;
+                Rol = string.IsNullOrEmpty(user.Rol) ? "Operador" : user.Rol;
                 Estado = "ACTIVO";
                 Codigo = $"EMP-{user.IdUsuario:D2}";
-                UltimoAcceso = "Hace 10 horas";
+                UltimoAcceso = "Sesión registrada";
             }
         }
         else

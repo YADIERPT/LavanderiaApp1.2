@@ -32,48 +32,69 @@ else
                     <span class="material-symbols-rounded">grid_view</span>
                     <span>General</span>
                 </NavLink>
-                <NavLink href="/pedidos" class="nav-item" ActiveClass="active">
-                    <span class="material-symbols-rounded">local_laundry_service</span>
-                    <span>Pedidos</span>
-                </NavLink>
-                <NavLink href="/clientes" class="nav-item" ActiveClass="active">
-                    <span class="material-symbols-rounded">group</span>
-                    <span>Clientes</span>
-                </NavLink>
-                <NavLink href="/empleados" class="nav-item" ActiveClass="active">
-                    <span class="material-symbols-rounded">engineering</span>
-                    <span>Empleados</span>
-                </NavLink>
-                <NavLink href="/finanzas" class="nav-item" ActiveClass="active">
-                    <span class="material-symbols-rounded">payments</span>
-                    <span>Finanzas</span>
-                </NavLink>
-                <NavLink href="/inventario" class="nav-item" ActiveClass="active">
-                    <span class="material-symbols-rounded">inventory_2</span>
-                    <span>Inventario</span>
-                </NavLink>
+                @if (TienePermisoMenu("Pedidos"))
+                {
+                    <NavLink href="/pedidos" class="nav-item" ActiveClass="active">
+                        <span class="material-symbols-rounded">local_laundry_service</span>
+                        <span>Pedidos</span>
+                    </NavLink>
+                }
+                @if (TienePermisoMenu("Clientes"))
+                {
+                    <NavLink href="/clientes" class="nav-item" ActiveClass="active">
+                        <span class="material-symbols-rounded">group</span>
+                        <span>Clientes</span>
+                    </NavLink>
+                }
+                @if (TienePermisoMenu("Empleados"))
+                {
+                    <NavLink href="/empleados" class="nav-item" ActiveClass="active">
+                        <span class="material-symbols-rounded">engineering</span>
+                        <span>Empleados</span>
+                    </NavLink>
+                }
+                @if (TienePermisoMenu("Finanzas"))
+                {
+                    <NavLink href="/finanzas" class="nav-item" ActiveClass="active">
+                        <span class="material-symbols-rounded">payments</span>
+                        <span>Finanzas</span>
+                    </NavLink>
+                }
+                @if (TienePermisoMenu("Inventario"))
+                {
+                    <NavLink href="/inventario" class="nav-item" ActiveClass="active">
+                        <span class="material-symbols-rounded">inventory_2</span>
+                        <span>Inventario</span>
+                    </NavLink>
+                }
             </nav>
 
-            <!-- Operaciones de Caja Chica siempre visibles -->
-            <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(194, 198, 213, 0.3); margin-top: auto; width: 100%; box-sizing: border-box;">
-                <span style="font-size: 10px; font-weight: 700; color: #5A6A85; letter-spacing: 0.5px; text-transform: uppercase;">Caja Chica</span>
-                <button class="btn-sidebar-action" @onclick="AbrirModalGasto" style="display: flex; align-items: center; gap: 8px; background: rgba(0, 88, 188, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #0058BC; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px;">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">price_change</span>
-                    <span>Registrar Gasto</span>
-                </button>
-                <button class="btn-sidebar-action" @onclick="AbrirModalCorte" style="display: flex; align-items: center; gap: 8px; background: rgba(220, 38, 38, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #DC2626; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px; margin-top: 2px;">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">lock</span>
-                    <span>Cerrar Turno</span>
-                </button>
-            </div>
+            @if (TienePermisoMenu("CajaChica"))
+            {
+                <!-- Operaciones de Caja Chica siempre visibles para Admin y Recepcionista -->
+                <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(194, 198, 213, 0.3); margin-top: auto; width: 100%; box-sizing: border-box;">
+                    <span style="font-size: 10px; font-weight: 700; color: #5A6A85; letter-spacing: 0.5px; text-transform: uppercase;">Caja Chica</span>
+                    <button class="btn-sidebar-action" @onclick="AbrirModalGasto" style="display: flex; align-items: center; gap: 8px; background: rgba(0, 88, 188, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #0058BC; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">price_change</span>
+                        <span>Registrar Gasto</span>
+                    </button>
+                    <button class="btn-sidebar-action" @onclick="AbrirModalCorte" style="display: flex; align-items: center; gap: 8px; background: rgba(220, 38, 38, 0.08); border: none; border-radius: 12px; padding: 10px 14px; width: 100%; color: #DC2626; font-weight: 700; font-size: 12.5px; text-align: left; cursor: pointer; transition: all 0.2s; box-sizing: border-box; height: 44px; margin-top: 2px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">lock</span>
+                        <span>Cerrar Turno</span>
+                    </button>
+                </div>
+            }
 
-            <!-- Sidebar Footer (Configuraciones) -->
-            <div class="sidebar-footer" style="padding: 12px 16px; border-top: 1px solid rgba(194, 198, 213, 0.3); width: 100%; box-sizing: border-box;">
-                <NavLink href="/configuraciones" class="nav-item" ActiveClass="active" style="margin: 0; width: 100%;">
-                    <span class="material-symbols-rounded">settings</span>
-                    <span>Configuraciones</span>
-                </NavLink>
-            </div>
+            @if (TienePermisoMenu("Configuraciones"))
+            {
+                <!-- Sidebar Footer (Configuraciones) -->
+                <div class="sidebar-footer" style="padding: 12px 16px; border-top: 1px solid rgba(194, 198, 213, 0.3); width: 100%; box-sizing: border-box; margin-top: @(TienePermisoMenu("CajaChica") ? "0" : "auto");">
+                    <NavLink href="/configuraciones" class="nav-item" ActiveClass="active" style="margin: 0; width: 100%;">
+                        <span class="material-symbols-rounded">settings</span>
+                        <span>Configuraciones</span>
+                    </NavLink>
+                </div>
+            }
         </aside>
 
         <!-- MAIN BODY -->
@@ -81,10 +102,10 @@ else
             <!-- TOP NAVBAR -->
             <header class="top-navbar">
                 <div class="navbar-left">
-                    <form @onsubmit="EjecutarBusquedaGlobal" class="search-bar-container">
-                        <span class="material-symbols-rounded search-icon">search</span>
-                        <input type="text" placeholder="Buscar pedidos, máquinas o clientes..." 
-                               class="search-input" @bind="GlobalSearchQuery" />
+                    <form @onsubmit="EjecutarBusquedaGlobal" @onsubmit:preventDefault="true" class="search-bar-container">
+                        <span class="material-symbols-rounded search-icon" style="cursor: pointer;" @onclick="EjecutarBusquedaGlobal" title="Buscar">search</span>
+                        <input type="text" placeholder="Buscar pedidos, clientes o insumos..." 
+                               class="search-input" @bind="GlobalSearchQuery" @bind:event="oninput" @onkeydown="OnSearchKeyDown" />
                     </form>
                 </div>
                 <div class="navbar-right">
@@ -347,6 +368,119 @@ else
             </div>
         </div>
     </div>
+<!-- Modal Búsqueda Global -->
+@if (ShowGlobalSearchModal)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => ShowGlobalSearchModal = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 720px; width: 92%; padding: 32px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="section-header-custom" style="width: 100%; margin-bottom: 20px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="section-icon-wrapper bg-blue-tint">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div>
+                        <h3 class="section-title-custom" style="font-size: 18px; margin: 0;">Resultados de Búsqueda</h3>
+                        <span style="font-size: 12.5px; color: #64748B;">Coincidencias para: "@GlobalSearchQuery"</span>
+                    </div>
+                </div>
+                <button class="btn-clear-filter" @onclick="() => ShowGlobalSearchModal = false" style="background: none; border: none; cursor: pointer;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 20px; width: 100%; padding-right: 4px; text-align: left;">
+                <!-- Pedidos -->
+                @if (GlobalSearchPedidos.Count > 0)
+                {
+                    <div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: #3B82F6; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">receipt_long</span>
+                            PEDIDOS ENCONTRADOS (@GlobalSearchPedidos.Count)
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @foreach (var p in GlobalSearchPedidos)
+                            {
+                                <div class="global-search-item-card">
+                                    <div>
+                                        <strong class="global-search-item-title">Pedido #@p.IdPedido.ToString("D2") - @(p.Cliente?.Nombre ?? "Cliente general")</strong>
+                                        <div style="font-size: 12px; color: #64748B;">Estado: @p.Estado | Fecha: @p.FechaRecepcion.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <strong class="global-search-item-title">@p.Total.ToString("$#,##0.00")</strong>
+                                        <button class="btn-primary-custom" style="padding: 6px 14px; font-size: 12px;" @onclick="() => IrAPedidoDesdeBusqueda(p.IdPedido)">
+                                            Ver Pedido
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Clientes -->
+                @if (GlobalSearchClientes.Count > 0)
+                {
+                    <div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: #10B981; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">person</span>
+                            CLIENTES ENCONTRADOS (@GlobalSearchClientes.Count)
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @foreach (var c in GlobalSearchClientes)
+                            {
+                                <div class="global-search-item-card">
+                                    <div>
+                                        <strong class="global-search-item-title">@c.Nombre</strong>
+                                        <div style="font-size: 12px; color: #64748B;">Tel: @c.Telefono | @c.Direccion</div>
+                                    </div>
+                                    <button class="btn-primary-custom" style="padding: 6px 14px; font-size: 12px; background: #10B981;" @onclick="() => IrAClientesDesdeBusqueda(c.Nombre)">
+                                        Ver en Clientes
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Insumos -->
+                @if (GlobalSearchInsumos.Count > 0)
+                {
+                    <div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: #F59E0B; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">inventory_2</span>
+                            INSUMOS DE INVENTARIO (@GlobalSearchInsumos.Count)
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @foreach (var ins in GlobalSearchInsumos)
+                            {
+                                <div class="global-search-item-card">
+                                    <div>
+                                        <strong class="global-search-item-title">@ins.Nombre</strong>
+                                        <div style="font-size: 12px; color: #64748B;">Categoría: @ins.Categoria</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <span class="global-search-item-title" style="font-size: 13px;">@ins.Cantidad @ins.UnidadMedida</span>
+                                        <button class="btn-primary-custom" style="padding: 6px 14px; font-size: 12px; background: #F59E0B;" @onclick="IrAInventarioDesdeBusqueda">
+                                            Ver Inventario
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (GlobalSearchPedidos.Count == 0 && GlobalSearchClientes.Count == 0 && GlobalSearchInsumos.Count == 0)
+                {
+                    <div style="text-align: center; padding: 36px 0; color: #64748B;">
+                        <span class="material-symbols-rounded" style="font-size: 48px; color: #94A3B8; margin-bottom: 8px; display: block;">search_off</span>
+                        <div style="font-weight: 600; font-size: 15px; color: #334155;">No se encontraron resultados</div>
+                        <p style="font-size: 13px; margin-top: 4px;">No hay pedidos, clientes o insumos que coincidan con "@GlobalSearchQuery".</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -370,6 +504,10 @@ else
     private System.Threading.Timer? ToastTimer;
 
     private string GlobalSearchQuery = "";
+    private bool ShowGlobalSearchModal = false;
+    private List<Pedido> GlobalSearchPedidos = new();
+    private List<Cliente> GlobalSearchClientes = new();
+    private List<InsumoItem> GlobalSearchInsumos = new();
 
     // Variables de Registro de Gastos
     private bool MostrarModalGasto = false;
@@ -547,6 +685,25 @@ else
         };
     }
 
+    private bool TienePermisoMenu(string menu)
+    {
+        var u = SessionManager.UsuarioActual;
+        if (u == null || u.EsAdmin) return true; // Administrador tiene acceso total a todo
+
+        return menu switch
+        {
+            "General" => true,
+            "Pedidos" => true,
+            "Clientes" => true,
+            "Inventario" => true,
+            "CajaChica" => true,
+            "Empleados" => false,        // Solo Administrador
+            "Finanzas" => false,         // Solo Administrador
+            "Configuraciones" => true,   // Acceso a configuraciones básicas como Tema
+            _ => true
+        };
+    }
+
     private void HandleShowToast(string title, string message, string type)
     {
         InvokeAsync(() =>
@@ -571,12 +728,169 @@ else
         CurrentToast = null;
     }
 
+    private void OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == "NumpadEnter")
+        {
+            EjecutarBusquedaGlobal();
+        }
+    }
+
     private void EjecutarBusquedaGlobal()
     {
-        if (!string.IsNullOrWhiteSpace(GlobalSearchQuery))
+        if (string.IsNullOrWhiteSpace(GlobalSearchQuery)) return;
+        
+        string q = GlobalSearchQuery.Trim();
+        string qLower = q.ToLowerInvariant();
+
+        // 1) ¿Es búsqueda de máquina? (ej. "maquina 1", "máquina 1", "lavadora 1", "secadora 1")
+        if (qLower.Contains("maquina") || qLower.Contains("máquina") || qLower.Contains("lavadora") || qLower.Contains("secadora"))
         {
-            NavManager.NavigateTo("/pedidos");
+            string numStr = new string(q.Where(char.IsDigit).ToArray());
+            string param = !string.IsNullOrEmpty(numStr) ? numStr : q;
+            GlobalSearchQuery = "";
+            ShowGlobalSearchModal = false;
+            NavManager.NavigateTo($"/maquinas?q={Uri.EscapeDataString(param)}");
+            return;
         }
+
+        // 2) ¿Es búsqueda directa de pedido por palabra clave? (ej. "pedido 3", "pedido #3", "ped 3", "orden 3", "#3")
+        if (qLower.StartsWith("pedido") || qLower.StartsWith("ped") || qLower.StartsWith("orden") || qLower.StartsWith("#"))
+        {
+            string numStr = new string(q.Where(char.IsDigit).ToArray());
+            if (int.TryParse(numStr, out int idPed))
+            {
+                GlobalSearchQuery = "";
+                ShowGlobalSearchModal = false;
+                NavManager.NavigateTo($"/pedidos/editar/{idPed}");
+                return;
+            }
+        }
+
+        // 3) ¿Es un número entero exacto? (ej. "3", "03") -> Llevar directamente al Pedido #3 si existe
+        if (int.TryParse(q, out int idDirecto))
+        {
+            try
+            {
+                var repoPedidos = new PedidoRepositorio();
+                var todos = repoPedidos.ObtenerTodos();
+                if (todos.Any(p => p.IdPedido == idDirecto))
+                {
+                    GlobalSearchQuery = "";
+                    ShowGlobalSearchModal = false;
+                    NavManager.NavigateTo($"/pedidos/editar/{idDirecto}");
+                    return;
+                }
+            }
+            catch { }
+        }
+
+        // 4) ¿Coincide directamente con algún cliente por nombre o teléfono?
+        try
+        {
+            var repoClientes = new ClienteRepositorio();
+            var clientes = repoClientes.ListarTodo();
+            var matchCliente = clientes.FirstOrDefault(c =>
+                (c.Nombre ?? "").Equals(q, StringComparison.OrdinalIgnoreCase) ||
+                (c.Nombre ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (c.Telefono ?? "").Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (matchCliente != null)
+            {
+                GlobalSearchQuery = "";
+                ShowGlobalSearchModal = false;
+                NavManager.NavigateTo($"/clientes?q={Uri.EscapeDataString(matchCliente.Nombre ?? q)}");
+                return;
+            }
+        }
+        catch { }
+
+        // 5) ¿Coincide directamente con algún empleado por nombre o código?
+        try
+        {
+            var repoUsuarios = new UsuarioRepositorio();
+            var empleados = repoUsuarios.ListarTodo();
+            var matchEmpleado = empleados.FirstOrDefault(e =>
+                (e.Nombre ?? "").Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (matchEmpleado != null)
+            {
+                GlobalSearchQuery = "";
+                ShowGlobalSearchModal = false;
+                NavManager.NavigateTo($"/empleados?q={Uri.EscapeDataString(matchEmpleado.Nombre ?? q)}");
+                return;
+            }
+        }
+        catch { }
+
+        // 6) Si no es un salto directo, poblamos los resultados del modal por si acaso
+        Dictionary<int, Cliente> dictClientes = new();
+        try
+        {
+            var repoClientes = new ClienteRepositorio();
+            var todosClientes = repoClientes.ListarTodo();
+            dictClientes = todosClientes.ToDictionary(c => c.IdCliente, c => c);
+
+            GlobalSearchClientes = todosClientes.Where(c =>
+                (c.Nombre ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (c.Telefono ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (c.Direccion ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)
+            ).Take(15).ToList();
+        }
+        catch { GlobalSearchClientes = new(); }
+
+        try
+        {
+            var repoPedidos = new PedidoRepositorio();
+            var todosPedidos = repoPedidos.ObtenerTodos();
+            foreach (var p in todosPedidos)
+            {
+                if (dictClientes.TryGetValue(p.IdCliente, out var cli))
+                {
+                    p.Cliente = cli;
+                }
+            }
+
+            GlobalSearchPedidos = todosPedidos.Where(p =>
+                p.IdPedido.ToString().Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                ("PEDIDO #" + p.IdPedido).Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                ("PEDIDO " + p.IdPedido).Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (p.Cliente?.Nombre ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (p.Cliente?.Telefono ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (p.Estado ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (p.MaquinaAsignada ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)
+            ).OrderByDescending(p => p.IdPedido).Take(15).ToList();
+        }
+        catch { GlobalSearchPedidos = new(); }
+
+        try
+        {
+            var repoInsumos = new InventarioRepositorio();
+            var todosInsumos = repoInsumos.ObtenerTodos();
+            GlobalSearchInsumos = todosInsumos.Where(i =>
+                (i.Nombre ?? "").Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (i.Categoria ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)
+            ).Take(15).ToList();
+        }
+        catch { GlobalSearchInsumos = new(); }
+
+        ShowGlobalSearchModal = true;
+    }
+
+    private void IrAPedidoDesdeBusqueda(int idPedido)
+    {
+        ShowGlobalSearchModal = false;
+        NavManager.NavigateTo($"/pedidos/editar/{idPedido}");
+    }
+
+    private void IrAClientesDesdeBusqueda(string nombreCliente)
+    {
+        ShowGlobalSearchModal = false;
+        NavManager.NavigateTo($"/clientes?q={Uri.EscapeDataString(nombreCliente)}");
+    }
+
+    private void IrAInventarioDesdeBusqueda()
+    {
+        ShowGlobalSearchModal = false;
+        NavManager.NavigateTo("/inventario");
     }
 
     private string ObtenerNombreNegocioLinea1()
@@ -778,4 +1092,5 @@ else
         // Devolver una lista combinada ordenada con los 10 registros más recientes
         return list.Take(10).ToList();
     }
+}
 }

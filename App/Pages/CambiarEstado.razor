@@ -90,26 +90,127 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación: Listo para entregar -->
+@if (MostrarModalConfirmarListo)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalConfirmarListo = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 40px 36px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon" style="color: #3B82F6;">check_circle</span>
+                    <span class="online-status-dot" style="background: #3B82F6;"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 19px; text-transform: uppercase;">
+                ¿CONFIRMAR LISTO PARA ENTREGAR?
+            </h2>
+            <p style="color: #64748B; font-size: 14.5px; margin-bottom: 24px; text-align: center; line-height: 1.5;">
+                Una vez marcado como <strong>Listo para entregar</strong>, el pedido ya habrá terminado sus procesos de lavado y secado, y <strong>ya no podrá cambiarse a ningún estado anterior</strong>.
+            </p>
+
+            <div style="display: flex; gap: 14px; justify-content: center; width: 100%;">
+                <button class="btn-cancelar" style="padding: 12px 24px;" @onclick="() => MostrarModalConfirmarListo = false">
+                    Cancelar
+                </button>
+                <button class="btn-guardar" style="padding: 12px 28px; background: #3B82F6; color: white;" @onclick="ConfirmarListoParaEntregar">
+                    Sí, marcar como Listo
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de Justificación de Retroceso -->
+@if (MostrarModalJustificacionRetroceso)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalJustificacionRetroceso = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 520px; padding: 40px 36px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon" style="color: #F59E0B;">history</span>
+                    <span class="online-status-dot" style="background: #F59E0B;"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 19px; text-transform: uppercase;">
+                JUSTIFICAR RETROCESO DE ESTADO
+            </h2>
+            <p style="color: #64748B; font-size: 14px; margin-bottom: 18px; text-align: center; line-height: 1.5;">
+                Está cambiando el pedido del estado <strong>'@EstadoOriginal'</strong> a <strong>'@SelectedStatus'</strong>.<br />
+                Por favor, explique el motivo del regreso (ej. error de ciclo, secado incompleto):
+            </p>
+
+            <div style="width: 100%; margin-bottom: 24px;">
+                <textarea @bind="MotivoRetroceso" placeholder="Escriba la justificación aquí..." 
+                          style="width: 100%; height: 90px; border-radius: 12px; border: 1.5px solid #CBD5E1; padding: 12px; font-size: 14px; font-family: inherit; resize: none; outline: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 14px; justify-content: center; width: 100%;">
+                <button class="btn-cancelar" style="padding: 12px 24px;" @onclick="() => MostrarModalJustificacionRetroceso = false">
+                    Cancelar
+                </button>
+                <button class="btn-guardar" style="padding: 12px 28px; background: #F59E0B; color: white;" @onclick="ConfirmarRetrocesoEstado">
+                    Registrar y Regresar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
 
-    private int OrderId = 3;
+    private int OrderId = 0;
     private string SelectedStatus = "En Lavado";
+    private string EstadoOriginal = "En espera";
+    private bool MostrarModalConfirmarListo = false;
+    private bool MostrarModalJustificacionRetroceso = false;
+    private string MotivoRetroceso = "";
+
     private PedidoRepositorio _pedidoRepo = new();
 
     protected override void OnInitialized()
     {
-        if (Id > 0)
+        if (Id <= 0)
         {
-            OrderId = Id;
+            NavManager.NavigateTo("/pedidos");
+            return;
         }
 
+        OrderId = Id;
         var pedidoDb = _pedidoRepo.ObtenerPorId(OrderId);
-        if (pedidoDb != null && !string.IsNullOrEmpty(pedidoDb.Estado))
+        if (pedidoDb != null)
         {
-            SelectedStatus = pedidoDb.Estado;
+            if (pedidoDb.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) ||
+                pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            {
+                ToastService.Show("Estado Bloqueado", $"Este pedido está en estado '{pedidoDb.Estado}' y ya no puede regresar a etapas anteriores ni modificarse.", "warning");
+                NavManager.NavigateTo("/pedidos");
+                return;
+            }
+            if (!string.IsNullOrEmpty(pedidoDb.Estado))
+            {
+                EstadoOriginal = pedidoDb.Estado;
+                SelectedStatus = pedidoDb.Estado;
+            }
         }
+    }
+
+    private int ObtenerNivelEstado(string estado)
+    {
+        return estado switch
+        {
+            "En espera" => 1,
+            "En espera de lavado" => 1,
+            "En Lavado" => 2,
+            "En espera de secado" => 3,
+            "En Secado" => 4,
+            "Listo para entregar" => 5,
+            "Entregado" => 6,
+            _ => 1
+        };
     }
 
     private void SelectStatus(string nuevoEstado)
@@ -124,6 +225,49 @@
 
     private void GuardarCambios()
     {
+        if (SelectedStatus == EstadoOriginal)
+        {
+            NavManager.NavigateTo("/pedidos");
+            return;
+        }
+
+        // 1. Si intenta poner "Listo para entregar", mostrar modal de confirmación
+        if (SelectedStatus.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) && !EstadoOriginal.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+        {
+            MostrarModalConfirmarListo = true;
+            return;
+        }
+
+        // 2. Si intenta regresar a un estado anterior en la jerarquía (Retroceso)
+        if (ObtenerNivelEstado(SelectedStatus) < ObtenerNivelEstado(EstadoOriginal))
+        {
+            MotivoRetroceso = "";
+            MostrarModalJustificacionRetroceso = true;
+            return;
+        }
+
+        EjecutarCambioEstado();
+    }
+
+    private void ConfirmarListoParaEntregar()
+    {
+        MostrarModalConfirmarListo = false;
+        EjecutarCambioEstado();
+    }
+
+    private void ConfirmarRetrocesoEstado()
+    {
+        if (string.IsNullOrWhiteSpace(MotivoRetroceso))
+        {
+            ToastService.Show("Motivo Requerido", "Debe ingresar una justificación para regresar a un proceso anterior.", "warning");
+            return;
+        }
+        MostrarModalJustificacionRetroceso = false;
+        EjecutarCambioEstado();
+    }
+
+    private void EjecutarCambioEstado()
+    {
         try
         {
             _pedidoRepo.ActualizarEstado(OrderId, SelectedStatus);
@@ -132,8 +276,15 @@
             {
                 InventarioAutomatizacion.ProcesarConsumoInventario(OrderId);
             }
+
+            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(OrderId, SelectedStatus);
             
-            ToastService.Show("¡Hecho!", $"Estado del Pedido #{OrderId:D2} cambiado exitosamente a '{SelectedStatus}'", "success");
+            string msj = $"Estado del Pedido #{OrderId:D2} cambiado a '{SelectedStatus}'";
+            if (!string.IsNullOrWhiteSpace(MotivoRetroceso))
+            {
+                msj += $" (Justificación: {MotivoRetroceso})";
+            }
+            ToastService.Show("¡Hecho!", msj, "success");
             NavManager.NavigateTo("/pedidos");
         }
         catch (Exception ex)

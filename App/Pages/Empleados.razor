@@ -1,6 +1,7 @@
 @page "/empleados"
 @using System.Windows
 @using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
 @inject NavigationManager NavManager
 
 <div class="employees-page-container">
@@ -250,7 +251,7 @@
     private bool ShowFilterModal = false;
     private string SearchText = "";
     private string SelectedPosFilter = "TODOS";
-    private readonly string[] PosOptions = new[] { "TODOS", "Recepcionista", "Lavadero", "Supervisor" };
+    private readonly string[] PosOptions = new[] { "TODOS", "Administrador", "Empleado" };
 
     private List<EmployeeItem> Employees = new();
     private EmployeeItem SelectedEmployee;
@@ -258,7 +259,7 @@
     private UsuarioRepositorio _usuarioRepo = new();
 
     private IEnumerable<EmployeeItem> FilteredEmployees => Employees.Where(e =>
-        (SelectedPosFilter == "TODOS" || e.Posicion.Equals(SelectedPosFilter, StringComparison.OrdinalIgnoreCase)) &&
+        (SelectedPosFilter == "TODOS" || e.Posicion.Equals(SelectedPosFilter, StringComparison.OrdinalIgnoreCase) || e.Rol.Equals(SelectedPosFilter, StringComparison.OrdinalIgnoreCase)) &&
         (string.IsNullOrWhiteSpace(SearchText) ||
          e.Nombre.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
          e.Codigo.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
@@ -267,7 +268,40 @@
 
     protected override void OnInitialized()
     {
+        if (SessionManager.UsuarioActual != null && !SessionManager.UsuarioActual.EsAdmin)
+        {
+            NavManager.NavigateTo("/dashboard");
+            return;
+        }
         CargarEmpleados();
+        ProcesarParametrosURL();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ProcesarParametrosURL();
+    }
+
+    private void ProcesarParametrosURL()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var q = uri.Query.TrimStart('?');
+            foreach (var p in q.Split('&'))
+            {
+                var kv = p.Split('=');
+                if (kv.Length == 2 && kv[0].Equals("q", StringComparison.OrdinalIgnoreCase))
+                {
+                    SearchText = Uri.UnescapeDataString(kv[1]);
+                    var match = FilteredEmployees.FirstOrDefault();
+                    if (match != null)
+                    {
+                        SelectedEmployee = match;
+                    }
+                }
+            }
+        }
     }
 
     private void CargarEmpleados()
@@ -280,8 +314,8 @@
             Codigo = $"EMP-{u.IdUsuario:D2}",
             IdEmpleado = u.Nombre.Split(' ')[0] + $"_{u.IdUsuario:D2}",
             Nombre = u.Nombre,
-            Posicion = u.Rol == "Admin" ? "Administrador" : "Operador",
-            Rol = string.IsNullOrEmpty(u.Rol) ? "Empleado" : u.Rol,
+            Posicion = u.Rol == "Admin" ? "Administrador" : "Empleado",
+            Rol = u.Rol == "Admin" ? "Admin" : "Empleado",
             Estado = "ACTIVO",
             FechaContrato = "N/A",
             Turno = "N/A",

@@ -182,12 +182,25 @@ public class DatabaseInitializer
         }
         catch { }
 
+        // 4. Asegurar que solo existan los usuarios de Administrador y Empleado
+        try
+        {
+            string cleanAndSeedUsers = @"
+                DELETE FROM Usuarios WHERE NombreUsuario IN ('recepcion', 'operador', 'almacen');
+
+                INSERT OR IGNORE INTO Usuarios (IdUsuario, Nombre, NombreUsuario, Password, Rol)
+                VALUES 
+                (1, 'Administrador General', 'admin', 'admin123', 'Admin'),
+                (2, 'Empleado General', 'empleado', 'empleado123', 'Empleado');
+            ";
+            using var cmdRoles = new SqliteCommand(cleanAndSeedUsers, conexion);
+            cmdRoles.ExecuteNonQuery();
+        }
+        catch { }
+
         if (!semillaInicializada)
         {
             string seedData = @"
-                INSERT OR IGNORE INTO Usuarios (IdUsuario, Nombre, NombreUsuario, Password, Rol)
-                VALUES (1, 'Administrador', 'admin', 'admin123', 'Admin');
-
                 INSERT OR IGNORE INTO Servicios (IdServicio, Nombre, Descripcion, Precio, TiempoEstimado, UnidadMedida) VALUES 
                 (1, 'Lavado General', 'Lavado de ropa por kilogramo', 15.00, 120, 'Kg'),
                 (2, 'Secado', 'Secado de ropa por carga', 30.00, 60, 'Carga'),

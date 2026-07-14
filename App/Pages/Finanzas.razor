@@ -4,6 +4,7 @@
 @using System.IO
 @using LavanderiaApp.Modelos
 @using LavanderiaApp.Repositorios
+@using LavanderiaApp.Servicios
 @inject PedidoRepositorio PedidoRepo
 @inject ClienteRepositorio ClienteRepo
 @inject PagoRepositorio PagoRepo
@@ -396,6 +397,11 @@
 
     protected override void OnInitialized()
     {
+        if (SessionManager.UsuarioActual != null && !SessionManager.UsuarioActual.EsAdmin)
+        {
+            NavManager.NavigateTo("/dashboard");
+            return;
+        }
         CargarDatosFinancieros();
     }
 
@@ -471,14 +477,8 @@
             
             var detalles = detallesRepo.ObtenerPorPedido(p.IdPedido);
             var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
-            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : (double)(p.Total / activePrice);
-
+            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : detalles.Sum(d => d.Cantidad);
             string machineName = !string.IsNullOrEmpty(p.MaquinaAsignada) ? p.MaquinaAsignada : "Sin Asignar";
-            if (string.IsNullOrEmpty(p.MaquinaAsignada) && maquinasDb.Count > 0)
-            {
-                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
-                machineName = assignedMachine.Nombre;
-            }
 
             return new OrderFinanceModel
             {
@@ -544,7 +544,7 @@
             string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
             if (!File.Exists(scriptPath))
             {
-                scriptPath = @"C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\generar_pdf_actividad.py";
+                scriptPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "generar_pdf_actividad.py"));
             }
 
             var psi = new ProcessStartInfo

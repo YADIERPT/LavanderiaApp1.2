@@ -4,6 +4,7 @@
 @using System.IO
 @using LavanderiaApp.Modelos
 @using LavanderiaApp.Repositorios
+@using LavanderiaApp.Servicios
 @inject PedidoRepositorio PedidoRepo
 @inject ClienteRepositorio ClienteRepo
 @inject PagoRepositorio PagoRepo
@@ -26,21 +27,40 @@
 
     <!-- Row 1: Sales and Active Capacity -->
     <div class="dashboard-row">
-        <!-- Sales Card -->
+        <!-- Sales Card (Oculta ganancias al Empleado) -->
         <div class="dashboard-card card-sales">
-            <div class="card-header-custom">
-                <div>
-                    <h3 class="card-title-custom">Ritmo de Ventas</h3>
-                    <p class="card-subtitle-custom">Flujo de ingresos registrados en la base de datos</p>
+            @if (SessionManager.UsuarioActual?.EsAdmin ?? true)
+            {
+                <div class="card-header-custom">
+                    <div>
+                        <h3 class="card-title-custom">Ritmo de Ventas</h3>
+                        <p class="card-subtitle-custom">Flujo de ingresos registrados en la base de datos</p>
+                    </div>
                 </div>
-            </div>
-            <div class="sales-value-container">
-                <span class="sales-value">@SalesTotal.ToString("$#,##0.00")</span>
-                <span class="sales-trend">
-                    <span class="material-symbols-rounded">trending_up</span>
-                    <span>En tiempo real</span>
-                </span>
-            </div>
+                <div class="sales-value-container">
+                    <span class="sales-value">@SalesTotal.ToString("$#,##0.00")</span>
+                    <span class="sales-trend">
+                        <span class="material-symbols-rounded">trending_up</span>
+                        <span>En tiempo real</span>
+                    </span>
+                </div>
+            }
+            else
+            {
+                <div class="card-header-custom">
+                    <div>
+                        <h3 class="card-title-custom">Pedidos Procesados</h3>
+                        <p class="card-subtitle-custom">Actividad operativa del día en lavandería</p>
+                    </div>
+                </div>
+                <div class="sales-value-container">
+                    <span class="sales-value">@CapacityCount Pedidos</span>
+                    <span class="sales-trend" style="color: #059669; background: #ECFDF5;">
+                        <span class="material-symbols-rounded">local_laundry_service</span>
+                        <span>Operativo</span>
+                    </span>
+                </div>
+            }
             <div class="sales-chart-container">
                 <svg viewBox="0 0 600 160" class="sales-svg">
                     <defs>
@@ -82,7 +102,8 @@
                     <!-- Background circle -->
                     <circle cx="60" cy="60" r="48" fill="none" stroke="#E5E7EB" stroke-width="10" />
                     <circle cx="60" cy="60" r="48" fill="none" stroke="url(#gaugeGradient)" stroke-width="10" 
-                            stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="52" 
+                            stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="@GaugeDashOffset" 
+                            style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);"
                             transform="rotate(-90 60 60)" />
                 </svg>
                 <div class="gauge-center-text">
@@ -145,7 +166,7 @@
                         </div>
                         <span class="machine-name">@m.Name</span>
                         <span class="machine-status @(m.Status.ToUpper() == "ACTIVA" ? "status-active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "status-alert" : "status-inactive")">
-                            @(m.Status.ToUpper() == "ACTIVA" ? $"Activa • {m.TimeRemainingText}" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "Requiere Mantenimiento" : "Inactiva")
+                            @(m.Status.ToUpper() == "ACTIVA" ? "Activa" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "Requiere Mantenimiento" : "Inactiva")
                         </span>
                     </div>
                 }
@@ -335,6 +356,19 @@
         CargarMetricasYActividad();
     }
 
+    private string GaugeDashOffset
+    {
+        get
+        {
+            double c = 301.6;
+            if (CapacityCount <= 0) return c.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            double ratio = (double)EnCursoCount / (double)CapacityCount;
+            if (ratio < 0.15 && EnCursoCount > 0) ratio = 0.15;
+            double offset = c * (1.0 - ratio);
+            return offset.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+        }
+    }
+
     private void CargarMetricasYActividad()
     {
         var pedidos = PedidoRepo.ObtenerTodos();
@@ -343,9 +377,11 @@
         var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
 
         SalesTotal = pagos.Sum(p => p.MontoPago);
-        CapacityCount = pedidos.Count;
-        EnCursoCount = pedidos.Count(p => p.Estado.Equals("Lavando", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Secando", StringComparison.OrdinalIgnoreCase));
-        PendientesCount = pedidos.Count(p => p.Estado.Equals("En espera", StringComparison.OrdinalIgnoreCase));
+        var pedidosActivos = pedidos.Where(p => !p.EsEntregado && !p.EsCancelado).ToList();
+        CapacityCount = pedidosActivos.Count;
+        PendientesCount = pedidosActivos.Count(p => p.EsEnEspera || p.Estado.Contains("espera", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Pendiente", StringComparison.OrdinalIgnoreCase));
+        EnCursoCount = pedidosActivos.Count - PendientesCount;
+        if (EnCursoCount < 0) EnCursoCount = 0;
 
         ActividadesDinamicas.Clear();
         int currentId = 1;
@@ -362,32 +398,27 @@
             string tagClass = estadoUpper switch
             {
                 "ENTREGADO" or "PAGADO" => "tag-completado",
-                "LAVANDO" => "tag-lavando",
-                "SECANDO" => "tag-alerta",
+                "LAVANDO" or "EN LAVADO" or "EN ESPERA DE LAVADO" => "tag-lavando",
+                "SECANDO" or "EN SECADO" or "EN ESPERA DE SECADO" => "tag-alerta",
+                "LISTO" or "LISTO PARA ENTREGAR" => "tag-completado",
                 _ => "tag-lavando"
             };
 
             string iconBg = estadoUpper switch
             {
-                "ENTREGADO" or "PAGADO" => "bg-green",
-                "LAVANDO" => "bg-blue",
-                "SECANDO" => "bg-red",
+                "ENTREGADO" or "PAGADO" or "LISTO" or "LISTO PARA ENTREGAR" => "bg-green",
+                "LAVANDO" or "EN LAVADO" => "bg-blue",
+                "SECANDO" or "EN SECADO" => "bg-red",
                 _ => "bg-blue"
             };
 
             string iconSymbol = estadoUpper switch
             {
-                "ENTREGADO" or "PAGADO" => "check",
+                "ENTREGADO" or "PAGADO" or "LISTO" or "LISTO PARA ENTREGAR" => "check",
                 _ => "shopping_basket"
             };
 
-            // Asignar máquina dinámicamente según las máquinas reales en la base de datos
-            string machineName = "Sin Asignar";
-            if (maquinasDb.Count > 0)
-            {
-                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
-                machineName = assignedMachine.Nombre;
-            }
+            string machineName = !string.IsNullOrEmpty(p.MaquinaAsignada) ? p.MaquinaAsignada : "Sin Asignar";
 
             ActividadesDinamicas.Add(new ActivityDetailModel
             {
@@ -463,7 +494,7 @@
                 string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "generar_pdf_actividad.py");
                 if (!File.Exists(scriptPath))
                 {
-                    scriptPath = @"C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\generar_pdf_actividad.py";
+                    scriptPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "generar_pdf_actividad.py"));
                 }
 
                 var psi = new ProcessStartInfo

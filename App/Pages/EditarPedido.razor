@@ -3,6 +3,7 @@
 @page "/pedidos/agregar"
 @using System.Windows
 @using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
 @inject ClienteRepositorio ClienteRepo
 @inject PedidoRepositorio PedidoRepo
 @inject ServicioRepositorio ServicioRepo
@@ -74,17 +75,17 @@
 
                 <div class="form-inputs-grid-2x2">
                     <div class="form-input-group">
-                        <label class="form-input-label">Día de Procesamiento</label>
-                        <div class="form-input-wrapper">
-                            <span class="material-symbols-rounded form-input-icon">calendar_today</span>
-                            <input type="text" class="form-input-field" @bind="ProcessingDate" placeholder="dd/mm/aaaa" />
+                        <label class="form-input-label">Día de Procesamiento <span class="label-aside">(Automático)</span></label>
+                        <div class="form-input-wrapper disabled" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                            <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">calendar_today</span>
+                            <input type="text" class="form-input-field" value="@ProcessingDate" readonly style="font-weight: 700; color: #1E293B;" />
                         </div>
                     </div>
                     <div class="form-input-group">
-                        <label class="form-input-label">Hora Estimada</label>
-                        <div class="form-input-wrapper">
-                            <span class="material-symbols-rounded form-input-icon">schedule</span>
-                            <input type="text" class="form-input-field" @bind="EstimatedTime" placeholder="00:00 PM" />
+                        <label class="form-input-label">Hora Estimada <span class="label-aside">(Automático)</span></label>
+                        <div class="form-input-wrapper disabled" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                            <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">schedule</span>
+                            <input type="text" class="form-input-field" value="@EstimatedTime" readonly style="font-weight: 700; color: #1E293B;" />
                         </div>
                     </div>
                     <div class="form-input-group">
@@ -101,7 +102,14 @@
                         </div>
                     </div>
                     <div class="form-input-group">
-                        <label class="form-input-label">Peso (kg)</label>
+                        <label class="form-input-label">Servicio Incluido</label>
+                        <div class="form-input-wrapper disabled" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                            <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">local_laundry_service</span>
+                            <input type="text" class="form-input-field" value="Lavado General (Lavado, Secado y Planchado)" readonly style="font-weight: 700; color: #1E293B;" />
+                        </div>
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Peso / Cantidad</label>
                         <div class="form-input-wrapper">
                             <span class="material-symbols-rounded form-input-icon">scale</span>
                             <input type="number" step="0.1" class="form-input-field" @bind="Weight" @bind:event="oninput" placeholder="00.0" />
@@ -139,7 +147,7 @@
                     @if (!IsEditMode)
                     {
                         <!-- High-contrast Advance Payment Widget -->
-                        <div style="margin-top: 20px; background: #FFFFFF; border-radius: 16px; padding: 18px; color: #1E293B; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); text-align: left;">
+                        <div class="anticipo-card-widget">
                             
                             <!-- Widget Header -->
                             <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #EDF2F7; padding-bottom: 8px; margin-bottom: 4px;">
@@ -151,25 +159,25 @@
 
                             <!-- Anticipo Input -->
                             <div class="form-input-group" style="margin-bottom: 0;">
-                                <label class="form-input-label" style="font-weight: 700; color: #475569; font-size: 12.5px; margin-bottom: 4px; display: block;">¿Cuánto abona el cliente?</label>
-                                <div class="form-input-wrapper" style="height: 40px; border-color: #CBD5E1; background: #F8FAFC;">
+                                <label class="form-input-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 4px; display: block;">¿Cuánto abona el cliente?</label>
+                                <div class="form-input-wrapper" style="height: 40px; border-color: #CBD5E1;">
                                     <span class="material-symbols-rounded form-input-icon" style="font-size: 18px; left: 12px; color: #0288D1;">attach_money</span>
                                     <input type="number" step="1" min="0" max="@TotalCost" class="form-input-field" 
-                                           style="padding: 4px 8px 4px 36px; font-size: 14px; font-weight: 700; color: #1E293B; background: transparent; border: none; outline: none; width: 100%;" 
+                                           style="padding: 4px 8px 4px 36px; font-size: 14px; font-weight: 700; background: transparent; border: none; outline: none; width: 100%;" 
                                            @bind="Anticipo" @bind:event="oninput" />
                                 </div>
                             </div>
 
                             <!-- Selector Método de Pago -->
                             <div class="form-input-group" style="margin-bottom: 0;">
-                                <label class="form-input-label" style="font-weight: 700; color: #475569; font-size: 12.5px; margin-bottom: 4px; display: block;">Método de Pago</label>
-                                <div class="form-input-wrapper @(Anticipo == 0 ? "disabled" : "")" style="height: 40px; border-color: #CBD5E1; background: @(Anticipo == 0 ? "#F1F5F9" : "#F8FAFC");">
+                                <label class="form-input-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 4px; display: block;">Método de Pago</label>
+                                <div class="form-input-wrapper @(Anticipo == 0 ? "disabled" : "")" style="height: 40px; border-color: #CBD5E1;">
                                     <span class="material-symbols-rounded form-input-icon" style="font-size: 18px; left: 12px; color: @(Anticipo == 0 ? "#94A3B8" : "#0288D1");">credit_card</span>
-                                    <select class="form-input-field select-field" style="padding: 4px 8px 4px 36px; font-size: 13.5px; color: @(Anticipo == 0 ? "#94A3B8" : "#1E293B"); font-weight: 600; background: transparent; border: none; outline: none; width: 100%;" 
+                                    <select class="form-input-field select-field" style="padding: 4px 8px 4px 36px; font-size: 13.5px; font-weight: 600; background: transparent; border: none; outline: none; width: 100%;" 
                                             @bind="MetodoPago" disabled="@(Anticipo == 0)">
                                         <option value="@Pago.MetodoPago.Efectivo">Efectivo</option>
                                         <option value="@Pago.MetodoPago.Tarjeta">Tarjeta (Terminal)</option>
-                                        <option value="@Pago.MetodoPago.Transferencia">Transferencia Coppel/BBVA</option>
+                                        <option value="@Pago.MetodoPago.Transferencia">Transferencia / Otros</option>
                                     </select>
                                 </div>
                             </div>
@@ -275,7 +283,7 @@
     private string ClientId = "01";
     private string ClientName = "";
 
-    private string ProcessingDate = DateTime.Now.ToString("dd/MM/yyyy");
+    private string ProcessingDate = DateTime.Now.ToString("dd MMM, yyyy");
     private string EstimatedTime = DateTime.Now.AddHours(2).ToString("hh:mm tt");
     private string AssignedMachine = "";
     private double Weight = 5.0;
@@ -284,10 +292,10 @@
     private double TotalCost => Weight * PricePerKg;
     private string OrderStatus = "En espera";
 
-    private double? _anticipo;
+    private double _anticipo = 0.0;
     private double Anticipo
     {
-        get => _anticipo ?? TotalCost;
+        get => _anticipo;
         set => _anticipo = value;
     }
     private Pago.MetodoPago MetodoPago = Pago.MetodoPago.Efectivo;
@@ -297,6 +305,8 @@
     private string SearchClientText = "";
     private List<Cliente> ListaClientes = new();
     private List<Maquina> ListaMaquinas = new();
+    private List<Servicio> ListaServicios = new();
+    private int SelectedServiceId = 1;
 
     private IEnumerable<Cliente> ClientesFiltrados => ListaClientes.Where(c =>
         string.IsNullOrWhiteSpace(SearchClientText) ||
@@ -308,13 +318,15 @@
     {
         CargarClientes();
 
-        // Cargar precio de lavado actual desde la base de datos
+        // Cargar lista completa de servicios y seleccionar por defecto
         try
         {
-            var servicioLavado = ServicioRepo.ObtenerTodos().FirstOrDefault(s => s.IdServicio == 1);
-            if (servicioLavado != null)
+            ListaServicios = ServicioRepo.ObtenerTodos();
+            var servDef = ListaServicios.FirstOrDefault();
+            if (servDef != null)
             {
-                PricePerKg = (double)servicioLavado.Precio;
+                SelectedServiceId = servDef.IdServicio;
+                PricePerKg = (double)servDef.Precio;
             }
         }
         catch { }
@@ -357,12 +369,17 @@
             var pedidoDb = PedidoRepo.ObtenerPorId(Id);
             if (pedidoDb != null)
             {
+                if (pedidoDb.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase))
+                {
+                    CustomMessageBox.Show("Pedido Finalizado", "Este pedido ya fue entregado al cliente. Por seguridad no puede ser editado.", "warning", () => NavManager.NavigateTo("/pedidos"));
+                    return;
+                }
                 RawClientId = pedidoDb.IdCliente;
                 ClientId = pedidoDb.IdCliente.ToString("D2");
                 var clienteDb = ClienteRepo.ObtenerPorId(pedidoDb.IdCliente);
                 ClientName = clienteDb?.Nombre ?? $"Cliente #{pedidoDb.IdCliente}";
 
-                ProcessingDate = pedidoDb.FechaRecepcion.ToString("dd/MM/yyyy");
+                ProcessingDate = pedidoDb.FechaRecepcion.ToString("dd MMM, yyyy");
                 EstimatedTime = pedidoDb.FechaRecepcion.ToString("hh:mm tt");
                 OrderStatus = pedidoDb.Estado;
                 AssignedMachine = pedidoDb.MaquinaAsignada ?? "";
@@ -379,6 +396,7 @@
                 {
                     Weight = (double)(pedidoDb.Total / (decimal)PricePerKg);
                 }
+                _anticipo = (double)new PagoRepositorio().ObtenerTodos().Where(p => p.IdPedido == Id).Sum(p => p.MontoPago);
             }
         }
         else if (string.IsNullOrEmpty(ClientName))
@@ -391,7 +409,21 @@
                 ClientId = clienteBase.IdCliente.ToString("D2");
                 ClientName = clienteBase.Nombre;
             }
-            OrderId = PedidoRepo.ObtenerTodos().Count + 1;
+            var ultimoPedido = PedidoRepo.ObtenerTodos().OrderBy(p => p.IdPedido).LastOrDefault();
+            OrderId = (ultimoPedido?.IdPedido ?? 0) + 1;
+        }
+    }
+
+    private void OnServicioChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int sid))
+        {
+            SelectedServiceId = sid;
+            var serv = ListaServicios.FirstOrDefault(s => s.IdServicio == sid);
+            if (serv != null)
+            {
+                PricePerKg = (double)serv.Precio;
+            }
         }
     }
 
@@ -455,6 +487,7 @@
         {
             pedido.IdPedido = Id;
             PedidoRepo.ActualizarEstadoYMaquina(Id, OrderStatus, AssignedMachine);
+            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(Id, OrderStatus);
             if (OrderStatus == "En Lavado")
             {
                 InventarioAutomatizacion.ProcesarConsumoInventario(Id);
@@ -480,7 +513,7 @@
         {
             var detalles = new List<DetallePedido>
             {
-                new DetallePedido { IdServicio = 1, Cantidad = Weight, PrecioUnitario = (decimal)PricePerKg, Subtotal = (decimal)TotalCost }
+                new DetallePedido { IdServicio = SelectedServiceId, Cantidad = Weight, PrecioUnitario = (decimal)PricePerKg, Subtotal = (decimal)TotalCost }
             };
 
             string res = PedidoServicio.RegistrarPedido(pedido, detalles, (decimal)Anticipo, MetodoPago);

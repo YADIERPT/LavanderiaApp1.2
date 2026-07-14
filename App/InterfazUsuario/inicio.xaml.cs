@@ -11,6 +11,11 @@ public partial class Inicio : Window
         
         // Inicializamos los servicios de BlazorWebView
         blazorWebView.Services = App.Services;
+        try
+        {
+            this.Title = $"{Servicios.BusinessConfig.Current?.NombreNegocio ?? "Lavandería Pro"} - Acceso";
+        }
+        catch { }
     }
 
     // Permite arrastrar la ventana sin bordes al hacer clic y arrastrar en la parte superior

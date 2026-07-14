@@ -1,6 +1,7 @@
 @page "/clientes"
 @using System.Windows
 @using LavanderiaApp.Modelos
+@using LavanderiaApp.Servicios
 @inject NavigationManager NavManager
 
 <div class="clients-page-container">
@@ -246,7 +247,9 @@
     private bool ShowFilterModal = false;
     private string SearchText = "";
     private string SelectedTypeFilter = "TODOS";
-    private readonly string[] TypeOptions = new[] { "TODOS", "Cliente frecuente", "Cliente nuevo", "Miembro Premium", "Cliente mensual" };
+    private List<string> TypeOptions => new[] { "TODOS" }
+        .Concat(Clients.Select(c => c.Tipo).Distinct())
+        .ToList();
 
     private List<ClientItem> Clients = new();
     private ClientItem SelectedClient;
@@ -262,7 +265,41 @@
 
     protected override void OnInitialized()
     {
+        var u = SessionManager.UsuarioActual;
+        if (u != null && !u.PuedeGestionarPedidos)
+        {
+            NavManager.NavigateTo("/dashboard");
+            return;
+        }
         CargarClientes();
+        ProcesarParametrosURL();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ProcesarParametrosURL();
+    }
+
+    private void ProcesarParametrosURL()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var q = uri.Query.TrimStart('?');
+            foreach (var p in q.Split('&'))
+            {
+                var kv = p.Split('=');
+                if (kv.Length == 2 && kv[0].Equals("q", StringComparison.OrdinalIgnoreCase))
+                {
+                    SearchText = Uri.UnescapeDataString(kv[1]);
+                    var match = FilteredClients.FirstOrDefault();
+                    if (match != null)
+                    {
+                        SelectedClient = match;
+                    }
+                }
+            }
+        }
     }
 
     private void CargarClientes()

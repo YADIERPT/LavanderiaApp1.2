@@ -49,7 +49,7 @@
             <div style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 6px 0 2px 0;">
                 @ReporteActual.TotalIngresos.ToString("$#,##0.00")
             </div>
-            <span style="font-size: 12px; color: #22C55E; font-weight: 700;">▲ +18.4% vs mes anterior</span>
+            <span style="font-size: 12px; color: #22C55E; font-weight: 700;">@(ReporteActual.TotalIngresos > 0 ? "▲ Activo en el período" : "Sin actividad registrada")</span>
         </div>
 
         <!-- KPI 2: Pedidos Procesados -->
@@ -109,17 +109,17 @@
 
             <div style="background: #F8FAFC; padding: 14px 18px; border-radius: 12px; border-left: 4px solid #3B82F6;">
                 <strong style="font-size: 13px; color: #0F172A; display: block;">Hora Pico de Atención</strong>
-                <span style="font-size: 12.5px; color: #64748B;">10:00 AM — 01:00 PM (45% de clientes)</span>
+                <span style="font-size: 12.5px; color: #64748B;">@ObtenerHoraPico()</span>
             </div>
 
             <div style="background: #F8FAFC; padding: 14px 18px; border-radius: 12px; border-left: 4px solid #10B981;">
-                <strong style="font-size: 13px; color: #0F172A; display: block;">Servicio Más Rentable</strong>
-                <span style="font-size: 12.5px; color: #64748B;">Lavado por Kg (68% de ingresos)</span>
+                <strong style="font-size: 13px; color: #0F172A; display: block;">Servicio y Pedidos</strong>
+                <span style="font-size: 12.5px; color: #64748B;">@ObtenerServicioPrincipal()</span>
             </div>
 
             <div style="background: #F8FAFC; padding: 14px 18px; border-radius: 12px; border-left: 4px solid #F59E0B;">
-                <strong style="font-size: 13px; color: #0F172A; display: block;">Mayor Insumo Consumido</strong>
-                <span style="font-size: 12.5px; color: #64748B;">Detergente Industrial (12.5L / semana)</span>
+                <strong style="font-size: 13px; color: #0F172A; display: block;">Insumos Consumidos</strong>
+                <span style="font-size: 12.5px; color: #64748B;">@ObtenerConsumoInsumo()</span>
             </div>
         </div>
     </div>
@@ -168,6 +168,32 @@
     private void ExportarReportePDF()
     {
         string resumen = ReporteActual.GenerarResumenTexto();
-        CustomMessageBox.Show("Reporte PDF Generado", $"Exportando Reporte Ejecutivo PyME a PDF...\n\n{resumen}", "success");
+        string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Reporte_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+        System.IO.File.WriteAllText(path, resumen);
+        CustomMessageBox.Show("Reporte Exportado", $"Reporte guardado exitosamente en:\n{path}\n\n{resumen}", "success");
+    }
+
+    private string ObtenerHoraPico()
+    {
+        if (ReporteActual.PedidosIncluidos.Count == 0) return "Sin pedidos en el período";
+        var horaPico = ReporteActual.PedidosIncluidos
+            .GroupBy(p => p.FechaRecepcion.Hour)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault();
+        if (horaPico == null) return "Sin datos suficientes";
+        int h = horaPico.Key;
+        return $"{h:00}:00 — {(h + 1) % 24:00}:00 ({horaPico.Count()} pedidos)";
+    }
+
+    private string ObtenerServicioPrincipal()
+    {
+        if (ReporteActual.TotalIngresos == 0) return "Sin ingresos en el período";
+        return $"Servicios operados ({ReporteActual.TotalPedidos} pedidos)";
+    }
+
+    private string ObtenerConsumoInsumo()
+    {
+        if (ReporteActual.TotalCostoInsumos == 0) return "Sin consumo registrado";
+        return $"Costo insumos: {ReporteActual.TotalCostoInsumos:C2}";
     }
 }

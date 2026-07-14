@@ -1,4 +1,5 @@
 using System.Text;
+using LavanderiaApp.Servicios;
 
 namespace LavanderiaApp.Modelos;
 
@@ -21,15 +22,19 @@ public class Ticket
     public decimal Cambio { get; set; }
     public List<CarritoItem> Items { get; set; } = new();
 
-    public string Encabezado { get; set; } = "LAVANDERÍA VILLAS DEL SUR";
-    public string DireccionEstablecimiento { get; set; } = "Villas del Sur, Calle Principal #123";
-    public string TelefonoEstablecimiento { get; set; } = "Tel: (988) 123-4567";
-    public string PieDePagina { get; set; } = "¡Gracias por su preferencia!";
+    public string Encabezado { get; set; } = BusinessConfig.Current?.NombreNegocio ?? "LAVANDERÍA VILLAS DEL SUR";
+    public string DireccionEstablecimiento { get; set; } = BusinessConfig.Current?.Direccion ?? "Villas del Sur, Calle Principal #123";
+    public string TelefonoEstablecimiento { get; set; } = BusinessConfig.Current?.Telefono ?? "Tel: (988) 123-4567";
+    public string PieDePagina { get; set; } = BusinessConfig.Current?.MensajeTicket ?? "¡Gracias por su preferencia!";
 
-    public Ticket() { }
+    public Ticket()
+    {
+        CargarConfiguracion();
+    }
 
     public Ticket(Pedido pedido, Cliente cliente, Usuario usuario, List<CarritoItem> items)
     {
+        CargarConfiguracion();
         if (pedido != null)
         {
             IdPedido = pedido.IdPedido;
@@ -60,6 +65,17 @@ public class Ticket
         }
 
         Fecha = DateTime.Now;
+    }
+
+    private void CargarConfiguracion()
+    {
+        if (BusinessConfig.Current != null)
+        {
+            Encabezado = !string.IsNullOrWhiteSpace(BusinessConfig.Current.NombreNegocio) ? BusinessConfig.Current.NombreNegocio : Encabezado;
+            DireccionEstablecimiento = !string.IsNullOrWhiteSpace(BusinessConfig.Current.Direccion) ? BusinessConfig.Current.Direccion : DireccionEstablecimiento;
+            TelefonoEstablecimiento = !string.IsNullOrWhiteSpace(BusinessConfig.Current.Telefono) ? BusinessConfig.Current.Telefono : TelefonoEstablecimiento;
+            PieDePagina = !string.IsNullOrWhiteSpace(BusinessConfig.Current.MensajeTicket) ? BusinessConfig.Current.MensajeTicket : PieDePagina;
+        }
     }
 
     /// <summary>

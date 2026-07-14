@@ -291,8 +291,38 @@
     {
         CargarMaquinas();
         SelectedMachine = Machines.FirstOrDefault(m => m.Id == 4) ?? Machines.FirstOrDefault();
+        ProcesarParametrosURL();
         PendingStatus = SelectedMachine?.Status ?? "INACTIVA";
         TextoObservacionActual = SelectedMachine?.Observacion ?? "";
+    }
+
+    protected override void OnParametersSet()
+    {
+        ProcesarParametrosURL();
+    }
+
+    private void ProcesarParametrosURL()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var q = uri.Query.TrimStart('?');
+            foreach (var p in q.Split('&'))
+            {
+                var kv = p.Split('=');
+                if (kv.Length == 2 && kv[0].Equals("q", StringComparison.OrdinalIgnoreCase))
+                {
+                    string param = Uri.UnescapeDataString(kv[1]);
+                    var match = Machines.FirstOrDefault(m => 
+                        m.Name.Contains(param, StringComparison.OrdinalIgnoreCase) ||
+                        m.Id.ToString() == param);
+                    if (match != null)
+                    {
+                        SelectMachine(match);
+                    }
+                }
+            }
+        }
     }
 
     private void CargarMaquinas()
@@ -326,7 +356,7 @@
 
             if (SelectedMachine.Status == "ACTIVA")
             {
-                SelectedMachine.TimeRemainingText = "10m rest.";
+                SelectedMachine.TimeRemainingText = "";
                 
                 // Guardar en base de datos
                 var maquinaDb = new Maquina
@@ -484,7 +514,7 @@
     {
         return m.Status.ToUpper() switch
         {
-            "ACTIVA" => $"Activa • {m.TimeRemainingText}",
+            "ACTIVA" => "Activa",
             "MANTENIMIENTO" or "ALERT" => "Requiere Mantenimiento",
             "INACTIVA" => "Inactiva",
             _ => "En Espera"

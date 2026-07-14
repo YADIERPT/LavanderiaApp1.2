@@ -139,15 +139,11 @@
                             <span class="material-symbols-rounded">edit</span>
                             <span>Editar pedido</span>
                         </button>
+                        <button class="btn-finalize-order" @onclick="FinalizeOrder">
+                            Finalizar pedido
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Bottom Attached Large Button -->
-            <div class="finalize-btn-container">
-                <button class="btn-finalize-order" @onclick="FinalizeOrder">
-                    Finalizar pedido
-                </button>
             </div>
         }
     </div>
@@ -224,6 +220,62 @@
             <div style="width: 100%; display: flex; justify-content: center;">
                 <button class="btn-pago-efectivo" style="max-width: 240px; padding: 14px 28px;" @onclick="() => MostrarModalPedidoEntregado = false">
                     CONTINUAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (MostrarModalPedidoNoListo)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalPedidoNoListo = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 48px 40px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 24px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon" style="color: #F59E0B;">warning</span>
+                    <span class="online-status-dot" style="background: #F59E0B;"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 20px; text-transform: uppercase;">
+                EL PEDIDO NO ESTÁ LISTO
+            </h2>
+            <p style="color: #64748B; font-size: 14.5px; margin-bottom: 28px; text-align: center;">
+                Sólo se puede finalizar y cobrar un pedido que ya está en estado <strong>'Listo para entregar'</strong>.<br />
+                Estado actual: <strong>@SelectedOrder?.Estado</strong>
+            </p>
+
+            <div style="width: 100%; display: flex; justify-content: center;">
+                <button class="btn-pago-efectivo" style="max-width: 240px; padding: 14px 28px;" @onclick="() => MostrarModalPedidoNoListo = false">
+                    ENTENDIDO
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (MostrarModalPedidoYaListo)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalPedidoYaListo = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 500px; padding: 48px 40px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 24px;">
+                <div class="payment-icon-bg">
+                    <span class="material-symbols-rounded payment-icon" style="color: #3B82F6;">check_circle</span>
+                    <span class="online-status-dot" style="background: #3B82F6;"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 20px; text-transform: uppercase;">
+                EL PEDIDO ESTÁ LISTO PARA ENTREGAR
+            </h2>
+            <p style="color: #64748B; font-size: 15px; margin-bottom: 28px; text-align: center; line-height: 1.5;">
+                Este pedido ya está en estado <strong>'Listo para entregar'</strong>.<br />
+                Ya ha completado sus procesos de lavado y secado, por lo que <strong>no puede regresar a estados anteriores ni editarse</strong>.
+            </p>
+
+            <div style="width: 100%; display: flex; justify-content: center;">
+                <button class="btn-pago-efectivo" style="max-width: 240px; padding: 14px 28px;" @onclick="() => MostrarModalPedidoYaListo = false">
+                    ENTENDIDO
                 </button>
             </div>
         </div>
@@ -309,11 +361,13 @@
     }
 
     private bool MostrarModalPedidoEntregado = false;
+    private bool MostrarModalPedidoYaListo = false;
+    private bool MostrarModalPedidoNoListo = false;
     private bool ShowFilterModal = false;
     private string SearchText = "";
     private string SelectedStatusFilter = "TODOS";
 
-    private readonly string[] StatusOptions = new[] { "TODOS", "EN ESPERA DE ENTREGA", "SECANDO", "LAVANDO", "ENTREGADO" };
+    private readonly string[] StatusOptions = new[] { "TODOS", "EN ESPERA", "EN LAVADO", "EN SECADO", "LISTO", "ENTREGADO" };
 
     private List<OrderItem> Orders = new();
     private OrderItem SelectedOrder;
@@ -327,8 +381,18 @@
     private decimal ModalSaldoPendiente = 0m;
     private Pago.MetodoPago MetodoPagoEntrega = Pago.MetodoPago.Efectivo;
 
+    private bool CoincideEstado(string estadoPedido, string filtro)
+    {
+        if (filtro == "TODOS") return true;
+        if (filtro == "EN ESPERA") return estadoPedido.Equals("En espera", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("En espera de lavado", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "EN LAVADO") return estadoPedido.Equals("En Lavado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Lavando", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "EN SECADO") return estadoPedido.Equals("En Secado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Secando", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "LISTO") return estadoPedido.Equals("Listo", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase);
+        return estadoPedido.Equals(filtro, StringComparison.OrdinalIgnoreCase);
+    }
+
     private IEnumerable<OrderItem> FilteredOrders => Orders.Where(o =>
-        (SelectedStatusFilter == "TODOS" || o.Estado.Equals(SelectedStatusFilter, StringComparison.OrdinalIgnoreCase)) &&
+        CoincideEstado(o.Estado, SelectedStatusFilter) &&
         (string.IsNullOrWhiteSpace(SearchText) ||
          o.Cliente.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
          o.Id.ToString().Contains(SearchText))
@@ -336,7 +400,36 @@
 
     protected override void OnInitialized()
     {
+        var u = SessionManager.UsuarioActual;
+        if (u != null && !u.PuedeGestionarPedidos && !u.PuedeOperarMaquinas)
+        {
+            NavManager.NavigateTo("/dashboard");
+            return;
+        }
         CargarPedidos();
+        ProcesarParametrosURL();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ProcesarParametrosURL();
+    }
+
+    private void ProcesarParametrosURL()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var q = uri.Query.TrimStart('?');
+            foreach (var p in q.Split('&'))
+            {
+                var kv = p.Split('=');
+                if (kv.Length == 2 && kv[0].Equals("q", StringComparison.OrdinalIgnoreCase))
+                {
+                    SearchText = Uri.UnescapeDataString(kv[1]);
+                }
+            }
+        }
     }
 
     private void CargarPedidos()
@@ -364,15 +457,10 @@
 
             // Asignar máquina dinámicamente según las máquinas reales en la base de datos si no tiene una guardada
             string machineName = !string.IsNullOrEmpty(p.MaquinaAsignada) ? p.MaquinaAsignada : "Sin Asignar";
-            if (string.IsNullOrEmpty(p.MaquinaAsignada) && maquinasDb.Count > 0)
-            {
-                var assignedMachine = maquinasDb[(p.IdPedido - 1) % maquinasDb.Count];
-                machineName = assignedMachine.Nombre;
-            }
 
-            // Calcular peso real si existe el servicio de Lavado General (IdServicio = 1)
+            // Calcular peso o cantidad total de los servicios del pedido
             var lavadoDetalle = detalles.FirstOrDefault(d => d.IdServicio == 1);
-            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : (double)(p.Total / activePrice);
+            double peso = lavadoDetalle != null ? lavadoDetalle.Cantidad : detalles.Sum(d => d.Cantidad);
 
             // Obtener nombres de todos los servicios asociados al pedido
             var nombresServicios = detalles
@@ -431,6 +519,16 @@
     {
         if (SelectedOrder != null)
         {
+            if (SelectedOrder.Estado.Equals("ENTREGADO", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoEntregado = true;
+                return;
+            }
+            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoYaListo = true;
+                return;
+            }
             NavManager.NavigateTo($"/pedidos/estado/{SelectedOrder.Id}");
         }
     }
@@ -439,6 +537,16 @@
     {
         if (SelectedOrder != null)
         {
+            if (SelectedOrder.Estado.Equals("ENTREGADO", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoEntregado = true;
+                return;
+            }
+            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoYaListo = true;
+                return;
+            }
             NavManager.NavigateTo($"/pedidos/editar/{SelectedOrder.Id}");
         }
     }
@@ -452,14 +560,13 @@
                 MostrarModalPedidoEntregado = true;
                 return;
             }
+            if (!SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            {
+                MostrarModalPedidoNoListo = true;
+                return;
+            }
 
-            // Calcular saldo pendiente real
-            var pagos = _pagoRepo.ObtenerTodos().Where(pg => pg.IdPedido == SelectedOrder.Id).ToList();
-            decimal yaPagado = pagos.Sum(pg => pg.MontoPago);
-            ModalSaldoPendiente = SelectedOrder.Costo - yaPagado;
-            MetodoPagoEntrega = Pago.MetodoPago.Efectivo; // Por defecto en Efectivo
-            
-            MostrarModalPagoEntrega = true;
+            NavManager.NavigateTo($"/cobro/{SelectedOrder.Id}");
         }
     }
 
