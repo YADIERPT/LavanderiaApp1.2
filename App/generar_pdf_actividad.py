@@ -97,8 +97,14 @@ def generate_pdf():
                 negocio_name = data.get("NombreNegocio", negocio_name)
                 negocio_phone = data.get("Telefono", negocio_phone)
                 negocio_address = data.get("Direccion", negocio_address)
+                iva_activo = data.get("IvaActivo", False)
+                iva_tasa = float(data.get("Iva", 16.0))
         except Exception:
-            pass
+            iva_activo = False
+            iva_tasa = 16.0
+    else:
+        iva_activo = False
+        iva_tasa = 16.0
 
     today_str = datetime.now().strftime('%Y-%m-%d')
     pagos_efectivo = 0.0
@@ -202,9 +208,14 @@ def generate_pdf():
             resumen_data = [
                 [Paragraph("<b>Concepto</b>", th_style), Paragraph("<b>Monto ($ MXN)</b>", th_style), Paragraph("<b>Estado</b>", th_style)],
                 [Paragraph("Ingresos en Efectivo", td_style), Paragraph(f"${pagos_efectivo:,.2f}", td_style), Paragraph("Caja Chica", td_style)],
-                [Paragraph("Ingresos Digitales / Transferencia", td_style), Paragraph(f"${pagos_digital:,.2f}", td_style), Paragraph("Bancos", td_style)],
-                [Paragraph("<b>TOTAL RECAUDADO HOY</b>", td_style), Paragraph(f"<b>${total_ingresos_hoy:,.2f}</b>", td_style), Paragraph("<b>Consolidado</b>", td_style)]
+                [Paragraph("Ingresos Digitales / Transferencia", td_style), Paragraph(f"${pagos_digital:,.2f}", td_style), Paragraph("Bancos", td_style)]
             ]
+            if iva_activo and iva_tasa > 0 and total_ingresos_hoy > 0:
+                sub_calc = round(total_ingresos_hoy / (1.0 + iva_tasa / 100.0), 2)
+                iva_calc = total_ingresos_hoy - sub_calc
+                resumen_data.append([Paragraph("SUBTOTAL RECAUDADO (SIN IVA)", td_style), Paragraph(f"${sub_calc:,.2f}", td_style), Paragraph("Base Gravable", td_style)])
+                resumen_data.append([Paragraph(f"I.V.A. RECAUDADO ({iva_tasa:.1f}%)", td_style), Paragraph(f"${iva_calc:,.2f}", td_style), Paragraph("Impuesto Trasladado", td_style)])
+            resumen_data.append([Paragraph("<b>TOTAL RECAUDADO HOY</b>", td_style), Paragraph(f"<b>${total_ingresos_hoy:,.2f}</b>", td_style), Paragraph("<b>Consolidado</b>", td_style)])
             t_resumen = Table(resumen_data, colWidths=[220, 150, 150])
             t_resumen.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1E3A8A")),

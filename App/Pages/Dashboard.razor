@@ -147,8 +147,15 @@
                 @foreach (var m in DashboardMachines)
                 {
                     <div class="machine-item-custom" @onclick='() => NavManager.NavigateTo("/maquinas")' style="cursor: pointer;">
-                        <div class="machine-circle @(m.Status.ToUpper() == "ACTIVA" ? "active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "alert" : "inactive")">
-                            @if (m.Status.ToUpper() == "ACTIVA")
+                        <div class="machine-circle @(m.Status.ToUpper().Contains("EN USO") ? "in-use" : m.Status.ToUpper() == "ACTIVA" ? "active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "alert" : "inactive")">
+                            @if (m.Status.ToUpper().Contains("EN USO"))
+                            {
+                                <span class="material-symbols-rounded" style="animation: spin 3s linear infinite;">sync</span>
+                                <div class="check-badge" style="background: #0284C7; border-color: #E0F2FE;">
+                                    <span class="material-symbols-rounded">play_arrow</span>
+                                </div>
+                            }
+                            else if (m.Status.ToUpper() == "ACTIVA")
                             {
                                 <span class="material-symbols-rounded">local_laundry_service</span>
                                 <div class="check-badge">
@@ -165,8 +172,8 @@
                             }
                         </div>
                         <span class="machine-name">@m.Name</span>
-                        <span class="machine-status @(m.Status.ToUpper() == "ACTIVA" ? "status-active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "status-alert" : "status-inactive")">
-                            @(m.Status.ToUpper() == "ACTIVA" ? "Activa" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "Requiere Mantenimiento" : "Inactiva")
+                        <span class="machine-status @(m.Status.ToUpper().Contains("EN USO") ? "status-in-use" : m.Status.ToUpper() == "ACTIVA" ? "status-active" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "status-alert" : "status-inactive")">
+                            @(m.Status.ToUpper().Contains("EN USO") ? "En Uso" : m.Status.ToUpper() == "ACTIVA" ? "Activa (Libre)" : m.Status.ToUpper() == "MANTENIMIENTO" || m.Status.ToUpper() == "ALERT" ? "Requiere Mantenimiento" : "Inactiva")
                         </span>
                     </div>
                 }
@@ -423,7 +430,7 @@
             ActividadesDinamicas.Add(new ActivityDetailModel
             {
                 Id = currentId++,
-                Title = $"Nuevo Pedido #{p.IdPedido} ({p.Estado})",
+                Title = $"Nuevo Pedido #{TurnoHelper.ObtenerNumeroDisplay(p.IdPedido)} ({p.Estado})",
                 Subtitle = $"Cliente: {nombreCliente}",
                 TimeAgo = p.FechaRecepcion.ToString("dd/MM/yyyy hh:mm tt"),
                 Tag = estadoUpper,

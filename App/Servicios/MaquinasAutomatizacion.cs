@@ -16,10 +16,9 @@ public static class MaquinasAutomatizacion
     {
         if (string.IsNullOrWhiteSpace(nuevoEstado)) return;
 
-        // Solo procesamos cuando pasa a estados activos de lavado, secado o terminado de ciclo
-        bool esCicloActivo = nuevoEstado.Equals("En Lavado", StringComparison.OrdinalIgnoreCase) ||
-                             nuevoEstado.Equals("En Secado", StringComparison.OrdinalIgnoreCase) ||
-                             nuevoEstado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase);
+        // Solo procesamos cuando pasa al estado de Listo para entregar o PENDIENTE PARA ENTREGA (ciclo completado)
+        bool esCicloActivo = nuevoEstado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) ||
+                             nuevoEstado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase);
 
         if (!esCicloActivo) return;
 
@@ -144,5 +143,134 @@ public static class MaquinasAutomatizacion
         {
             System.Diagnostics.Debug.WriteLine($"[MaquinasAutomatizacion] Error: {ex.Message}");
         }
+    }
+
+    public static bool EstaMaquinaOcupadaPorOtroPedido(string nombreMaquina, int idPedidoActual)
+    {
+        if (string.IsNullOrWhiteSpace(nombreMaquina)) return false;
+        try
+        {
+            using var conexion = new SqliteConnection(Config.ConnectionString);
+            conexion.Open();
+            string query = @"SELECT COUNT(*) FROM Pedidos 
+                             WHERE MaquinaAsignada = @Nombre 
+                             AND IdPedido != @IdPedido 
+                             AND Estado = 'En Lavado'";
+            using var cmd = new SqliteCommand(query, conexion);
+            cmd.Parameters.AddWithValue("@Nombre", nombreMaquina);
+            cmd.Parameters.AddWithValue("@IdPedido", idPedidoActual);
+            var count = Convert.ToInt32(cmd.ExecuteScalar());
+            return count > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static void AsignarMaquina(string nombreMaquina)
+    {
+        if (string.IsNullOrWhiteSpace(nombreMaquina)) return;
+        SincronizarEstadoMaquina(nombreMaquina);
+    }
+
+    public static void LiberarMaquina(string nombreMaquina)
+    {
+        if (string.IsNullOrWhiteSpace(nombreMaquina)) return;
+        try
+        {
+            using var conexion = new SqliteConnection(Config.ConnectionString);
+            conexion.Open();
+            
+            // Revisar si hay pedidos "En espera" encolados para esta máquina
+            string queryQueue = "SELECT IdPedido FROM Pedidos WHERE MaquinaAsignada = @Nombre AND Estado = 'En espera' ORDER BY FechaRecepcion ASC LIMIT 1";
+            int queuedId = 0;
+            using (var cmdQ = new SqliteCommand(queryQueue, conexion))
+            {
+                cmdQ.Parameters.AddWithValue("@Nombre", nombreMaquina);
+                var result = cmdQ.ExecuteScalar();
+                if (result != null && result != DBNull.Value)
+                {
+                    queuedId = Convert.ToInt32(result);
+                }
+            }
+            
+            if (queuedId > 0)
+            {
+                // Hay un pedido encolado, pasarlo a "En espera de lavado"
+                string updateOrder = "UPDATE Pedidos SET Estado = 'En espera de lavado' WHERE IdPedido = @IdPedido";
+                using (var cmdUpdateOrder = new SqliteCommand(updateOrder, conexion))
+                {
+                    cmdUpdateOrder.Parameters.AddWithValue("@IdPedido", queuedId);
+                    cmdUpdateOrder.ExecuteNonQuery();
+                }
+                System.Diagnostics.Debug.WriteLine($"[MaquinasAutomatizacion] Pedido #{queuedId} auto-asignado a máquina '{nombreMaquina}'");
+            }
+        }
+        catch { }
+        finally
+        {
+            SincronizarEstadoMaquina(nombreMaquina);
+        }
+    }
+
+    public static void SincronizarEstadoMaquina(string nombreMaquina)
+    {
+        if (string.IsNullOrWhiteSpace(nombreMaquina)) return;
+        try
+        {
+            using var conexion = new SqliteConnection(Config.ConnectionString);
+            conexion.Open();
+            string checkStatus = "SELECT Status FROM Maquinas WHERE Nombre = @Nombre";
+            using (var cmdCheck = new SqliteCommand(checkStatus, conexion))
+            {
+                cmdCheck.Parameters.AddWithValue("@Nombre", nombreMaquina);
+                var statusActual = cmdCheck.ExecuteScalar()?.ToString();
+                if (statusActual != null && (statusActual.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || statusActual.Equals("ALERT", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return;
+                }
+            }
+
+            string checkLavado = "SELECT COUNT(*) FROM Pedidos WHERE MaquinaAsignada = @Nombre AND Estado = 'En Lavado'";
+            using var cmdCount = new SqliteCommand(checkLavado, conexion);
+            cmdCount.Parameters.AddWithValue("@Nombre", nombreMaquina);
+            var count = Convert.ToInt32(cmdCount.ExecuteScalar());
+
+            string nuevoStatus = count > 0 ? "EN USO" : "ACTIVA";
+            string updateStatus = "UPDATE Maquinas SET Status = @NuevoStatus WHERE Nombre = @Nombre AND Status != 'MANTENIMIENTO' AND Status != 'ALERT'";
+            using var cmdUpdate = new SqliteCommand(updateStatus, conexion);
+            cmdUpdate.Parameters.AddWithValue("@NuevoStatus", nuevoStatus);
+            cmdUpdate.Parameters.AddWithValue("@Nombre", nombreMaquina);
+            cmdUpdate.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MaquinasAutomatizacion] Error al sincronizar máquina: {ex.Message}");
+        }
+    }
+
+    public static void SincronizarTodasLasMaquinas()
+    {
+        try
+        {
+            using var conexion = new SqliteConnection(Config.ConnectionString);
+            conexion.Open();
+            string getMaquinas = "SELECT Nombre FROM Maquinas WHERE Status != 'MANTENIMIENTO' AND Status != 'ALERT'";
+            using var cmd = new SqliteCommand(getMaquinas, conexion);
+            using var reader = cmd.ExecuteReader();
+            var nombres = new List<string>();
+            while (reader.Read())
+            {
+                nombres.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            foreach (var nombre in nombres)
+            {
+                SincronizarEstadoMaquina(nombre);
+            }
+        }
+        catch { }
     }
 }

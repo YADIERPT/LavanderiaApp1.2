@@ -1,3 +1,5 @@
+using LavanderiaApp.Servicios;
+
 namespace LavanderiaApp.Modelos;
 
 /// <summary>
@@ -38,7 +40,15 @@ public class Pedido
     /// </summary>
     public decimal CalcularTotal()
     {
-        Total = Detalles?.Sum(d => d.Subtotal) ?? 0m;
+        decimal subtotal = Detalles?.Sum(d => d.Subtotal) ?? 0m;
+        if (BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0)
+        {
+            Total = Math.Round(subtotal * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2);
+        }
+        else
+        {
+            Total = subtotal;
+        }
         return Total;
     }
 
@@ -78,7 +88,8 @@ public class Pedido
                               string.Equals(Estado, "Secando", StringComparison.OrdinalIgnoreCase);
     public bool EsEnProceso => EsEnLavado || EsEnSecado || string.Equals(Estado, "En proceso", StringComparison.OrdinalIgnoreCase);
     public bool EsListo => string.Equals(Estado, "Listo", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(Estado, "Listo para entregar", StringComparison.OrdinalIgnoreCase);
+                           string.Equals(Estado, "Listo para entregar", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(Estado, "PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase);
     public bool EsEntregado => string.Equals(Estado, "Entregado", StringComparison.OrdinalIgnoreCase);
     public bool EsCancelado => string.Equals(Estado, "Cancelado", StringComparison.OrdinalIgnoreCase);
 

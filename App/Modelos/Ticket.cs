@@ -116,6 +116,13 @@ public class Ticket
         }
 
         sb.AppendLine("----------------------------------------");
+        if (BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0 && Total > 0)
+        {
+            decimal subtotalSinIva = Math.Round(Total / (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2);
+            decimal montoIva = Total - subtotalSinIva;
+            sb.AppendLine($"SUBTOTAL:           {subtotalSinIva,14:C2}");
+            sb.AppendLine($"IVA ({BusinessConfig.Current.Iva,2:0.#}%):        {montoIva,14:C2}");
+        }
         sb.AppendLine($"TOTAL:              {Total,14:C2}");
         sb.AppendLine($"PAGADO:             {MontoPagado,14:C2}");
         sb.AppendLine($"SALDO PENDIENTE:    {SaldoPendiente,14:C2}");

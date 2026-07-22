@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 
 namespace LavanderiaApp;
@@ -148,57 +150,36 @@ public class DatabaseInitializer
             cmd.ExecuteNonQuery();
         }
 
-        // 2. MIGRACIONES (Agregar columnas si faltan)
-        try
+        // 2. MIGRACIONES (Rutina automática de introspección con PRAGMA table_info)
+        MigrarTabla(conexion, "Pedidos", new Dictionary<string, string>
         {
-            using var cmdAlter = new SqliteCommand("ALTER TABLE Pedidos ADD COLUMN Estado TEXT NOT NULL DEFAULT 'En espera';", conexion);
-            cmdAlter.ExecuteNonQuery();
-        } catch { }
+            { "Estado", "TEXT NOT NULL DEFAULT 'En espera'" },
+            { "InventarioRestado", "INTEGER NOT NULL DEFAULT 0" },
+            { "CostoInsumos", "DECIMAL NOT NULL DEFAULT 0.0" },
+            { "MaquinaAsignada", "TEXT" }
+        });
+
+        MigrarTabla(conexion, "Servicios", new Dictionary<string, string>
+        {
+            { "UnidadMedida", "TEXT NOT NULL DEFAULT 'Unidad'" }
+        });
 
         try
         {
-            using var cmdAlter = new SqliteCommand("ALTER TABLE Servicios ADD COLUMN UnidadMedida TEXT NOT NULL DEFAULT 'Unidad';", conexion);
-            cmdAlter.ExecuteNonQuery();
+            using var cmdSeed99 = new SqliteCommand("INSERT OR IGNORE INTO Servicios (IdServicio, Nombre, Descripcion, Precio, TiempoEstimado, UnidadMedida) VALUES (99, 'Aplazamiento de Entrega', 'Cargo extra por posponer la fecha de entrega', 0.00, 0, 'Unidad');", conexion);
+            cmdSeed99.ExecuteNonQuery();
         } catch { }
 
-        try
+        MigrarTabla(conexion, "Usuarios", new Dictionary<string, string>
         {
-            using var cmdAlter = new SqliteCommand("ALTER TABLE Pedidos ADD COLUMN InventarioRestado INTEGER NOT NULL DEFAULT 0;", conexion);
-            cmdAlter.ExecuteNonQuery();
-        } catch { }
-
-        try
-        {
-            using var cmdAlter = new SqliteCommand("ALTER TABLE Pedidos ADD COLUMN CostoInsumos DECIMAL NOT NULL DEFAULT 0.0;", conexion);
-            cmdAlter.ExecuteNonQuery();
-        } catch { }
-
-        try
-        {
-            using var cmdAlter = new SqliteCommand("ALTER TABLE Pedidos ADD COLUMN MaquinaAsignada TEXT;", conexion);
-            cmdAlter.ExecuteNonQuery();
-        } catch { }
-
-        // Migraciones para la tabla Usuarios
-        string[] alterUsuarios = new[]
-        {
-            "ALTER TABLE Usuarios ADD COLUMN Telefono TEXT DEFAULT '';",
-            "ALTER TABLE Usuarios ADD COLUMN Correo TEXT DEFAULT '';",
-            "ALTER TABLE Usuarios ADD COLUMN Turno TEXT DEFAULT '';",
-            "ALTER TABLE Usuarios ADD COLUMN FechaContrato TEXT DEFAULT '';",
-            "ALTER TABLE Usuarios ADD COLUMN Salario DECIMAL DEFAULT 0.0;",
-            "ALTER TABLE Usuarios ADD COLUMN Sucursal TEXT DEFAULT '';",
-            "ALTER TABLE Usuarios ADD COLUMN Edad INTEGER DEFAULT 0;"
-        };
-        foreach (var queryAlter in alterUsuarios)
-        {
-            try
-            {
-                using var cmdAlterU = new SqliteCommand(queryAlter, conexion);
-                cmdAlterU.ExecuteNonQuery();
-            }
-            catch { }
-        }
+            { "Telefono", "TEXT DEFAULT ''" },
+            { "Correo", "TEXT DEFAULT ''" },
+            { "Turno", "TEXT DEFAULT ''" },
+            { "FechaContrato", "TEXT DEFAULT ''" },
+            { "Salario", "DECIMAL DEFAULT 0.0" },
+            { "Sucursal", "TEXT DEFAULT ''" },
+            { "Edad", "INTEGER DEFAULT 0" }
+        });
 
         // 3. VERIFICAR Y REGISTRAR SEMILLA INICIALIZADA (Para no reinsertar máquinas borradas al reiniciar)
         bool semillaInicializada = false;
@@ -242,7 +223,8 @@ public class DatabaseInitializer
                 INSERT OR IGNORE INTO Servicios (IdServicio, Nombre, Descripcion, Precio, TiempoEstimado, UnidadMedida) VALUES 
                 (1, 'Lavado General', 'Lavado de ropa por kilogramo', 15.00, 120, 'Kg'),
                 (2, 'Secado', 'Secado de ropa por carga', 30.00, 60, 'Carga'),
-                (3, 'Planchado', 'Planchado por prenda (Opcional)', 10.00, 15, 'Unidad');
+                (3, 'Planchado', 'Planchado por prenda (Opcional)', 10.00, 15, 'Unidad'),
+                (99, 'Aplazamiento de Entrega', 'Cargo extra por posponer la fecha de entrega', 0.00, 0, 'Unidad');
 
                 INSERT OR IGNORE INTO AppMetadata (Clave, Valor) VALUES ('SemillaInicializada', 'true');
             ";
@@ -250,6 +232,28 @@ public class DatabaseInitializer
             using (var cmd = new SqliteCommand(seedData, conexion))
             {
                 cmd.ExecuteNonQuery();
+            }
+        }
+    }
+
+    private static void MigrarTabla(SqliteConnection conexion, string tabla, Dictionary<string, string> columnasDefinicion)
+    {
+        var columnasExistentes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (var cmd = new SqliteCommand($"PRAGMA table_info({tabla})", conexion))
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                columnasExistentes.Add(reader.GetString(1)); // Nombre de la columna
+            }
+        }
+
+        foreach (var col in columnasDefinicion)
+        {
+            if (!columnasExistentes.Contains(col.Key))
+            {
+                using var alterCmd = new SqliteCommand($"ALTER TABLE {tabla} ADD COLUMN {col.Key} {col.Value}", conexion);
+                alterCmd.ExecuteNonQuery();
             }
         }
     }

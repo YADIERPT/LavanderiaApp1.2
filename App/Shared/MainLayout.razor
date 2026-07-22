@@ -556,6 +556,21 @@ else
 
     private void AbrirModalCorte()
     {
+        var pedidosPendientesHoy = new PedidoRepositorio().ObtenerTodos()
+            .Where(p => !p.Estado.Contains("Entregado", StringComparison.OrdinalIgnoreCase) && 
+                        !p.Estado.Contains("Cancelado", StringComparison.OrdinalIgnoreCase) && 
+                        (!p.FechaEntrega.HasValue || p.FechaEntrega.Value.Date <= DateTime.Today))
+            .ToList();
+
+        if (pedidosPendientesHoy.Any())
+        {
+            var pEj = pedidosPendientesHoy.First();
+            string numEj = TurnoHelper.ObtenerNumeroDisplay(pEj.IdPedido).ToString("D2");
+            CustomMessageBox.Show("Corte Bloqueado por Pedidos Pendientes", 
+                $"No se puede realizar el corte de caja porque hay {pedidosPendientesHoy.Count} pedido(s) pendiente(s) programado(s) para hoy o sin fecha posterior de entrega (por ejemplo, el Pedido #{numEj}).\n\nPara cerrar la caja, debe entregar/finalizar los pedidos pendientes de hoy, o bien editar el pedido y especificar que su entrega es para un día posterior.", "warning");
+            return;
+        }
+
         EfectivoContado = 0m;
         MostrarModalCorte = true;
     }
@@ -564,6 +579,22 @@ else
     {
         try
         {
+            var pedidosPendientesHoy = new PedidoRepositorio().ObtenerTodos()
+                .Where(p => !p.Estado.Contains("Entregado", StringComparison.OrdinalIgnoreCase) && 
+                            !p.Estado.Contains("Cancelado", StringComparison.OrdinalIgnoreCase) && 
+                            (!p.FechaEntrega.HasValue || p.FechaEntrega.Value.Date <= DateTime.Today))
+                .ToList();
+
+            if (pedidosPendientesHoy.Any())
+            {
+                MostrarModalCorte = false;
+                var pEj = pedidosPendientesHoy.First();
+                string numEj = TurnoHelper.ObtenerNumeroDisplay(pEj.IdPedido).ToString("D2");
+                CustomMessageBox.Show("Corte Bloqueado por Pedidos Pendientes", 
+                    $"No se puede realizar el corte de caja porque hay {pedidosPendientesHoy.Count} pedido(s) pendiente(s) programado(s) para hoy o sin fecha posterior de entrega (por ejemplo, el Pedido #{numEj}).\n\nPara cerrar la caja, debe entregar/finalizar los pedidos pendientes de hoy, o bien especificar que su entrega es para un día posterior.", "warning");
+                return;
+            }
+
             decimal fondoInicial = BusinessConfig.Current.FondoCaja;
             
             // Pagos en efectivo hoy

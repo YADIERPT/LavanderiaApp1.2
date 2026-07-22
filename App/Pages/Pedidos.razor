@@ -42,11 +42,15 @@
                     {
                         <div class="order-row-item @(SelectedOrder?.Id == order.Id ? "selected" : "")" @onclick="() => SelectOrder(order)">
                             <div class="order-icon-container @GetIconClass(order.Estado)">
-                                <span class="material-symbols-rounded">assignment</span>
+                                <span class="material-symbols-rounded">@GetIconSymbol(order.Estado)</span>
                             </div>
                             <div class="order-info-details">
-                                <span class="order-title">Pedido #@order.Id</span>
+                                <span class="order-title">Pedido #@order.NumeroDisplay</span>
                                 <span class="order-subtitle">@order.Cliente • @order.Peso.ToString("0.0") kg</span>
+                                @if (order.EsPendienteEntrega)
+                                {
+                                    <span style="display: inline-block; font-size: 10px; background: #EDE9FE; color: #6D28D9; border: 1px solid #DDD6FE; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-top: 4px; width: fit-content;">PENDIENTE PARA ENTREGA</span>
+                                }
                             </div>
                             <div class="order-status-badge-container">
                                 <span class="order-badge @GetBadgeClass(order.Estado)">
@@ -83,7 +87,7 @@
                 <div class="details-header-banner">
                     <div class="header-banner-text">
                         <h2>Detalles</h2>
-                        <span>Pedidos</span>
+                        <span>Pedido #@SelectedOrder.NumeroDisplay</span>
                     </div>
                     <!-- Decorative back card icon -->
                     <span class="material-symbols-rounded decorative-icon">badge</span>
@@ -104,8 +108,18 @@
                         <span class="prop-val">@SelectedOrder.HoraRecepcion</span>
                     </div>
                     <div class="detail-property-row">
+                        <span class="prop-label">ESTADO ACTUAL</span>
+                        <span class="prop-val font-bold" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="order-badge @GetBadgeClass(SelectedOrder.Estado)" style="font-size: 11px; padding: 4px 10px;">@SelectedOrder.Estado</span>
+                            @if (SelectedOrder.EsPendienteEntrega)
+                            {
+                                <span style="font-size: 10px; background: #EDE9FE; color: #6D28D9; border: 1px solid #DDD6FE; padding: 3px 6px; border-radius: 4px; font-weight: 700;">PENDIENTE PARA ENTREGA</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="detail-property-row">
                         <span class="prop-label">MÁQUINA</span>
-                        <span class="prop-val">@SelectedOrder.Maquina</span>
+                        <span class="prop-val font-bold">@SelectedOrder.Maquina</span>
                     </div>
                     <div class="detail-property-row">
                         <span class="prop-label">PESO</span>
@@ -301,6 +315,29 @@
     </div>
 }
 
+@if (MostrarModalAdvertenciaEntregaAnticipada)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalAdvertenciaEntregaAnticipada = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 440px; padding: 32px; background: #FFFFFF;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; color: #6D28D9;">
+                <span class="material-symbols-rounded" style="font-size: 32px;">event_available</span>
+                <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #1E293B;">ENTREGA ANTICIPADA</h3>
+            </div>
+            <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                Este pedido fue programado para entregarse en una fecha posterior (<strong>@FechaEntregaAnticipadaStr</strong>). ¿El cliente vino a recogerlo antes y deseas proceder al cobro y entrega ahora?
+            </p>
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #6D28D9; border-color: #6D28D9;" @onclick="ConfirmarIrACobroAnticipado">
+                    SÍ, ENTREGAR AHORA
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalAdvertenciaEntregaAnticipada = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Modal de Pago y Entrega -->
 @if (MostrarModalPagoEntrega)
 {
@@ -365,6 +402,7 @@
     public class OrderItem
     {
         public int Id { get; set; }
+        public int NumeroDisplay { get; set; }
         public string Cliente { get; set; }
         public string Dia { get; set; }
         public string HoraRecepcion { get; set; }
@@ -377,11 +415,14 @@
         public string Estado { get; set; }
         public decimal Abonado { get; set; } = 0m;
         public decimal SaldoPendiente { get; set; } = 0m;
+        public bool EsPendienteEntrega { get; set; }
     }
 
     private bool MostrarModalPedidoEntregado = false;
     private bool MostrarModalPedidoYaListo = false;
     private bool MostrarModalPedidoNoListo = false;
+    private bool MostrarModalAdvertenciaEntregaAnticipada = false;
+    private string FechaEntregaAnticipadaStr = "";
     private bool ShowFilterModal = false;
     private string SearchText = "";
     private string SelectedStatusFilter = "TODOS";
@@ -413,10 +454,10 @@
     private bool CoincideEstado(string estadoPedido, string filtro)
     {
         if (filtro == "TODOS") return true;
-        if (filtro == "EN ESPERA") return estadoPedido.Equals("En espera", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("En espera de lavado", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "EN ESPERA") return estadoPedido.Equals("En espera", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("En espera de lavado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("En espera de secado", StringComparison.OrdinalIgnoreCase);
         if (filtro == "EN LAVADO") return estadoPedido.Equals("En Lavado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Lavando", StringComparison.OrdinalIgnoreCase);
-        if (filtro == "EN SECADO") return estadoPedido.Equals("En Secado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Secando", StringComparison.OrdinalIgnoreCase);
-        if (filtro == "LISTO") return estadoPedido.Equals("Listo", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "EN SECADO") return estadoPedido.Equals("En Secado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Secando", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("En espera de secado", StringComparison.OrdinalIgnoreCase);
+        if (filtro == "LISTO") return estadoPedido.Equals("Listo", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase);
         if (filtro == "ENTREGADO") return estadoPedido.Equals("Entregado", StringComparison.OrdinalIgnoreCase) || estadoPedido.Equals("Finalizado", StringComparison.OrdinalIgnoreCase);
         if (filtro == "CANCELADO") return estadoPedido.Equals("Cancelado", StringComparison.OrdinalIgnoreCase);
         return estadoPedido.Equals(filtro, StringComparison.OrdinalIgnoreCase);
@@ -427,7 +468,8 @@
         CoincideEstado(o.Estado, SelectedStatusFilter) &&
         (string.IsNullOrWhiteSpace(SearchText) ||
          o.Cliente.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-         o.Id.ToString().Contains(SearchText))
+         o.Id.ToString().Contains(SearchText) ||
+         o.NumeroDisplay.ToString().Contains(SearchText))
     );
 
     protected override void OnInitialized()
@@ -444,6 +486,7 @@
 
     protected override void OnParametersSet()
     {
+        CargarPedidos();
         ProcesarParametrosURL();
     }
 
@@ -476,7 +519,48 @@
         var servicioLavado = serviciosDb.FirstOrDefault(s => s.IdServicio == 1);
         decimal activePrice = servicioLavado?.Precio ?? 15.00m;
 
-        Orders = pedidosDb.Select((p, index) => {
+        var cortes = new CorteCajaRepositorio().ObtenerTodos();
+        var ultimoCorte = cortes.OrderByDescending(c => c.Fecha).FirstOrDefault();
+        bool isAdmin = SessionManager.UsuarioActual?.EsAdmin ?? false;
+
+        var pedidosFiltrados = pedidosDb.Where(p => 
+        {
+            bool estaEntregadoOCancelado = p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase);
+
+            // 1. Si se registró en días anteriores y está programado para una fecha de entrega posterior a hoy, se muestra SOLO cuando llega el día de su entrega
+            if (p.FechaRecepcion.Date < DateTime.Today && p.FechaEntrega.HasValue && p.FechaEntrega.Value.Date > DateTime.Today)
+            {
+                return false;
+            }
+
+            // 2. Si no se ha venido a buscar (está pendiente de entrega) y su fecha de entrega es hoy o anterior
+            if (!estaEntregadoOCancelado && (!p.FechaEntrega.HasValue || p.FechaEntrega.Value.Date <= DateTime.Today))
+            {
+                // Se muestra siempre, incluso después del corte de caja o si es de días pasados
+                return true;
+            }
+
+            // 3. Ocultar pedidos de días anteriores que ya se entregaron o cancelaron
+            bool esDeHoy = p.FechaRecepcion.Date == DateTime.Today || (p.FechaEntrega.HasValue && p.FechaEntrega.Value.Date == DateTime.Today);
+            if (!esDeHoy) return false;
+
+            // Para empleados: Ocultar pedidos anteriores al último corte de caja de hoy si ya están completados/cancelados
+            if (!isAdmin && ultimoCorte != null && ultimoCorte.Fecha.Date == DateTime.Today)
+            {
+                if (p.FechaRecepcion <= ultimoCorte.Fecha && estaEntregadoOCancelado)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }).ToList();
+
+        pedidosFiltrados = pedidosFiltrados
+            .OrderByDescending(p => !p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) && !p.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(p => p.IdPedido)
+            .ToList();
+
+        Orders = pedidosFiltrados.Select((p, index) => {
             var cliente = clientesDb.FirstOrDefault(c => c.IdCliente == p.IdCliente);
             string nombreCliente = cliente?.Nombre ?? $"Cliente #{p.IdCliente}";
 
@@ -500,8 +584,13 @@
                 .ToList();
             string otrosServicios = nombresServicios.Count > 0 ? string.Join(" + ", nombresServicios) : "Lavado Estándar";
 
+            bool esPendienteEntrega = !p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) && 
+                                      !p.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase) && 
+                                      (p.FechaRecepcion.Date < DateTime.Today || (ultimoCorte != null && ultimoCorte.Fecha.Date == DateTime.Today && p.FechaRecepcion <= ultimoCorte.Fecha));
+
             return new OrderItem {
                 Id = p.IdPedido,
+                NumeroDisplay = TurnoHelper.ObtenerNumeroDisplay(p.IdPedido),
                 Cliente = nombreCliente,
                 Dia = p.FechaRecepcion.ToString("dd MMM, yyyy"),
                 HoraRecepcion = p.FechaRecepcion.ToString("hh:mm tt"),
@@ -510,19 +599,26 @@
                 Costo = p.Total,
                 OtrosServicios = otrosServicios,
                 Empleado = SessionManager.UsuarioActual?.Nombre ?? "Atendido en Recepción",
-                HoraEntrega = p.FechaEntrega.HasValue ? p.FechaEntrega.Value.ToString("hh:mm tt") : (p.Estado.ToLower().Contains("entregado") ? p.FechaRecepcion.AddHours(2).ToString("hh:mm tt") : "Pendiente"),
+                HoraEntrega = p.FechaEntrega.HasValue ? (p.FechaEntrega.Value.Date == DateTime.Today ? p.FechaEntrega.Value.ToString("hh:mm tt") : p.FechaEntrega.Value.ToString("dd MMM hh:mm tt")) : (p.Estado.ToLower().Contains("entregado") ? p.FechaRecepcion.AddHours(2).ToString("hh:mm tt") : "Pendiente"),
                 Estado = p.Estado.ToUpper(),
                 Abonado = abonado,
-                SaldoPendiente = Math.Max(0m, saldoPendiente)
+                SaldoPendiente = Math.Max(0m, saldoPendiente),
+                EsPendienteEntrega = esPendienteEntrega
             };
         }).ToList();
 
-        SelectedOrder = Orders.FirstOrDefault();
+        var previousId = SelectedOrder?.Id ?? SessionManager.LastSelectedOrderId;
+        SelectedOrder = previousId.HasValue ? Orders.FirstOrDefault(o => o.Id == previousId.Value) ?? Orders.FirstOrDefault() : Orders.FirstOrDefault();
+        if (SelectedOrder != null)
+        {
+            SessionManager.LastSelectedOrderId = SelectedOrder.Id;
+        }
     }
 
     private void SelectOrder(OrderItem order)
     {
         SelectedOrder = order;
+        SessionManager.LastSelectedOrderId = order.Id;
     }
 
     private void ToggleFilters()
@@ -561,7 +657,8 @@
                 MostrarModalPedidoEntregado = true;
                 return;
             }
-            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) ||
+                SelectedOrder.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
             {
                 MostrarModalPedidoYaListo = true;
                 return;
@@ -579,7 +676,8 @@
                 MostrarModalPedidoEntregado = true;
                 return;
             }
-            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            if (SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) ||
+                SelectedOrder.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
             {
                 MostrarModalPedidoYaListo = true;
                 return;
@@ -597,12 +695,30 @@
                 MostrarModalPedidoEntregado = true;
                 return;
             }
-            if (!SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            if (!SelectedOrder.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) &&
+                !SelectedOrder.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
             {
                 MostrarModalPedidoNoListo = true;
                 return;
             }
 
+            var pedidoDbCheck = _pedidoRepo.ObtenerPorId(SelectedOrder.Id);
+            if (pedidoDbCheck != null && (pedidoDbCheck.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase) || (pedidoDbCheck.FechaEntrega.HasValue && pedidoDbCheck.FechaEntrega.Value.Date > DateTime.Today)))
+            {
+                FechaEntregaAnticipadaStr = pedidoDbCheck.FechaEntrega.HasValue ? pedidoDbCheck.FechaEntrega.Value.ToString("dd MMM yyyy") : "Fecha posterior";
+                MostrarModalAdvertenciaEntregaAnticipada = true;
+                return;
+            }
+
+            NavManager.NavigateTo($"/cobro/{SelectedOrder.Id}");
+        }
+    }
+
+    private void ConfirmarIrACobroAnticipado()
+    {
+        MostrarModalAdvertenciaEntregaAnticipada = false;
+        if (SelectedOrder != null)
+        {
             NavManager.NavigateTo($"/cobro/{SelectedOrder.Id}");
         }
     }
@@ -627,7 +743,7 @@
             // Cambiar estado a Entregado
             _pedidoRepo.Entregar(SelectedOrder.Id);
             
-            ToastService.Show("¡Pedido Entregado!", $"El pedido #{SelectedOrder.Id:D2} ha sido entregado correctamente.", "success");
+            ToastService.Show("¡Pedido Entregado!", $"El pedido #{SelectedOrder.NumeroDisplay:D2} ha sido entregado correctamente.", "success");
             
             MostrarModalPagoEntrega = false;
             CargarPedidos();
@@ -642,11 +758,12 @@
     {
         return estado.ToUpper() switch
         {
-            "EN ESPERA" or "EN ESPERA DE LAVADO" or "EN ESPERA DE ENTREGA" => "badge-espera",
+            "EN ESPERA" or "EN ESPERA DE ENTREGA" => "badge-espera",
+            "EN ESPERA DE LAVADO" => "badge-espera-lavado",
             "EN LAVADO" or "LAVANDO" => "badge-lavando",
             "EN ESPERA DE SECADO" => "badge-espera-secado",
             "EN SECADO" or "SECANDO" => "badge-secando",
-            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" => "badge-listo",
+            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" or "PENDIENTE PARA ENTREGA" => "badge-listo",
             "ENTREGADO" or "FINALIZADO" => "badge-entregado",
             "CANCELADO" => "badge-cancelado",
             _ => "badge-espera"
@@ -657,14 +774,31 @@
     {
         return estado.ToUpper() switch
         {
-            "EN ESPERA" or "EN ESPERA DE LAVADO" or "EN ESPERA DE ENTREGA" => "icon-espera",
+            "EN ESPERA" or "EN ESPERA DE ENTREGA" => "icon-espera",
+            "EN ESPERA DE LAVADO" => "icon-espera-lavado",
             "EN LAVADO" or "LAVANDO" => "icon-lavando",
             "EN ESPERA DE SECADO" => "icon-espera-secado",
             "EN SECADO" or "SECANDO" => "icon-secando",
-            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" => "icon-listo",
+            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" or "PENDIENTE PARA ENTREGA" => "icon-listo",
             "ENTREGADO" or "FINALIZADO" => "icon-entregado",
             "CANCELADO" => "icon-cancelado",
             _ => "icon-espera"
+        };
+    }
+
+    private string GetIconSymbol(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "EN ESPERA" or "EN ESPERA DE ENTREGA" => "assignment",
+            "EN ESPERA DE LAVADO" => "hourglass_top",
+            "EN LAVADO" or "LAVANDO" => "local_laundry_service",
+            "EN ESPERA DE SECADO" => "hourglass_bottom",
+            "EN SECADO" or "SECANDO" => "wb_sunny",
+            "LISTO PARA ENTREGAR" or "LISTO" or "TERMINADA" or "PENDIENTE PARA ENTREGA" => "check_circle",
+            "ENTREGADO" or "FINALIZADO" => "task_alt",
+            "CANCELADO" => "cancel",
+            _ => "assignment"
         };
     }
 }

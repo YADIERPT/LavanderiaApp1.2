@@ -70,16 +70,29 @@
                 <span>Configuración de Cobros</span>
             </h3>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- Estado IVA (Toggle) -->
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label">Estado del I.V.A. (Predeterminado: Apagado)</label>
+                    <div style="display: flex; align-items: center; gap: 12px; height: 48px; background: #F8FAFC; padding: 0 16px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                        <input type="checkbox" id="ivaToggle" @bind="configData.IvaActivo" style="width: 20px; height: 20px; cursor: pointer; accent-color: #0058BC;" />
+                        <label for="ivaToggle" style="cursor: pointer; font-size: 14px; font-weight: 600; color: @(configData.IvaActivo ? "#0058BC" : "#64748B"); margin: 0;">
+                            @(configData.IvaActivo ? "I.V.A. Activado (Se aplica en cobros y ticket)" : "I.V.A. Desactivado (Sin IVA)")
+                        </label>
+                    </div>
+                </div>
+
                 <!-- IVA -->
                 <div class="input-group" style="margin-bottom: 0;">
                     <label class="input-label">I.V.A. Aplicable (%)</label>
                     <div class="input-container">
                         <span class="material-symbols-rounded input-icon-left">percent</span>
-                        <input type="number" step="0.1" class="form-input" @bind="configData.Iva" style="padding-left: 48px;" />
+                        <input type="number" step="0.1" class="form-input" @bind="configData.Iva" disabled="@(!configData.IvaActivo)" style="padding-left: 48px; @(configData.IvaActivo ? "" : "background-color: #F1F5F9; opacity: 0.7;")" />
                     </div>
                 </div>
+            </div>
 
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <!-- Simbolo Moneda -->
                 <div class="input-group" style="margin-bottom: 0;">
                     <label class="input-label">Símbolo de Moneda</label>
@@ -97,6 +110,15 @@
                     <div class="input-container">
                         <span class="material-symbols-rounded input-icon-left">account_balance_wallet</span>
                         <input type="number" step="10" class="form-input" @bind="configData.FondoCaja" style="padding-left: 48px;" />
+                    </div>
+                </div>
+
+                <!-- Costo Extra de Aplazamiento -->
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label">Costo Extra por Aplazar Entrega ($)</label>
+                    <div class="input-container">
+                        <span class="material-symbols-rounded input-icon-left">event_repeat</span>
+                        <input type="number" step="5" class="form-input" @bind="configData.CostoAplazarEntrega" style="padding-left: 48px;" />
                     </div>
                 </div>
             </div>
@@ -418,6 +440,7 @@
             Direccion = BusinessConfig.Current.Direccion,
             MensajeTicket = BusinessConfig.Current.MensajeTicket,
             Iva = BusinessConfig.Current.Iva,
+            IvaActivo = BusinessConfig.Current.IvaActivo,
             Moneda = BusinessConfig.Current.Moneda,
             Tema = BusinessConfig.Current.Tema,
             FondoCaja = BusinessConfig.Current.FondoCaja,
@@ -468,6 +491,7 @@
         BusinessConfig.Current.Direccion = configData.Direccion;
         BusinessConfig.Current.MensajeTicket = configData.MensajeTicket;
         BusinessConfig.Current.Iva = configData.Iva;
+        BusinessConfig.Current.IvaActivo = configData.IvaActivo;
         BusinessConfig.Current.Moneda = configData.Moneda;
         BusinessConfig.Current.Tema = configData.Tema;
         BusinessConfig.Current.FondoCaja = configData.FondoCaja;

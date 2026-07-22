@@ -277,6 +277,7 @@
 
     protected override void OnParametersSet()
     {
+        CargarClientes();
         ProcesarParametrosURL();
     }
 
@@ -363,12 +364,24 @@
             };
         }).ToList();
 
-        SelectedClient = Clients.FirstOrDefault();
+        int? previousId = null;
+        if (SelectedClient != null && int.TryParse(SelectedClient.Id, out int curId)) previousId = curId;
+        else previousId = SessionManager.LastSelectedClientId;
+
+        SelectedClient = previousId.HasValue ? Clients.FirstOrDefault(c => int.TryParse(c.Id, out int cid) && cid == previousId.Value) ?? Clients.FirstOrDefault() : Clients.FirstOrDefault();
+        if (SelectedClient != null && int.TryParse(SelectedClient.Id, out int finalId))
+        {
+            SessionManager.LastSelectedClientId = finalId;
+        }
     }
 
     private void SelectClient(ClientItem client)
     {
         SelectedClient = client;
+        if (client != null && int.TryParse(client.Id, out int id))
+        {
+            SessionManager.LastSelectedClientId = id;
+        }
     }
 
     private void ToggleFilters()

@@ -136,4 +136,26 @@ public class PedidoRepositorio
         command.Parameters.AddWithValue("@IdPedido", idPedido);
         command.ExecuteNonQuery();
     }
+
+    public void ActualizarPedido(Pedido pedido)
+    {
+        using var conexion = new SqliteConnection(Config.ConnectionString);
+        conexion.Open();
+
+        string query = @"UPDATE Pedidos 
+                         SET IdCliente = @IdCliente,
+                             FechaEntrega = @FechaEntrega,
+                             Estado = @Estado,
+                             Total = @Total,
+                             MaquinaAsignada = @MaquinaAsignada
+                         WHERE IdPedido = @IdPedido";
+        using var command = new SqliteCommand(query, conexion);
+        command.Parameters.AddWithValue("@IdCliente", pedido.IdCliente);
+        command.Parameters.AddWithValue("@FechaEntrega", pedido.FechaEntrega.HasValue ? pedido.FechaEntrega.Value.ToString("yyyy-MM-dd HH:mm:ss") : (object)System.DBNull.Value);
+        command.Parameters.AddWithValue("@Estado", string.IsNullOrEmpty(pedido.Estado) ? "En espera de lavado" : pedido.Estado);
+        command.Parameters.AddWithValue("@Total", pedido.Total);
+        command.Parameters.AddWithValue("@MaquinaAsignada", pedido.MaquinaAsignada ?? "");
+        command.Parameters.AddWithValue("@IdPedido", pedido.IdPedido);
+        command.ExecuteNonQuery();
+    }
 }

@@ -14,7 +14,7 @@
             <!-- Cyan-Blue Gradient Header Banner -->
             <div class="cobro-header-banner">
                 <div class="header-banner-text">
-                    <h2>PEDIDO # @OrderId</h2>
+                    <h2>PEDIDO # @TurnoHelper.ObtenerNumeroDisplay(OrderId)</h2>
                     <span>DETALLES</span>
                 </div>
                 <span class="material-symbols-rounded decorative-icon">local_laundry_service</span>
@@ -63,6 +63,20 @@
                     </div>
                 </div>
 
+                @if (AplicaIva)
+                {
+                    <div style="margin-top: 16px; padding: 12px 16px; background: #F8FAFC; border-radius: 12px; border: 1px dashed #CBD5E1;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; color: #64748B;">
+                            <span>SUBTOTAL:</span>
+                            <span style="font-weight: 600;">@SubtotalSinIva.ToString("$#,##0.00")</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #64748B;">
+                            <span>I.V.A. (@BusinessConfig.Current.Iva%):</span>
+                            <span style="font-weight: 600;">@MontoIva.ToString("$#,##0.00")</span>
+                        </div>
+                    </div>
+                }
+
                 <!-- Total Row (Único y Grande) -->
                 <div class="cobro-total-container" style="margin-top: 28px; padding-top: 24px;">
                     <span class="cobro-total-label" style="font-size: 17px;">VALOR DEL PEDIDO</span>
@@ -90,6 +104,18 @@
             <div class="payment-form-box" style="padding: 28px 32px; border-radius: 20px; width: 100%;">
                 <!-- Desglose Financiero Destacado -->
                 <div class="desglose-box" style="padding: 20px 24px; margin-bottom: 24px; border-radius: 16px;">
+                    @if (AplicaIva)
+                    {
+                        <div class="desglose-row" style="font-size: 15px; margin-bottom: 8px; color: #64748B;">
+                            <span>SUBTOTAL (SIN IVA)</span>
+                            <span class="font-bold">@SubtotalSinIva.ToString("$#,##0.00") MXN</span>
+                        </div>
+                        <div class="desglose-row" style="font-size: 15px; margin-bottom: 12px; color: #64748B;">
+                            <span>I.V.A. (@BusinessConfig.Current.Iva%)</span>
+                            <span class="font-bold">@MontoIva.ToString("$#,##0.00") MXN</span>
+                        </div>
+                        <div class="desglose-divider" style="margin-bottom: 12px;"></div>
+                    }
                     @if (MontoYaAbonado > 0)
                     {
                         <div class="desglose-row" style="font-size: 16px; margin-bottom: 10px;">
@@ -248,12 +274,38 @@
     </div>
 }
 
+@if (MostrarModalAdvertenciaEntregaAnticipada)
+{
+    <div class="tipo-pago-backdrop" @onclick="() => MostrarModalAdvertenciaEntregaAnticipada = false">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 440px; padding: 32px; background: #FFFFFF;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; color: #6D28D9;">
+                <span class="material-symbols-rounded" style="font-size: 32px;">event_available</span>
+                <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #1E293B;">ENTREGA ANTICIPADA</h3>
+            </div>
+            <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                Este pedido fue programado para entregarse en una fecha posterior (<strong>@FechaProgramadaEntregaStr</strong>). ¿El cliente vino a recogerlo antes y deseas procesar el cobro y entrega ahora?
+            </p>
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button class="btn-payment-submit" style="background: #6D28D9; border-color: #6D28D9;" @onclick="ConfirmarEntregaAnticipada">
+                    SÍ, ENTREGAR AHORA
+                </button>
+                <button class="btn-payment-cancel" @onclick="() => MostrarModalAdvertenciaEntregaAnticipada = false">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
 
     private bool EsTarjeta => NavManager.Uri.Contains("/tarjeta");
     private bool MostrarModalExitoPago = false;
+    private bool MostrarModalAdvertenciaEntregaAnticipada = false;
+    private bool _advirtioEntregaAnticipada = false;
+    private string FechaProgramadaEntregaStr = "";
 
     private int OrderId = 2;
     private string ClientName = "Julio vera";
@@ -268,12 +320,15 @@
 
     private decimal CostoTotalPedido = 0m;
     private decimal TotalAmount => CostoTotalPedido > 0 ? CostoTotalPedido : ((decimal)Weight * PricePerKg + OtherServices);
+    private bool AplicaIva => BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0 && CostoTotalPedido > 0;
+    private decimal SubtotalSinIva => AplicaIva ? Math.Round(CostoTotalPedido / (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : CostoTotalPedido;
+    private decimal MontoIva => Math.Max(0m, CostoTotalPedido - SubtotalSinIva);
 
     private decimal AmountPaid = 200.00m;
     private decimal MontoYaAbonado = 0m;
     private decimal SaldoDeudor = 0m;
     private decimal CalculatedChange => AmountPaid > SaldoDeudor ? AmountPaid - SaldoDeudor : 0.00m;
-    private string FolioText => $"FOL-{DateTime.Now.Year}-{OrderId:D4}";
+    private string FolioText => $"FOL-{DateTime.Now.Year}-{TurnoHelper.ObtenerNumeroDisplay(OrderId):D4}";
 
     private PagoServicio _pagoServicio = new();
     private PedidoRepositorio _pedidoRepo = new();
@@ -301,11 +356,21 @@
             var pedidoDb = _pedidoRepo.ObtenerPorId(OrderId);
             if (pedidoDb != null)
             {
-                if (!pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+                if (!pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) &&
+                    !pedidoDb.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
                 {
-                    ToastService.Show("Acceso Restringido", $"El pedido #{OrderId:D2} está en estado '{pedidoDb.Estado}'. Solo se pueden finalizar y cobrar pedidos que estén 'Listo para entregar'.", "warning");
+                    ToastService.Show("Acceso Restringido", $"El pedido #{TurnoHelper.ObtenerNumeroDisplay(OrderId):D2} está en estado '{pedidoDb.Estado}'. Solo se pueden finalizar y cobrar pedidos que estén 'Listo para entregar' o 'PENDIENTE PARA ENTREGA'.", "warning");
                     NavManager.NavigateTo("/pedidos");
                     return;
+                }
+
+                if (pedidoDb.FechaEntrega.HasValue && pedidoDb.FechaEntrega.Value.Date > DateTime.Today)
+                {
+                    FechaProgramadaEntregaStr = pedidoDb.FechaEntrega.Value.ToString("dd MMM yyyy");
+                }
+                else if (pedidoDb.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
+                {
+                    FechaProgramadaEntregaStr = pedidoDb.FechaEntrega.HasValue ? pedidoDb.FechaEntrega.Value.ToString("dd MMM yyyy") : "Fecha posterior";
                 }
 
                 FormattedDate = pedidoDb.FechaRecepcion.ToString("dd MMM yyyy, hh:mm tt");
@@ -329,20 +394,23 @@
                 decimal yaPagado = Math.Abs(pagos.Sum(pg => pg.MontoPago));
                 MontoYaAbonado = yaPagado;
                 
-                CostoTotalPedido = pedidoDb.Total > 0 ? pedidoDb.Total : ((decimal)Weight * PricePerKg + OtherServices);
+                decimal subtotalCalc = ((decimal)Weight * PricePerKg + OtherServices);
+                CostoTotalPedido = pedidoDb.Total > 0 ? pedidoDb.Total : (BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc);
                 SaldoDeudor = Math.Max(0m, CostoTotalPedido - yaPagado);
                 AmountPaid = SaldoDeudor;
             }
             else
             {
-                CostoTotalPedido = (decimal)Weight * PricePerKg + OtherServices;
+                decimal subtotalCalc = (decimal)Weight * PricePerKg + OtherServices;
+                CostoTotalPedido = BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc;
                 SaldoDeudor = CostoTotalPedido;
                 AmountPaid = CostoTotalPedido;
             }
         }
         else
         {
-            CostoTotalPedido = (decimal)Weight * PricePerKg + OtherServices;
+            decimal subtotalCalc = (decimal)Weight * PricePerKg + OtherServices;
+            CostoTotalPedido = BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc;
             SaldoDeudor = CostoTotalPedido;
             AmountPaid = CostoTotalPedido;
         }
@@ -350,6 +418,12 @@
 
     private void ProcesarPago()
     {
+        if (!_advirtioEntregaAnticipada && !string.IsNullOrEmpty(FechaProgramadaEntregaStr) && (new PedidoRepositorio().ObtenerPorId(OrderId)?.FechaEntrega?.Date > DateTime.Today || new PedidoRepositorio().ObtenerPorId(OrderId)?.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase) == true))
+        {
+            MostrarModalAdvertenciaEntregaAnticipada = true;
+            return;
+        }
+
         if (!EsTarjeta && AmountPaid < SaldoDeudor)
         {
             CustomMessageBox.Show("Monto insuficiente", $"El monto pagado (${AmountPaid:0.00}) es menor que el saldo pendiente (${SaldoDeudor:0.00}).", "warning");
@@ -377,6 +451,13 @@
         {
             CustomMessageBox.Show("Error", $"Error al guardar pago: {resultado}", "error");
         }
+    }
+
+    private void ConfirmarEntregaAnticipada()
+    {
+        MostrarModalAdvertenciaEntregaAnticipada = false;
+        _advirtioEntregaAnticipada = true;
+        ProcesarPago();
     }
 
     private bool MostrarModalTicketView = false;
@@ -422,7 +503,7 @@
 
     private void EnviarTicketWhatsApp()
     {
-        string mensaje = $"Hola {ClientName}, ¡tu pago de {TotalAmount.ToString("$0.00")} para el Pedido #{OrderId} ha sido registrado con éxito en Lavanderías Villas del Sur! 🧺✨";
+        string mensaje = $"Hola {ClientName}, ¡tu pago de {TotalAmount.ToString("$0.00")} para el Pedido #{TurnoHelper.ObtenerNumeroDisplay(OrderId)} ha sido registrado con éxito en Lavanderías Villas del Sur! 🧺✨";
         string url = $"https://wa.me/{ClientPhone.Replace(" ", "").Replace("+", "")}?text={Uri.EscapeDataString(mensaje)}";
         CustomMessageBox.Show("Notificación por WhatsApp", $"Abriendo WhatsApp Web para notificar a {ClientName} ({ClientPhone})...\n\nMensaje: {mensaje}", "info");
     }
@@ -436,7 +517,7 @@
     private void FinalizarTransaccion()
     {
         MostrarModalExitoPago = false;
-        ToastService.Show("¡Pago Procesado!", $"El cobro del Pedido #{OrderId:D2} por {TotalAmount.ToString("$#,##0.00")} fue registrado exitosamente.", "success");
+        ToastService.Show("¡Pago Procesado!", $"El cobro del Pedido #{TurnoHelper.ObtenerNumeroDisplay(OrderId):D2} por {TotalAmount.ToString("$#,##0.00")} fue registrado exitosamente.", "success");
         NavManager.NavigateTo("/pedidos");
     }
 

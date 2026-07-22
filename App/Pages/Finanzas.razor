@@ -26,7 +26,7 @@
     <!-- Period Selector & Date Bar -->
     <div class="dashboard-card" style="padding: 14px 24px; width: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn-status-filter-chip @(PeriodoSeleccionado == "Diario" ? "chip-active" : "")" @onclick='() => SeleccionarPeriodo("Diario")'>
                     Diario
                 </button>
@@ -36,6 +36,15 @@
                 <button class="btn-status-filter-chip @(PeriodoSeleccionado == "Mensual" ? "chip-active" : "")" @onclick='() => SeleccionarPeriodo("Mensual")'>
                     Mensual
                 </button>
+                
+                <div style="width: 1px; background-color: #E2E8F0; margin: 0 4px;"></div>
+                
+                @foreach (var dia in new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" })
+                {
+                    <button class="btn-status-filter-chip @(PeriodoSeleccionado == dia ? "chip-active" : "")" @onclick='() => SeleccionarDiaSemana(dia)'>
+                        @dia
+                    </button>
+                }
             </div>
 
             <div style="font-size: 13px; color: #64748B; font-weight: 700;">
@@ -412,35 +421,40 @@
         var pagos = PagoRepo.ObtenerTodos();
         var gastos = new GastoRepositorio().ObtenerTodos();
 
-        TotalPedidosCount = pedidos.Count;
-        PedidosCompletadosCount = pedidos.Count(p => p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase));
-        TotalGeneralDb = pagos.Sum(p => p.MontoPago);
-        TotalCostDb = pedidos.Sum(p => p.CostoInsumos);
+        // Filtrar según el periodo seleccionado (FechaInicio a FechaFin)
+        var pedidosFiltrados = pedidos.Where(p => p.FechaRecepcion.Date >= FechaInicio.Date && p.FechaRecepcion.Date <= FechaFin.Date).ToList();
+        var pagosFiltrados = pagos.Where(p => p.FechaPago.Date >= FechaInicio.Date && p.FechaPago.Date <= FechaFin.Date).ToList();
+        var gastosFiltrados = gastos.Where(g => g.Fecha.Date >= FechaInicio.Date && g.Fecha.Date <= FechaFin.Date).ToList();
+
+        TotalPedidosCount = pedidosFiltrados.Count;
+        PedidosCompletadosCount = pedidosFiltrados.Count(p => p.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase));
+        TotalGeneralDb = pagosFiltrados.Sum(p => p.MontoPago);
+        TotalCostDb = pedidosFiltrados.Sum(p => p.CostoInsumos);
         
-        // 1. Recaudado Hoy
-        RecaudadoHoy = pagos.Where(p => p.FechaPago.Date == DateTime.Today).Sum(p => p.MontoPago);
+        // 1. Recaudado en el periodo
+        RecaudadoHoy = pagosFiltrados.Sum(p => p.MontoPago);
 
-        // 2. Gastos Hoy
-        GastosHoyTotal = gastos.Where(g => g.Fecha.Date == DateTime.Today).Sum(g => g.Monto);
+        // 2. Gastos en el periodo
+        GastosHoyTotal = gastosFiltrados.Sum(g => g.Monto);
 
-        // 3. Efectivo en Cajón (Fondo inicial configurado + Pagos efectivo hoy - Gastos hoy)
-        decimal pagosEfectivoHoy = pagos
-            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Efectivo)
+        // 3. Efectivo en Cajón (Fondo inicial configurado + Pagos efectivo en periodo - Gastos en periodo)
+        decimal pagosEfectivoHoy = pagosFiltrados
+            .Where(p => p.Metodo == Pago.MetodoPago.Efectivo)
             .Sum(p => p.MontoPago);
         EfectivoEnCajon = BusinessConfig.Current.FondoCaja + pagosEfectivoHoy - GastosHoyTotal;
 
-        // 4. Tarjetas / Transferencias Neto Hoy (restar comisión del 3.6% en pagos con tarjeta)
-        decimal pagosTarjetaHoy = pagos
-            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Tarjeta)
+        // 4. Tarjetas / Transferencias Neto en periodo (restar comisión del 3.6% en pagos con tarjeta)
+        decimal pagosTarjetaHoy = pagosFiltrados
+            .Where(p => p.Metodo == Pago.MetodoPago.Tarjeta)
             .Sum(p => p.MontoPago);
-        decimal pagosTransferenciaHoy = pagos
-            .Where(p => p.FechaPago.Date == DateTime.Today && p.Metodo == Pago.MetodoPago.Transferencia)
+        decimal pagosTransferenciaHoy = pagosFiltrados
+            .Where(p => p.Metodo == Pago.MetodoPago.Transferencia)
             .Sum(p => p.MontoPago);
         DigitalNetoHoy = (pagosTarjetaHoy * 0.964m) + pagosTransferenciaHoy;
 
-        // 5. Saldos Pendientes (Cuentas por Cobrar) - Suma de saldos restantes en pedidos activos no entregados
+        // 5. Saldos Pendientes (Cuentas por Cobrar) - Suma de saldos restantes en pedidos activos no entregados en el periodo
         SaldosPendientesTotal = 0m;
-        foreach (var p in pedidos.Where(x => !x.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) && !x.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase)))
+        foreach (var p in pedidosFiltrados.Where(x => !x.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) && !x.Estado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase)))
         {
             decimal yaPagado = pagos.Where(pg => pg.IdPedido == p.IdPedido).Sum(pg => pg.MontoPago);
             decimal pendiente = p.Total - yaPagado;
@@ -453,8 +467,10 @@
         CurrentRevenueValue = TotalGeneralDb;
         CurrentCostValue = TotalCostDb;
 
-        ListaGastos = gastos.OrderByDescending(g => g.Fecha).ToList();
-        ListaCortes = new CorteCajaRepositorio().ObtenerTodos().OrderByDescending(c => c.Fecha).ToList();
+        ListaGastos = gastosFiltrados.OrderByDescending(g => g.Fecha).ToList();
+        ListaCortes = new CorteCajaRepositorio().ObtenerTodos()
+            .Where(c => c.Fecha.Date >= FechaInicio.Date && c.Fecha.Date <= FechaFin.Date)
+            .OrderByDescending(c => c.Fecha).ToList();
 
         var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
         var detallesRepo = new DetallePedidoRepositorio();
@@ -470,7 +486,7 @@
         }
         catch { }
 
-        RecentOrders = pedidos.OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).Select(p => {
+        RecentOrders = pedidosFiltrados.OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).Select(p => {
             var cliente = clientes.FirstOrDefault(c => c.IdCliente == p.IdCliente);
             var pagoList = pagos.Where(pg => pg.IdPedido == p.IdPedido).ToList();
             decimal pagado = pagoList.Sum(x => x.MontoPago);
@@ -505,36 +521,52 @@
     private void SeleccionarPeriodo(string periodo)
     {
         PeriodoSeleccionado = periodo;
-        var pagos = PagoRepo.ObtenerTodos();
-        var pedidos = PedidoRepo.ObtenerTodos();
 
         if (periodo == "Diario")
         {
             FechaInicio = DateTime.Today;
-            var pagosDia = pagos.Where(p => p.FechaPago.Date == DateTime.Today).ToList();
-            var pedidosDia = pedidos.Where(p => p.FechaRecepcion.Date == DateTime.Today).ToList();
-            
-            CurrentRevenueValue = pagosDia.Sum(p => p.MontoPago);
-            CurrentCostValue = pedidosDia.Sum(p => p.CostoInsumos);
-            TotalPedidosCount = pedidosDia.Count;
+            FechaFin = DateTime.Today;
         }
         else if (periodo == "Semanal")
         {
             FechaInicio = DateTime.Today.AddDays(-7);
-            var pagosSemana = pagos.Where(p => p.FechaPago.Date >= FechaInicio.Date).ToList();
-            var pedidosSemana = pedidos.Where(p => p.FechaRecepcion.Date >= FechaInicio.Date).ToList();
-            
-            CurrentRevenueValue = pagosSemana.Sum(p => p.MontoPago);
-            CurrentCostValue = pedidosSemana.Sum(p => p.CostoInsumos);
-            TotalPedidosCount = pedidosSemana.Count;
+            FechaFin = DateTime.Today;
         }
-        else
+        else if (periodo == "Mensual")
         {
             FechaInicio = DateTime.Today.AddDays(-30);
-            CurrentRevenueValue = TotalGeneralDb;
-            CurrentCostValue = TotalCostDb;
-            TotalPedidosCount = pedidos.Count;
+            FechaFin = DateTime.Today;
         }
+        
+        CargarDatosFinancieros();
+    }
+
+    private void SeleccionarDiaSemana(string diaNombre)
+    {
+        PeriodoSeleccionado = diaNombre;
+        
+        DayOfWeek dayOfWeek = diaNombre switch
+        {
+            "Lunes" => DayOfWeek.Monday,
+            "Martes" => DayOfWeek.Tuesday,
+            "Miércoles" => DayOfWeek.Wednesday,
+            "Jueves" => DayOfWeek.Thursday,
+            "Viernes" => DayOfWeek.Friday,
+            "Sábado" => DayOfWeek.Saturday,
+            "Domingo" => DayOfWeek.Sunday,
+            _ => DayOfWeek.Monday
+        };
+
+        DateTime fechaTarget = DateTime.Today;
+        while (fechaTarget.DayOfWeek != dayOfWeek)
+        {
+            fechaTarget = fechaTarget.AddDays(-1);
+        }
+
+        FechaInicio = fechaTarget;
+        FechaFin = fechaTarget;
+
+        CargarDatosFinancieros();
     }
 
     private void ExportarReportePDF()

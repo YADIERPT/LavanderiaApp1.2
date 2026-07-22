@@ -4,6 +4,13 @@
   "Direccion": "Villas del Sur, Calle Principal #123",
   "MensajeTicket": "\u00A1Gracias por su preferencia!",
   "Iva": 16,
+  "IvaActivo": false,
   "Moneda": "$",
-  "Tema": "Oscuro"
+  "Tema": "Claro",
+  "FondoCaja": 800,
+  "CostoAplazarEntrega": 25.00,
+  "Sucursales": [
+    "Sucursal Principal",
+    "Sucursal Centro"
+  ]
 }

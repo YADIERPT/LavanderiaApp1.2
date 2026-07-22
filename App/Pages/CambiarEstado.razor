@@ -10,7 +10,7 @@
     <div class="edit-order-header">
         <div class="header-left">
             <h1 class="header-title">Editar datos del pedido</h1>
-            <p class="header-subtitle">Pedido #@OrderId.ToString("D2")</p>
+            <p class="header-subtitle">Pedido #@TurnoHelper.ObtenerNumeroDisplay(OrderId).ToString("D2")</p>
         </div>
         <div class="header-actions">
             <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
@@ -158,6 +158,35 @@
     </div>
 }
 
+<!-- Modal Alerta: Máquina Ocupada -->
+@if (MostrarModalMaquinaOcupada)
+{
+    <div class="tipo-pago-backdrop" @onclick="AceptarYGuardarEnEspera">
+        <div class="tipo-pago-modal-card" @onclick:stopPropagation style="max-width: 520px; padding: 40px 36px;">
+            <div class="payment-icon-wrapper" style="margin-bottom: 20px;">
+                <div class="payment-icon-bg" style="background: rgba(2, 132, 199, 0.15); color: #0284C7;">
+                    <span class="material-symbols-rounded payment-icon">sync_problem</span>
+                    <span class="online-status-dot" style="background: #0284C7;"></span>
+                </div>
+            </div>
+
+            <h2 class="tipo-pago-title" style="margin-bottom: 12px; font-size: 19px; text-transform: uppercase;">
+                MÁQUINA EN USO POR OTRO PEDIDO
+            </h2>
+            <p style="color: #475569; font-size: 14.5px; margin-bottom: 24px; text-align: center; line-height: 1.5;">
+                No se puede cambiar el pedido al estado <strong>'@SelectedStatus'</strong> porque la lavadora asignada (<strong>@MaquinaOcupadaNombre</strong>) se encuentra actualmente en un ciclo activo por otro pedido.<br /><br />
+                El pedido se mantendrá en <strong>'En espera de lavado'</strong> hasta que el ciclo anterior finalice o se libere la máquina.
+            </p>
+
+            <div style="display: flex; gap: 14px; justify-content: center; width: 100%;">
+                <button class="btn-guardar" style="padding: 12px 28px; background: #0284C7; color: white;" @onclick="AceptarYGuardarEnEspera">
+                    Entendido (Mantener en 'En espera de lavado')
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
@@ -167,6 +196,8 @@
     private string EstadoOriginal = "En espera";
     private bool MostrarModalConfirmarListo = false;
     private bool MostrarModalJustificacionRetroceso = false;
+    private bool MostrarModalMaquinaOcupada = false;
+    private string MaquinaOcupadaNombre = "";
     private string MotivoRetroceso = "";
 
     private PedidoRepositorio _pedidoRepo = new();
@@ -184,7 +215,8 @@
         if (pedidoDb != null)
         {
             if (pedidoDb.Estado.Equals("Entregado", StringComparison.OrdinalIgnoreCase) ||
-                pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+                pedidoDb.Estado.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) ||
+                pedidoDb.Estado.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase))
             {
                 ToastService.Show("Estado Bloqueado", $"Este pedido está en estado '{pedidoDb.Estado}' y ya no puede regresar a etapas anteriores ni modificarse.", "warning");
                 NavManager.NavigateTo("/pedidos");
@@ -208,6 +240,7 @@
             "En espera de secado" => 3,
             "En Secado" => 4,
             "Listo para entregar" => 5,
+            "PENDIENTE PARA ENTREGA" => 5,
             "Entregado" => 6,
             _ => 1
         };
@@ -215,6 +248,19 @@
 
     private void SelectStatus(string nuevoEstado)
     {
+        if (nuevoEstado.Equals("En Lavado", StringComparison.OrdinalIgnoreCase))
+        {
+            var pedidoDbCheck = _pedidoRepo.ObtenerPorId(OrderId);
+            if (pedidoDbCheck != null && !string.IsNullOrEmpty(pedidoDbCheck.MaquinaAsignada))
+            {
+                if (MaquinasAutomatizacion.EstaMaquinaOcupadaPorOtroPedido(pedidoDbCheck.MaquinaAsignada, OrderId))
+                {
+                    MaquinaOcupadaNombre = pedidoDbCheck.MaquinaAsignada;
+                    MostrarModalMaquinaOcupada = true;
+                    return;
+                }
+            }
+        }
         SelectedStatus = nuevoEstado;
     }
 
@@ -234,12 +280,46 @@
         // 1. Si intenta poner "Listo para entregar", mostrar modal de confirmación
         if (SelectedStatus.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) && !EstadoOriginal.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
         {
+            // Validar que el pedido haya pasado por Secado antes de estar listo para entregar
+            if (ObtenerNivelEstado(EstadoOriginal) < 4)
+            {
+                ToastService.Show("Acceso Restringido", "El pedido no ha completado la etapa de secado. Debe pasar por 'En Secado' antes de poder marcarse como 'Listo para entregar'.", "danger");
+                return;
+            }
             MostrarModalConfirmarListo = true;
             return;
         }
 
+        // Regla: No saltar lavado (pasar de espera a secado o listo)
+        int nivelOriginal = ObtenerNivelEstado(EstadoOriginal);
+        int nivelNuevo = ObtenerNivelEstado(SelectedStatus);
+
+        if (nivelOriginal <= 1 && nivelNuevo >= 3)
+        {
+            ToastService.Show("Error", "El pedido no puede pasar a secado o entrega sin haber pasado por 'En Lavado'.", "danger");
+            return;
+        }
+
+        // Regla: Si intenta pasar a En Lavado, verificar si la máquina está ocupada por otro pedido activo
+        if (nivelNuevo == 2)
+        {
+            if (SelectedStatus.Equals("En Lavado", StringComparison.OrdinalIgnoreCase))
+            {
+                var pedidoDbCheck = _pedidoRepo.ObtenerPorId(OrderId);
+                if (pedidoDbCheck != null && !string.IsNullOrEmpty(pedidoDbCheck.MaquinaAsignada))
+                {
+                    if (MaquinasAutomatizacion.EstaMaquinaOcupadaPorOtroPedido(pedidoDbCheck.MaquinaAsignada, OrderId))
+                    {
+                        MaquinaOcupadaNombre = pedidoDbCheck.MaquinaAsignada;
+                        MostrarModalMaquinaOcupada = true;
+                        return;
+                    }
+                }
+            }
+        }
+
         // 2. Si intenta regresar a un estado anterior en la jerarquía (Retroceso)
-        if (ObtenerNivelEstado(SelectedStatus) < ObtenerNivelEstado(EstadoOriginal))
+        if (nivelNuevo < nivelOriginal)
         {
             MotivoRetroceso = "";
             MostrarModalJustificacionRetroceso = true;
@@ -266,20 +346,56 @@
         EjecutarCambioEstado();
     }
 
+    private void AceptarYGuardarEnEspera()
+    {
+        MostrarModalMaquinaOcupada = false;
+        SelectedStatus = "En espera de lavado";
+        EjecutarCambioEstado();
+    }
+
     private void EjecutarCambioEstado()
     {
         try
         {
-            _pedidoRepo.ActualizarEstado(OrderId, SelectedStatus);
+            var pedido = _pedidoRepo.ObtenerPorId(OrderId);
+            string estadoAActualizar = SelectedStatus;
+            if (SelectedStatus.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase))
+            {
+                if (pedido != null && pedido.FechaEntrega.HasValue && pedido.FechaEntrega.Value.Date > DateTime.Today)
+                {
+                    estadoAActualizar = "PENDIENTE PARA ENTREGA";
+                }
+            }
+
+            _pedidoRepo.ActualizarEstado(OrderId, estadoAActualizar);
             
-            if (SelectedStatus == "En Lavado")
+            if (estadoAActualizar == "En Lavado")
             {
                 InventarioAutomatizacion.ProcesarConsumoInventario(OrderId);
             }
 
-            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(OrderId, SelectedStatus);
+            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(OrderId, estadoAActualizar);
+
+            if (pedido != null && !string.IsNullOrEmpty(pedido.MaquinaAsignada))
+            {
+                // Al pasar a secado, listo para entregar, pendiente para entrega, cancelado o entregado, se libera la lavadora (ya que el secado es al sol)
+                if (estadoAActualizar.Equals("Listo para entregar", StringComparison.OrdinalIgnoreCase) || 
+                    estadoAActualizar.Equals("PENDIENTE PARA ENTREGA", StringComparison.OrdinalIgnoreCase) || 
+                    estadoAActualizar.Equals("Cancelado", StringComparison.OrdinalIgnoreCase) || 
+                    estadoAActualizar.Equals("Entregado", StringComparison.OrdinalIgnoreCase) ||
+                    estadoAActualizar.Equals("En espera de secado", StringComparison.OrdinalIgnoreCase) ||
+                    estadoAActualizar.Equals("En Secado", StringComparison.OrdinalIgnoreCase))
+                {
+                    MaquinasAutomatizacion.LiberarMaquina(pedido.MaquinaAsignada);
+                }
+                else if (estadoAActualizar.Equals("En Lavado", StringComparison.OrdinalIgnoreCase))
+                {
+                    MaquinasAutomatizacion.AsignarMaquina(pedido.MaquinaAsignada);
+                }
+            }
+            MaquinasAutomatizacion.SincronizarTodasLasMaquinas();
             
-            string msj = $"Estado del Pedido #{OrderId:D2} cambiado a '{SelectedStatus}'";
+            string msj = $"Estado del Pedido #{TurnoHelper.ObtenerNumeroDisplay(OrderId):D2} cambiado a '{estadoAActualizar}'";
             if (!string.IsNullOrWhiteSpace(MotivoRetroceso))
             {
                 msj += $" (Justificación: {MotivoRetroceso})";
@@ -302,6 +418,7 @@
             "En Secado" => "status-secado-pill",
             "En espera de secado" => "status-espera-secado-pill",
             "Listo para entregar" => "status-listo-pill",
+            "PENDIENTE PARA ENTREGA" => "status-listo-pill",
             "En espera" => "status-espera-pill",
             _ => "status-lavado-pill"
         };

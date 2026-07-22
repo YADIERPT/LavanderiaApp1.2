@@ -1027,6 +1027,17 @@ body {
     transform: scale(1.05);
 }
 
+.machine-circle.in-use {
+    background: #E0F2FE;
+    border: 2.5px solid #38BDF8;
+    color: #0284C7;
+}
+
+.machine-circle.in-use:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+}
+
 .check-badge {
     position: absolute;
     bottom: -2px;
@@ -1060,6 +1071,10 @@ body {
 
 .status-active {
     color: #15803D;
+}
+
+.status-in-use {
+    color: #0284C7;
 }
 
 .status-alert {
@@ -1327,6 +1342,11 @@ body {
     color: #0891B2;
 }
 
+.order-icon-container.icon-espera-lavado {
+    background: rgba(14, 165, 233, 0.15);
+    color: #0284C7;
+}
+
 .order-icon-container.icon-lavando {
     background: rgba(37, 99, 235, 0.15);
     color: #2563EB;
@@ -1393,6 +1413,12 @@ body {
     background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
     color: #FFFFFF;
     box-shadow: 0 2px 6px rgba(8, 145, 178, 0.25);
+}
+
+.order-badge.badge-espera-lavado {
+    background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
 }
 
 .order-badge.badge-lavando {
@@ -4208,18 +4234,19 @@ table td {
 
 .toast-popup-card {
     pointer-events: auto;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     border: 1px solid rgba(0, 86, 198, 0.2);
-    border-left: 5px solid #10B981;
+    border-left: 6px solid #10B981;
     border-radius: 16px;
     padding: 16px 20px;
     box-shadow: 0 12px 32px rgba(0, 40, 100, 0.18);
     backdrop-filter: blur(12px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 14px;
-    min-width: 320px;
-    max-width: 440px;
+    min-width: 340px;
+    max-width: min(650px, 90vw);
+    width: max-content;
     animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -4256,17 +4283,25 @@ table td {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .toast-title {
     font-weight: 700;
     font-size: 15px;
     color: #0F172A;
+    margin-bottom: 4px;
 }
 
 .toast-message {
     font-size: 13.5px;
     color: #475569;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 @keyframes slideInRight {
@@ -4704,6 +4739,16 @@ table td {
 
 .app-layout.dark-theme .status-active {
     color: #22C55E !important;
+}
+
+.app-layout.dark-theme .status-in-use {
+    color: #38BDF8 !important;
+}
+
+.app-layout.dark-theme .machine-circle.in-use {
+    background: rgba(14, 165, 233, 0.15) !important;
+    border-color: #38BDF8 !important;
+    color: #38BDF8 !important;
 }
 
 .app-layout.dark-theme .status-inactive {

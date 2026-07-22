@@ -292,6 +292,7 @@
 
     protected override void OnParametersSet()
     {
+        CargarEmpleados();
         ProcesarParametrosURL();
     }
 
@@ -342,12 +343,24 @@
             Initials = string.IsNullOrEmpty(u.Nombre) ? "US" : string.Concat(u.Nombre.Split(' ').Select(w => w.FirstOrDefault()))
         }).ToList();
 
-        SelectedEmployee = Employees.FirstOrDefault();
+        int? previousId = null;
+        if (SelectedEmployee != null && int.TryParse(SelectedEmployee.Id, out int curId)) previousId = curId;
+        else previousId = SessionManager.LastSelectedEmpleadoId;
+
+        SelectedEmployee = previousId.HasValue ? Employees.FirstOrDefault(e => int.TryParse(e.Id, out int eid) && eid == previousId.Value) ?? Employees.FirstOrDefault() : Employees.FirstOrDefault();
+        if (SelectedEmployee != null && int.TryParse(SelectedEmployee.Id, out int finalId))
+        {
+            SessionManager.LastSelectedEmpleadoId = finalId;
+        }
     }
 
     private void SelectEmployee(EmployeeItem emp)
     {
         SelectedEmployee = emp;
+        if (emp != null && int.TryParse(emp.Id, out int id))
+        {
+            SessionManager.LastSelectedEmpleadoId = id;
+        }
     }
 
     private void ToggleFilters()

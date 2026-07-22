@@ -21,8 +21,9 @@ public class Maquina
     {
         get
         {
-            if (Status == "ACTIVA") return "10m rest.";
-            if (Status == "MANTENIMIENTO") return "Requiere Mantenimiento";
+            if (Status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase)) return "Disponible";
+            if (Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase)) return "Máquina en Uso";
+            if (Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)) return "Requiere Mantenimiento";
             return "Inactiva";
         }
     }

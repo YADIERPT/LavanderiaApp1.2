@@ -111,6 +111,13 @@ public static class ReporteGeneradorNativo
         sb.AppendLine("    <tbody>");
         sb.AppendLine($"      <tr><td>Ingresos en Efectivo</td><td>${pagosEfectivo:N2}</td><td>Caja Chica</td></tr>");
         sb.AppendLine($"      <tr><td>Ingresos Digitales / Transferencia</td><td>${pagosDigital:N2}</td><td>Bancos</td></tr>");
+        if (BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0 && totalIngresosHoy > 0)
+        {
+            double subtotalReporte = Math.Round(totalIngresosHoy / (1.0 + BusinessConfig.Current.Iva / 100.0), 2);
+            double ivaReporte = totalIngresosHoy - subtotalReporte;
+            sb.AppendLine($"      <tr><td>SUBTOTAL RECAUDADO (SIN IVA)</td><td>${subtotalReporte:N2}</td><td>Base Gravable</td></tr>");
+            sb.AppendLine($"      <tr><td>I.V.A. RECAUDADO ({BusinessConfig.Current.Iva:0.#}%)</td><td>${ivaReporte:N2}</td><td>Impuesto Trasladado</td></tr>");
+        }
         sb.AppendLine($"      <tr class=\"total-row\"><td>TOTAL RECAUDADO HOY</td><td>${totalIngresosHoy:N2}</td><td>Consolidado</td></tr>");
         sb.AppendLine("    </tbody>");
         sb.AppendLine("  </table>");

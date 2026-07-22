@@ -64,7 +64,14 @@
                 {
                     <div class="machine-item-custom-large @(SelectedMachine?.Id == machine.Id ? "selected-machine" : "")" @onclick="() => SelectMachine(machine)">
                         <div class="machine-circle @GetMachineCircleClass(machine.Status)">
-                            @if (machine.Status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase))
+                            @if (machine.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="material-symbols-rounded" style="animation: spin 3s linear infinite;">sync</span>
+                                <div class="check-badge" style="background: #0284C7; border-color: #E0F2FE;">
+                                    <span class="material-symbols-rounded">play_arrow</span>
+                                </div>
+                            }
+                            else if (machine.Status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase))
                             {
                                 <span class="material-symbols-rounded">local_laundry_service</span>
                                 <div class="check-badge">
@@ -144,6 +151,17 @@
                     </div>
                 </div>
             </div>
+
+            @if (SelectedMachine.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase))
+            {
+                <div style="margin-top: 20px; padding: 18px 22px; border-radius: 14px; background: #EDE9FE; border: 1.5px solid #A78BFA; color: #5B21B6; display: flex; align-items: center; gap: 16px;">
+                    <span class="material-symbols-rounded" style="font-size: 32px; color: #6D28D9;">lock</span>
+                    <div>
+                        <h4 style="margin: 0; font-size: 14px; font-weight: 800;">MÁQUINA ACTUALMENTE EN USO</h4>
+                        <p style="margin: 4px 0 0 0; font-size: 12.5px; line-height: 1.4;">Esta máquina se encuentra ocupada por un pedido activo. Su estado no puede cambiarse manualmente hasta que el pedido termine ('Listo para entregar') o sea cancelado.</p>
+                    </div>
+                </div>
+            }
         </div>
     }
 </div>
@@ -241,7 +259,8 @@
             get
             {
                 if (!string.IsNullOrEmpty(_timeRemainingText)) return _timeRemainingText;
-                if (Status == "ACTIVA") return "10m rest.";
+                if (Status == "ACTIVA") return "Disponible";
+                if (Status == "EN USO") return "Ocupada (En Uso)";
                 if (Status == "MANTENIMIENTO") return "Requiere Mantenimiento";
                 return "Inactiva";
             }
@@ -290,7 +309,12 @@
     protected override void OnInitialized()
     {
         CargarMaquinas();
-        SelectedMachine = Machines.FirstOrDefault(m => m.Id == 4) ?? Machines.FirstOrDefault();
+        var previousId = SelectedMachine?.Id ?? SessionManager.LastSelectedMaquinaId;
+        SelectedMachine = previousId.HasValue ? Machines.FirstOrDefault(m => m.Id == previousId.Value) ?? Machines.FirstOrDefault() : (Machines.FirstOrDefault(m => m.Id == 4) ?? Machines.FirstOrDefault());
+        if (SelectedMachine != null)
+        {
+            SessionManager.LastSelectedMaquinaId = SelectedMachine.Id;
+        }
         ProcesarParametrosURL();
         PendingStatus = SelectedMachine?.Status ?? "INACTIVA";
         TextoObservacionActual = SelectedMachine?.Observacion ?? "";
@@ -298,7 +322,16 @@
 
     protected override void OnParametersSet()
     {
+        CargarMaquinas();
+        var previousId = SelectedMachine?.Id ?? SessionManager.LastSelectedMaquinaId;
+        SelectedMachine = previousId.HasValue ? Machines.FirstOrDefault(m => m.Id == previousId.Value) ?? Machines.FirstOrDefault() : (Machines.FirstOrDefault(m => m.Id == 4) ?? Machines.FirstOrDefault());
+        if (SelectedMachine != null)
+        {
+            SessionManager.LastSelectedMaquinaId = SelectedMachine.Id;
+        }
         ProcesarParametrosURL();
+        PendingStatus = SelectedMachine?.Status ?? "INACTIVA";
+        TextoObservacionActual = SelectedMachine?.Observacion ?? "";
     }
 
     private void ProcesarParametrosURL()
@@ -343,12 +376,22 @@
     private void SelectMachine(MachineItem machine)
     {
         SelectedMachine = machine;
-        PendingStatus = machine.Status;
-        TextoObservacionActual = machine.Observacion ?? "";
+        PendingStatus = machine?.Status ?? "INACTIVA";
+        TextoObservacionActual = machine?.Observacion ?? "";
+        if (machine != null)
+        {
+            SessionManager.LastSelectedMaquinaId = machine.Id;
+        }
     }
 
     private void SetPendingStatus(string status)
     {
+        if (SelectedMachine != null && SelectedMachine.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase))
+        {
+            ToastService.Show("Máquina en Uso", "No se puede cambiar el estado de una máquina en uso. Debe terminar el pedido activo ('Listo para entregar') o cancelarse.", "warning");
+            return;
+        }
+
         PendingStatus = status;
         if (SelectedMachine != null)
         {
@@ -356,7 +399,7 @@
 
             if (SelectedMachine.Status == "ACTIVA")
             {
-                SelectedMachine.TimeRemainingText = "";
+                SelectedMachine.TimeRemainingText = "Disponible";
                 
                 // Guardar en base de datos
                 var maquinaDb = new Maquina
@@ -472,6 +515,11 @@
     {
         if (SelectedMachine != null)
         {
+            if (SelectedMachine.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase))
+            {
+                ToastService.Show("Máquina en Uso", "No se puede modificar el estado mientras la máquina esté operando un pedido activo.", "warning");
+                return;
+            }
             // Abre el modal de salvaguarda/confirmación antes de regresar a General
             MostrarModalConfirmacion = true;
         }
@@ -501,34 +549,25 @@
 
     private string GetMachineCircleClass(string status)
     {
-        return status.ToUpper() switch
-        {
-            "ACTIVA" => "active",
-            "MANTENIMIENTO" or "ALERT" => "alert",
-            "INACTIVA" => "inactive",
-            _ => "inactive"
-        };
+        if (status.Contains("EN USO", StringComparison.OrdinalIgnoreCase)) return "in-use";
+        if (status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase)) return "active";
+        if (status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)) return "alert";
+        return "inactive";
     }
 
     private string GetStatusText(MachineItem m)
     {
-        return m.Status.ToUpper() switch
-        {
-            "ACTIVA" => "Activa",
-            "MANTENIMIENTO" or "ALERT" => "Requiere Mantenimiento",
-            "INACTIVA" => "Inactiva",
-            _ => "En Espera"
-        };
+        if (m.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase)) return "En Uso";
+        if (m.Status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase)) return "Activa (Libre)";
+        if (m.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || m.Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)) return "Requiere Mantenimiento";
+        return "Inactiva";
     }
 
     private string GetStatusTextClass(string status)
     {
-        return status.ToUpper() switch
-        {
-            "ACTIVA" => "status-active",
-            "MANTENIMIENTO" or "ALERT" => "status-alert",
-            "INACTIVA" => "status-inactive",
-            _ => ""
-        };
+        if (status.Contains("EN USO", StringComparison.OrdinalIgnoreCase)) return "status-in-use";
+        if (status.Equals("ACTIVA", StringComparison.OrdinalIgnoreCase)) return "status-active";
+        if (status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) || status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)) return "status-alert";
+        return "status-inactive";
     }
 }

@@ -15,7 +15,7 @@
     <div class="edit-order-header">
         <div class="header-left">
             <h1 class="header-title">@(IsEditMode ? "Editar datos del pedido" : "Registrar nuevo pedido")</h1>
-            <p class="header-subtitle">@(IsEditMode ? $"Pedido #{OrderId.ToString("D2")}" : "Nuevo Pedido")</p>
+            <p class="header-subtitle">@(IsEditMode ? $"Pedido #{TurnoHelper.ObtenerNumeroDisplay(OrderId).ToString("D2")}" : "Nuevo Pedido")</p>
         </div>
         <div class="header-actions">
             <button class="btn-cancelar" @onclick="Cancelar">Cancelar</button>
@@ -75,17 +75,31 @@
 
                 <div class="form-inputs-grid-2x2">
                     <div class="form-input-group">
-                        <label class="form-input-label">Día de Procesamiento <span class="label-aside">(Automático)</span></label>
+                        <label class="form-input-label">Día de Procesamiento <span class="label-aside">(Recepción)</span></label>
                         <div class="form-input-wrapper disabled" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
                             <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">calendar_today</span>
                             <input type="text" class="form-input-field" value="@ProcessingDate" readonly style="font-weight: 700; color: #1E293B;" />
                         </div>
                     </div>
                     <div class="form-input-group">
-                        <label class="form-input-label">Hora Estimada <span class="label-aside">(Automático)</span></label>
-                        <div class="form-input-wrapper disabled" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <label class="form-input-label">Día Programado de Entrega</label>
+                        <div class="form-input-wrapper" style="border-color: #0288D1; background: #F0F9FF;">
+                            <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">event_available</span>
+                            <input type="date" class="form-input-field" @bind="FechaEntregaInput" style="font-weight: 700; color: #0F172A; background: transparent;" />
+                        </div>
+                        @if (AplazaEntrega)
+                        {
+                            <div style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #6D28D9; display: flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px;">info</span>
+                                <span>Aplazando entrega: +$@BusinessConfig.CostoAplazarEntrega.ToString("N2") MXN extra</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="form-input-group">
+                        <label class="form-input-label">Hora Estimada de Entrega <span class="label-aside">(Opcional)</span></label>
+                        <div class="form-input-wrapper" style="border-color: #0288D1; background: #F0F9FF;">
                             <span class="material-symbols-rounded form-input-icon" style="color: #0288D1;">schedule</span>
-                            <input type="text" class="form-input-field" value="@EstimatedTime" readonly style="font-weight: 700; color: #1E293B;" />
+                            <input type="time" class="form-input-field" @bind="HoraEntregaInput" style="font-weight: 700; color: #0F172A; background: transparent;" />
                         </div>
                     </div>
                     <div class="form-input-group">
@@ -96,7 +110,7 @@
                                 <option value="">Seleccionar máquina...</option>
                                 @foreach (var m in ListaMaquinas)
                                 {
-                                    <option value="@m.Nombre">@m.Nombre</option>
+                                    <option value="@m.Nombre">@m.Nombre @(m.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase) && (!IsEditMode || m.Nombre != (PedidoRepo.ObtenerPorId(Id)?.MaquinaAsignada)) ? "(EN USO)" : "")</option>
                                 }
                             </select>
                         </div>
@@ -139,6 +153,17 @@
                         <span class="summary-detail-label">Precio por kg</span>
                         <span class="summary-detail-val">@PricePerKg.ToString("$00.00")</span>
                     </div>
+                    @if (BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0)
+                    {
+                        <div class="summary-detail-item">
+                            <span class="summary-detail-label">Subtotal</span>
+                            <span class="summary-detail-val">@SubtotalCost.ToString("$00.00")</span>
+                        </div>
+                        <div class="summary-detail-item">
+                            <span class="summary-detail-label">I.V.A. (@BusinessConfig.Current.Iva%)</span>
+                            <span class="summary-detail-val">@IvaAmount.ToString("$00.00")</span>
+                        </div>
+                    }
                     <div class="summary-detail-item total-item">
                         <span class="summary-detail-label font-bold">Total Pedido</span>
                         <span class="summary-detail-val font-bold">@TotalCost.ToString("$00.00")</span>
@@ -273,7 +298,7 @@
             <!-- Modal Body -->
             <div style="width: 100%; margin-bottom: 24px;">
                 <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
-                    Estás a punto de cancelar el <strong style="color: #0F172A;">Pedido #@OrderId.ToString("D2") (@ClientName)</strong>. Esta acción cambiará el estado del pedido a <strong>Cancelado</strong> y liberará los recursos asignados.
+                    Estás a punto de cancelar el <strong style="color: #0F172A;">Pedido #@TurnoHelper.ObtenerNumeroDisplay(OrderId).ToString("D2") (@ClientName)</strong>. Esta acción cambiará el estado del pedido a <strong>Cancelado</strong> y liberará los recursos asignados.
                 </p>
                 
                 <div class="form-input-group" style="width: 100%;">
@@ -378,12 +403,19 @@
 
     private string ProcessingDate = DateTime.Now.ToString("dd MMM, yyyy");
     private string EstimatedTime = DateTime.Now.AddHours(2).ToString("hh:mm tt");
+    private DateTime FechaEntregaInput = DateTime.Today;
+    private TimeOnly? HoraEntregaInput = TimeOnly.FromDateTime(DateTime.Now.AddHours(2));
+    private DateTime? OriginalFechaEntrega;
+    private double OtrosServiciosCosto = 0.0;
     private string AssignedMachine = "";
-    private double Weight = 5.0;
+    private double Weight = 0.0;
     private double PricePerKg = 15.0;
 
-    private double TotalCost => Weight * PricePerKg;
-    private string OrderStatus = "En espera";
+    private bool AplazaEntrega => IsEditMode && OriginalFechaEntrega.HasValue && FechaEntregaInput.Date > OriginalFechaEntrega.Value.Date;
+    private double SubtotalCost => (Weight * PricePerKg) + OtrosServiciosCosto + (AplazaEntrega ? (double)BusinessConfig.CostoAplazarEntrega : 0.0);
+    private double TotalCost => (BusinessConfig.Current != null && BusinessConfig.Current.IvaActivo && BusinessConfig.Current.Iva > 0) ? Math.Round(SubtotalCost * (1.0 + BusinessConfig.Current.Iva / 100.0), 2) : SubtotalCost;
+    private double IvaAmount => TotalCost - SubtotalCost;
+    private string OrderStatus = "En espera de lavado";
 
     private double _anticipo = 0.0;
     private double Anticipo
@@ -393,6 +425,29 @@
     }
     private Pago.MetodoPago MetodoPago = Pago.MetodoPago.Efectivo;
     private double SaldoPendiente => Math.Max(0.0, TotalCost - Anticipo);
+
+    private void LimpiarFormulario()
+    {
+        RawClientId = 0;
+        ClientId = "";
+        ClientName = "";
+        AssignedMachine = "";
+        Weight = 0.0;
+        _anticipo = 0.0;
+        MetodoPago = Pago.MetodoPago.Efectivo;
+        OrderStatus = "En espera de lavado";
+        ProcessingDate = DateTime.Now.ToString("dd MMM, yyyy");
+        FechaEntregaInput = DateTime.Today;
+        HoraEntregaInput = TimeOnly.FromDateTime(DateTime.Now.AddHours(2));
+        OriginalFechaEntrega = null;
+        OtrosServiciosCosto = 0.0;
+        var servDef = ListaServicios.FirstOrDefault();
+        if (servDef != null)
+        {
+            SelectedServiceId = servDef.IdServicio;
+            PricePerKg = (double)servDef.Precio;
+        }
+    }
 
     private bool ShowSelectClientModal = false;
     private bool MostrarModalCancelarPedido = false;
@@ -426,18 +481,10 @@
         }
         catch { }
 
-        // Cargar máquinas reales de la base de datos
+        // Cargar máquinas (se filtrará después de cargar el pedido si es edición)
         try
         {
             ListaMaquinas = new MaquinaRepositorio().ObtenerTodas();
-            if (Id == 0 && ListaMaquinas.Count > 0)
-            {
-                AssignedMachine = ListaMaquinas.First().Nombre;
-            }
-            else if (Id == 0)
-            {
-                AssignedMachine = "";
-            }
         }
         catch { }
 
@@ -481,6 +528,18 @@
 
                 ProcessingDate = pedidoDb.FechaRecepcion.ToString("dd MMM, yyyy");
                 EstimatedTime = pedidoDb.FechaRecepcion.ToString("hh:mm tt");
+                if (pedidoDb.FechaEntrega.HasValue)
+                {
+                    FechaEntregaInput = pedidoDb.FechaEntrega.Value.Date;
+                    HoraEntregaInput = TimeOnly.FromDateTime(pedidoDb.FechaEntrega.Value);
+                    OriginalFechaEntrega = pedidoDb.FechaEntrega.Value.Date;
+                }
+                else
+                {
+                    FechaEntregaInput = pedidoDb.FechaRecepcion.Date;
+                    HoraEntregaInput = TimeOnly.FromDateTime(pedidoDb.FechaRecepcion.AddHours(2));
+                    OriginalFechaEntrega = pedidoDb.FechaRecepcion.Date;
+                }
                 OrderStatus = pedidoDb.Estado;
                 AssignedMachine = pedidoDb.MaquinaAsignada ?? "";
                 
@@ -496,19 +555,28 @@
                 {
                     Weight = (double)(pedidoDb.Total / (decimal)PricePerKg);
                 }
+                OtrosServiciosCosto = (double)detalles.Where(d => d.IdServicio != 1 && d.IdServicio != 99).Sum(d => d.Subtotal);
                 _anticipo = (double)new PagoRepositorio().ObtenerTodos().Where(p => p.IdPedido == Id).Sum(p => p.MontoPago);
             }
+            
+            // Filtrar máquinas para que no aparezcan las de MANTENIMIENTO
+            ListaMaquinas = ListaMaquinas.Where(m => !m.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) && !m.Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)).ToList();
         }
         else if (string.IsNullOrEmpty(ClientName))
         {
-            // 3. Modo Registro - Asignar por defecto al primer cliente si aún no hay ninguno seleccionado
-            var clienteBase = ListaClientes.FirstOrDefault();
-            if (clienteBase != null)
-            {
-                RawClientId = clienteBase.IdCliente;
-                ClientId = clienteBase.IdCliente.ToString("D2");
-                ClientName = clienteBase.Nombre;
-            }
+            // Filtrar máquinas para nuevo pedido (solo quitar MANTENIMIENTO)
+            ListaMaquinas = ListaMaquinas.Where(m => !m.Status.Equals("MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) && !m.Status.Equals("ALERT", StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            // 3. Modo Registro - Dejar campos vacíos por defecto para evitar confusiones al capturar
+            RawClientId = 0;
+            ClientId = "";
+            ClientName = "";
+            AssignedMachine = "";
+            Weight = 0.0;
+            _anticipo = 0.0;
+            FechaEntregaInput = DateTime.Today;
+            HoraEntregaInput = TimeOnly.FromDateTime(DateTime.Now.AddHours(2));
+            
             var ultimoPedido = PedidoRepo.ObtenerTodos().OrderBy(p => p.IdPedido).LastOrDefault();
             OrderId = (ultimoPedido?.IdPedido ?? 0) + 1;
         }
@@ -593,7 +661,13 @@
         try
         {
             OrderStatus = "Cancelado";
+            var pedidoDb = PedidoRepo.ObtenerPorId(Id);
+            if (pedidoDb != null && !string.IsNullOrEmpty(pedidoDb.MaquinaAsignada))
+            {
+                MaquinasAutomatizacion.LiberarMaquina(pedidoDb.MaquinaAsignada);
+            }
             PedidoRepo.ActualizarEstadoYMaquina(Id, "Cancelado", "");
+            MaquinasAutomatizacion.SincronizarTodasLasMaquinas();
 
             try
             {
@@ -616,7 +690,7 @@
             catch { }
 
             MostrarModalCancelarPedido = false;
-            CustomMessageBox.Show("Pedido Cancelado", $"El pedido #{Id} ha sido cancelado y retirado exitosamente.\n\nMotivo: {RazonCancelacion.Trim()}", "success", () => NavManager.NavigateTo("/pedidos"));
+            CustomMessageBox.Show("Pedido Cancelado", $"El pedido #{TurnoHelper.ObtenerNumeroDisplay(Id)} ha sido cancelado y retirado exitosamente.\n\nMotivo: {RazonCancelacion.Trim()}", "success", () => NavManager.NavigateTo("/pedidos"));
         }
         catch (Exception ex)
         {
@@ -638,12 +712,41 @@
             return;
         }
 
+        if (!IsEditMode)
+        {
+            var maquinaSel = ListaMaquinas.FirstOrDefault(m => m.Nombre == AssignedMachine);
+            if (maquinaSel != null && maquinaSel.Status.Contains("EN USO", StringComparison.OrdinalIgnoreCase))
+            {
+                OrderStatus = "En espera";
+                CustomMessageBox.Show("Máquina en Uso", "La máquina seleccionada está en uso. El pedido quedará en estado 'En espera' y se asignará automáticamente cuando se libere.", "info");
+            }
+            else
+            {
+                OrderStatus = "En espera de lavado";
+            }
+        }
+
+        DateTime? fechaProgramada = null;
+        if (HoraEntregaInput.HasValue)
+        {
+            fechaProgramada = FechaEntregaInput.Date.Add(HoraEntregaInput.Value.ToTimeSpan());
+        }
+        else if (FechaEntregaInput.Date > DateTime.Today)
+        {
+            fechaProgramada = FechaEntregaInput.Date.AddHours(18);
+        }
+        else
+        {
+            fechaProgramada = FechaEntregaInput.Date.Add(DateTime.Now.TimeOfDay.Add(TimeSpan.FromHours(2)));
+        }
+
         var pedido = new Pedido
         {
             IdCliente = RawClientId,
             IdUsuario = SessionManager.UsuarioActual?.IdUsuario ?? 1,
             FechaRecepcion = DateTime.Now,
-            Estado = string.IsNullOrEmpty(OrderStatus) ? "En espera" : OrderStatus,
+            FechaEntrega = fechaProgramada,
+            Estado = string.IsNullOrEmpty(OrderStatus) ? "En espera de lavado" : OrderStatus,
             Total = (decimal)TotalCost,
             MaquinaAsignada = AssignedMachine
         };
@@ -651,7 +754,47 @@
         if (IsEditMode && Id > 0)
         {
             pedido.IdPedido = Id;
+            var pedidoDb = PedidoRepo.ObtenerPorId(Id);
+            
+            // Si la máquina cambió, liberar la anterior y asignar la nueva
+            if (pedidoDb != null && pedidoDb.MaquinaAsignada != AssignedMachine)
+            {
+                if (!string.IsNullOrEmpty(pedidoDb.MaquinaAsignada))
+                    MaquinasAutomatizacion.LiberarMaquina(pedidoDb.MaquinaAsignada);
+                
+                if (!string.IsNullOrEmpty(AssignedMachine))
+                    MaquinasAutomatizacion.AsignarMaquina(AssignedMachine);
+            }
+
+            // Validar si la máquina está en uso por otro pedido al intentar pasar a En Lavado
+            if (OrderStatus.Equals("En Lavado", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(AssignedMachine) && MaquinasAutomatizacion.EstaMaquinaOcupadaPorOtroPedido(AssignedMachine, Id))
+                {
+                    OrderStatus = "En espera de lavado";
+                    CustomMessageBox.Show("Máquina en Uso", $"La lavadora '{AssignedMachine}' está en uso por otro pedido activo. El pedido se mantendrá en estado 'En espera de lavado' hasta que la máquina se libere.", "info");
+                }
+            }
+
+            if (AplazaEntrega)
+            {
+                var detallesRepo = new DetallePedidoRepositorio();
+                if (!detallesRepo.ObtenerPorPedido(Id).Any(d => d.IdServicio == 99))
+                {
+                    detallesRepo.Guardar(new DetallePedido
+                    {
+                        IdPedido = Id,
+                        IdServicio = 99,
+                        Cantidad = 1,
+                        PrecioUnitario = BusinessConfig.CostoAplazarEntrega,
+                        Subtotal = BusinessConfig.CostoAplazarEntrega
+                    });
+                }
+            }
+
+            PedidoRepo.ActualizarPedido(pedido);
             PedidoRepo.ActualizarEstadoYMaquina(Id, OrderStatus, AssignedMachine);
+            MaquinasAutomatizacion.SincronizarTodasLasMaquinas();
             MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(Id, OrderStatus);
             if (OrderStatus == "En Lavado")
             {
@@ -659,6 +802,10 @@
             }
             if (OrderStatus == "Cancelado")
             {
+                if (!string.IsNullOrEmpty(AssignedMachine))
+                {
+                    MaquinasAutomatizacion.LiberarMaquina(AssignedMachine);
+                }
                 try
                 {
                     new AuditoriaRepositorio().Guardar(new LavanderiaApp.Modelos.Auditoria
@@ -672,18 +819,25 @@
                 }
                 catch { }
             }
-            CustomMessageBox.Show("Éxito", $"Pedido #{Id} actualizado exitosamente.", "success", () => NavManager.NavigateTo("/pedidos"));
+            CustomMessageBox.Show("Éxito", $"Pedido #{TurnoHelper.ObtenerNumeroDisplay(Id)} actualizado exitosamente.", "success", () => NavManager.NavigateTo("/pedidos"));
         }
         else
         {
             var detalles = new List<DetallePedido>
             {
-                new DetallePedido { IdServicio = SelectedServiceId, Cantidad = Weight, PrecioUnitario = (decimal)PricePerKg, Subtotal = (decimal)TotalCost }
+                new DetallePedido { IdServicio = SelectedServiceId, Cantidad = Weight, PrecioUnitario = (decimal)PricePerKg, Subtotal = (decimal)SubtotalCost }
             };
 
             string res = PedidoServicio.RegistrarPedido(pedido, detalles, (decimal)Anticipo, MetodoPago);
             if (res == "Éxito")
             {
+                // Asignar máquina y ponerla en uso
+                if (!string.IsNullOrEmpty(AssignedMachine))
+                {
+                    MaquinasAutomatizacion.AsignarMaquina(AssignedMachine);
+                }
+                MaquinasAutomatizacion.SincronizarTodasLasMaquinas();
+
                 decimal total = (decimal)TotalCost;
                 decimal abono = (decimal)Anticipo;
                 decimal pendiente = total - abono;
@@ -692,7 +846,10 @@
                              $"Total del Pedido: ${total:N2} MXN\n" +
                              $"Monto Abonado: ${abono:N2} MXN ({MetodoPago})\n" +
                              $"Saldo Pendiente: ${pendiente:N2} MXN";
-                CustomMessageBox.Show("Pedido Registrado", msg, "success", () => NavManager.NavigateTo("/pedidos"));
+                CustomMessageBox.Show("Pedido Registrado", msg, "success", () => {
+                    LimpiarFormulario();
+                    NavManager.NavigateTo("/pedidos");
+                });
             }
             else
             {
