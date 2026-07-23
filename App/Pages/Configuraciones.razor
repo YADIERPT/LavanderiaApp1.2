@@ -121,6 +121,19 @@
                         <input type="number" step="5" class="form-input" @bind="configData.CostoAplazarEntrega" style="padding-left: 48px;" />
                     </div>
                 </div>
+
+                <!-- Activar/Desactivar Módulo de Inventario -->
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label">Módulo de Inventario y Gastos de Insumos</label>
+                    <div class="input-container" style="display: flex; align-items: center; height: 52px; padding: 0 16px; background: #F1F3FF; border-radius: 12px; border: 1px solid rgba(194, 198, 213, 0.4);">
+                        <span class="material-symbols-rounded" style="color: #64748B; margin-right: 12px;">inventory</span>
+                        <span style="flex: 1; font-weight: 500; color: #1E293B; font-size: 14px;">Habilitar gestión de insumos</span>
+                        <label class="switch" style="margin: 0;">
+                            <input type="checkbox" @bind="configData.InventarioActivo">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         }
 
@@ -169,8 +182,10 @@
         </div>
 
 
-        <!-- Consumos Automáticos por Lavado -->
-        <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        @if (configData.InventarioActivo)
+        {
+            <!-- Consumos Automáticos por Lavado -->
+            <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
                 <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; margin: 0;">
                     <span class="material-symbols-rounded" style="color: #0058BC;">water_drop</span>
@@ -261,6 +276,7 @@
                 </table>
             </div>
         </div>
+        }
 
         <!-- Gestión de Máquinas -->
         <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -544,7 +560,8 @@
             Moneda = BusinessConfig.Current.Moneda,
             Tema = BusinessConfig.Current.Tema,
             FondoCaja = BusinessConfig.Current.FondoCaja,
-            Sucursales = BusinessConfig.Current.Sucursales != null ? new List<string>(BusinessConfig.Current.Sucursales) : new List<string> { "Sucursal Principal", "Sucursal Norte", "Sucursal Sur", "Sucursal Centro" }
+            Sucursales = BusinessConfig.Current.Sucursales != null ? new List<string>(BusinessConfig.Current.Sucursales) : new List<string> { "Sucursal Principal", "Sucursal Norte", "Sucursal Sur", "Sucursal Centro" },
+            InventarioActivo = BusinessConfig.Current.InventarioActivo
         };
 
         CargarDatosBase();
@@ -642,6 +659,7 @@
         BusinessConfig.Current.Moneda = configData.Moneda;
         BusinessConfig.Current.Tema = configData.Tema;
         BusinessConfig.Current.FondoCaja = configData.FondoCaja;
+        BusinessConfig.Current.InventarioActivo = configData.InventarioActivo;
         if (configData.Sucursales != null)
         {
             BusinessConfig.Current.Sucursales = new List<string>(configData.Sucursales);

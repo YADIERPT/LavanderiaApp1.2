@@ -60,7 +60,7 @@ else
                         <span>Finanzas</span>
                     </NavLink>
                 }
-                @if (TienePermisoMenu("Inventario"))
+                @if (TienePermisoMenu("Inventario") && LavanderiaApp.Servicios.BusinessConfig.Current.InventarioActivo)
                 {
                     <NavLink href="/inventario" class="nav-item" ActiveClass="active">
                         <span class="material-symbols-rounded">inventory_2</span>

@@ -12,5 +12,6 @@
   "Sucursales": [
     "Sucursal Principal",
     "Sucursal Centro"
-  ]
+  ],
+  "InventarioActivo": false
 }

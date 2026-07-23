@@ -14,6 +14,8 @@ public static class InventarioAutomatizacion
     /// <param name="idPedido">ID del pedido a procesar.</param>
     public static void ProcesarConsumoInventario(int idPedido)
     {
+        if (!BusinessConfig.Current.InventarioActivo) return;
+
         try
         {
             using var conexion = new SqliteConnection(Config.ConnectionString);

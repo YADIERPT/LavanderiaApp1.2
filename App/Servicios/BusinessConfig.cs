@@ -18,6 +18,7 @@ public class BusinessConfigData
     public decimal FondoCaja { get; set; } 
     public decimal CostoAplazarEntrega { get; set; } = 25.00m;
     public List<string> Sucursales { get; set; } = new List<string> { "Sucursal Norte", "Sucursal Sur" };
+    public bool InventarioActivo { get; set; } = true;
 }
 
 public static class BusinessConfig
