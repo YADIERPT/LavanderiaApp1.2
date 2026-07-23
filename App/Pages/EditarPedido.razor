@@ -712,6 +712,12 @@
             return;
         }
 
+        if (string.IsNullOrEmpty(AssignedMachine))
+        {
+            CustomMessageBox.Show("Máquina Requerida", "Por favor, seleccione una máquina para asignar el pedido.", "warning");
+            return;
+        }
+
         if (!IsEditMode)
         {
             var maquinaSel = ListaMaquinas.FirstOrDefault(m => m.Nombre == AssignedMachine);

@@ -324,7 +324,7 @@
     private decimal SubtotalSinIva => AplicaIva ? Math.Round(CostoTotalPedido / (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : CostoTotalPedido;
     private decimal MontoIva => Math.Max(0m, CostoTotalPedido - SubtotalSinIva);
 
-    private decimal AmountPaid = 200.00m;
+    private decimal AmountPaid = 0.00m;
     private decimal MontoYaAbonado = 0m;
     private decimal SaldoDeudor = 0m;
     private decimal CalculatedChange => AmountPaid > SaldoDeudor ? AmountPaid - SaldoDeudor : 0.00m;
@@ -397,14 +397,14 @@
                 decimal subtotalCalc = ((decimal)Weight * PricePerKg + OtherServices);
                 CostoTotalPedido = pedidoDb.Total > 0 ? pedidoDb.Total : (BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc);
                 SaldoDeudor = Math.Max(0m, CostoTotalPedido - yaPagado);
-                AmountPaid = SaldoDeudor;
+                AmountPaid = 0m; // Default a 0 para que el usuario deba ingresarlo manualmente
             }
             else
             {
                 decimal subtotalCalc = (decimal)Weight * PricePerKg + OtherServices;
                 CostoTotalPedido = BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc;
                 SaldoDeudor = CostoTotalPedido;
-                AmountPaid = CostoTotalPedido;
+                AmountPaid = 0m;
             }
         }
         else
@@ -412,7 +412,7 @@
             decimal subtotalCalc = (decimal)Weight * PricePerKg + OtherServices;
             CostoTotalPedido = BusinessConfig.Current.IvaActivo ? Math.Round(subtotalCalc * (1m + (decimal)(BusinessConfig.Current.Iva / 100.0)), 2) : subtotalCalc;
             SaldoDeudor = CostoTotalPedido;
-            AmountPaid = CostoTotalPedido;
+            AmountPaid = 0m; // Default a 0
         }
     }
 

@@ -168,6 +168,100 @@
             </div>
         </div>
 
+
+        <!-- Consumos Automáticos por Lavado -->
+        <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+                <h3 class="card-title-custom" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                    <span class="material-symbols-rounded" style="color: #0058BC;">water_drop</span>
+                    <span>Consumos Automáticos por Lavado (Insumos)</span>
+                </h3>
+            </div>
+            <p style="color: #64748B; font-size: 14px; margin: 0;">Agrega los insumos que se consumen automáticamente por cada pedido de lavado. Cuando el inventario llegue a 0, se registrará un gasto automáticamente.</p>
+            
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <select class="form-input" value="@nuevoConsumoIdInsumo" @onchange="OnInsumoChanged" style="height: 40px; padding: 0 14px; font-size: 13px; flex: 1;">
+                    <option value="0">-- Selecciona un Insumo --</option>
+                    @foreach (var ins in insumosDisponibles)
+                    {
+                        <option value="@ins.IdInsumo">@ins.Nombre (@ins.UnidadMedida)</option>
+                    }
+                </select>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" step="0.1" class="form-input" @bind="nuevoConsumoCantidad" placeholder="Cantidad" style="height: 40px; padding: 0 14px; font-size: 13px; width: 100px;" />
+                    <select class="form-input" @bind="nuevoConsumoUnidad" style="height: 40px; padding: 0 14px; font-size: 13px; width: 80px;">
+                        @{
+                            var insumoSeleccionado = insumosDisponibles.FirstOrDefault(i => i.IdInsumo == nuevoConsumoIdInsumo);
+                            var u = insumoSeleccionado?.UnidadMedida?.ToLower() ?? "";
+                        }
+                        @if (u == "litros" || u == "galones" || u == "ml")
+                        {
+                            <option value="ml">ml</option>
+                            <option value="Litros">Litros</option>
+                        }
+                        else if (u == "kg" || u == "g" || u == "mg")
+                        {
+                            <option value="g">g</option>
+                            <option value="mg">mg</option>
+                            <option value="Kg">Kg</option>
+                        }
+                        else if (u == "piezas")
+                        {
+                            <option value="Piezas">Piezas</option>
+                        }
+                        else
+                        {
+                            <option value="ml">ml</option>
+                            <option value="g">g</option>
+                            <option value="Piezas">Piezas</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn-guardar" style="padding: 8px 16px; font-size: 13px; background: #0058BC; display: flex; align-items: center; gap: 6px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;" @onclick="AgregarConsumo">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">add</span>
+                    <span>Agregar</span>
+                </button>
+            </div>
+
+            <div style="overflow-x: auto; width: 100%;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #E2E8F0; color: #475569;">
+                            <th style="padding: 12px 8px; font-weight: 600;">Insumo</th>
+                            <th style="padding: 12px 8px; font-weight: 600;">Cantidad por Lavado</th>
+                            <th style="padding: 12px 8px; font-weight: 600; text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (consumosList.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 32px; color: #94A3B8;">
+                                    <span class="material-symbols-rounded" style="font-size: 32px; display: block; margin-bottom: 6px;">info</span>
+                                    No hay consumos automáticos configurados.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var c in consumosList)
+                            {
+                                <tr style="border-bottom: 1px solid #F1F5F9; color: #1E293B;">
+                                    <td style="padding: 12px 8px; font-weight: 600;">@c.NombreInsumo</td>
+                                    <td style="padding: 12px 8px;">@c.Cantidad @c.UnidadConsumo</td>
+                                    <td style="padding: 12px 8px; text-align: right;">
+                                        <button style="background: none; border: none; color: #DC2626; cursor: pointer; font-weight: 600; font-size: 13px;" @onclick="() => EliminarConsumo(c.IdConsumo)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Gestión de Máquinas -->
         <div class="dashboard-card" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; width: 100%; margin-top: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
@@ -416,6 +510,12 @@
     private BusinessConfigData configData = new();
     private string originalTema = "Claro";
 
+
+    private List<LavanderiaApp.Modelos.ConsumoLavado> consumosList = new();
+    private List<LavanderiaApp.Repositorios.InsumoItem> insumosDisponibles = new();
+    private int nuevoConsumoIdInsumo = 0;
+    private double nuevoConsumoCantidad = 0;
+    private string nuevoConsumoUnidad = "ml";
     private List<Servicio> serviciosList = new();
     private List<Maquina> maquinasList = new();
 
@@ -458,8 +558,55 @@
                         !s.Nombre.Contains("Planchado", StringComparison.OrdinalIgnoreCase))
             .ToList();
         maquinasList = new MaquinaRepositorio().ObtenerTodas();
+
+        consumosList = new LavanderiaApp.Repositorios.ConsumoLavadoRepositorio().ObtenerTodos();
+        insumosDisponibles = new LavanderiaApp.Repositorios.InventarioRepositorio().ObtenerTodos();
     }
 
+
+
+    private void OnInsumoChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            nuevoConsumoIdInsumo = id;
+            var ins = insumosDisponibles.FirstOrDefault(i => i.IdInsumo == id);
+            var u = ins?.UnidadMedida?.ToLower() ?? "";
+            if (u == "litros" || u == "galones" || u == "ml") nuevoConsumoUnidad = "ml";
+            else if (u == "kg" || u == "g" || u == "mg") nuevoConsumoUnidad = "g";
+            else if (u == "piezas") nuevoConsumoUnidad = "Piezas";
+        }
+        else
+        {
+            nuevoConsumoIdInsumo = 0;
+        }
+    }
+    private void AgregarConsumo()
+    {
+        if (nuevoConsumoIdInsumo <= 0 || nuevoConsumoCantidad <= 0)
+        {
+            ToastService.Show("Error", "Selecciona un insumo y una cantidad válida mayor a 0.", "danger");
+            return;
+        }
+        var consumo = new LavanderiaApp.Modelos.ConsumoLavado
+        {
+            IdInsumo = nuevoConsumoIdInsumo,
+            Cantidad = nuevoConsumoCantidad,
+            UnidadConsumo = nuevoConsumoUnidad
+        };
+        new LavanderiaApp.Repositorios.ConsumoLavadoRepositorio().Guardar(consumo);
+        ToastService.Show("Éxito", "Consumo automático agregado correctamente.", "success");
+        nuevoConsumoIdInsumo = 0;
+        nuevoConsumoCantidad = 0;
+        CargarDatosBase();
+    }
+
+    private void EliminarConsumo(int idConsumo)
+    {
+        new LavanderiaApp.Repositorios.ConsumoLavadoRepositorio().Eliminar(idConsumo);
+        ToastService.Show("Éxito", "Consumo automático eliminado.", "success");
+        CargarDatosBase();
+    }
     private void OnTemaChanged(ChangeEventArgs e)
     {
         string selectedTheme = e.Value?.ToString() ?? "Claro";

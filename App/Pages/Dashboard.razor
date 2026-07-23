@@ -382,8 +382,13 @@
         var clientes = ClienteRepo.ListarTodo();
         var pagos = PagoRepo.ObtenerTodos();
         var maquinasDb = new MaquinaRepositorio().ObtenerTodas();
+        
+        // Obtener último corte para reiniciar ventas y turnos
+        var ultimoCorte = new CorteCajaRepositorio().ObtenerTodos().OrderByDescending(c => c.Fecha).FirstOrDefault();
+        DateTime corteLim = (ultimoCorte != null && ultimoCorte.Fecha.Date == DateTime.Today) ? ultimoCorte.Fecha : DateTime.Today;
 
-        SalesTotal = pagos.Sum(p => p.MontoPago);
+        SalesTotal = pagos.Where(p => p.FechaPago >= corteLim).Sum(p => p.MontoPago);
+        
         var pedidosActivos = pedidos.Where(p => !p.EsEntregado && !p.EsCancelado).ToList();
         CapacityCount = pedidosActivos.Count;
         PendientesCount = pedidosActivos.Count(p => p.EsEnEspera || p.Estado.Contains("espera", StringComparison.OrdinalIgnoreCase) || p.Estado.Equals("Pendiente", StringComparison.OrdinalIgnoreCase));
@@ -393,8 +398,8 @@
         ActividadesDinamicas.Clear();
         int currentId = 1;
 
-        // Cargar actividades recientes dinámicamente desde los pedidos registrados en SQLite
-        var recents = pedidos.OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).ToList();
+        // Cargar actividades recientes del turno actual dinámicamente
+        var recents = pedidos.Where(p => p.FechaRecepcion >= corteLim).OrderByDescending(p => p.FechaRecepcion).ThenByDescending(p => p.IdPedido).ToList();
 
         foreach (var p in recents)
         {

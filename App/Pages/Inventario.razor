@@ -108,6 +108,7 @@
                                 </div>
                             </td>
                             <td style="padding: 16px; color: #64748B;">@item.StockMinimo.ToString("0.0") @item.UnidadMedida</td>
+                            <td style="padding: 16px; color: #64748B;">@item.CapacidadEnvase.ToString("0.0") @item.UnidadMedida</td>
                             <td style="padding: 16px; font-weight: 700;">@item.PrecioUnitario.ToString("$0.00")</td>
                             <td style="padding: 16px; font-weight: 800; color: #0F172A;">@item.ValuacionTotal.ToString("$#,##0.00")</td>
                             <td style="padding: 16px; text-align: center;">
@@ -171,7 +172,10 @@
                             <span class="material-symbols-rounded form-input-icon">scale</span>
                             <select class="form-input-field select-field" @bind="ItemEdicion.UnidadMedida" style="padding-left: 48px;">
                                 <option value="Litros">Litros</option>
+                                <option value="ml">Mililitros (ml)</option>
                                 <option value="Kg">Kg</option>
+                                <option value="g">Gramos (g)</option>
+                                <option value="mg">Miligramos (mg)</option>
                                 <option value="Piezas">Piezas</option>
                                 <option value="Galones">Galones</option>
                             </select>
@@ -181,7 +185,7 @@
 
                 <div class="form-inputs-grid-2x2">
                     <div class="form-input-group">
-                        <label class="form-input-label">Cantidad Actual</label>
+                        <label class="form-input-label">Cantidad Actual (@ItemEdicion.UnidadMedida)</label>
                         <div class="form-input-wrapper">
                             <span class="material-symbols-rounded form-input-icon">inventory_2</span>
                             <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.Cantidad" />
@@ -189,10 +193,18 @@
                     </div>
 
                     <div class="form-input-group">
-                        <label class="form-input-label">Stock Mínimo Alerta</label>
+                        <label class="form-input-label">Stock Mínimo (@ItemEdicion.UnidadMedida)</label>
                         <div class="form-input-wrapper">
                             <span class="material-symbols-rounded form-input-icon">warning</span>
                             <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.StockMinimo" />
+                        </div>
+                    </div>
+
+                    <div class="form-input-group">
+                        <label class="form-input-label">Capacidad por Envase (@ItemEdicion.UnidadMedida)</label>
+                        <div class="form-input-wrapper">
+                            <span class="material-symbols-rounded form-input-icon">inventory</span>
+                            <input type="number" step="0.5" class="form-input-field" @bind="ItemEdicion.CapacidadEnvase" />
                         </div>
                     </div>
                 </div>
@@ -403,6 +415,7 @@
             Cantidad = item.Cantidad,
             UnidadMedida = item.UnidadMedida,
             StockMinimo = item.StockMinimo,
+            CapacidadEnvase = item.CapacidadEnvase,
             PrecioUnitario = item.PrecioUnitario
         };
         ShowModal = true;

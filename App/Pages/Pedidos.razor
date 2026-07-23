@@ -544,8 +544,8 @@
             bool esDeHoy = p.FechaRecepcion.Date == DateTime.Today || (p.FechaEntrega.HasValue && p.FechaEntrega.Value.Date == DateTime.Today);
             if (!esDeHoy) return false;
 
-            // Para empleados: Ocultar pedidos anteriores al último corte de caja de hoy si ya están completados/cancelados
-            if (!isAdmin && ultimoCorte != null && ultimoCorte.Fecha.Date == DateTime.Today)
+            // Ocultar pedidos anteriores al último corte de caja de hoy si ya están completados/cancelados
+            if (ultimoCorte != null && ultimoCorte.Fecha.Date == DateTime.Today)
             {
                 if (p.FechaRecepcion <= ultimoCorte.Fecha && estaEntregadoOCancelado)
                 {

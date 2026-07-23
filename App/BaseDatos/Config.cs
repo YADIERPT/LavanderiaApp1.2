@@ -19,12 +19,16 @@ public static class Config
                 return Path.Combine(baseDir, "lavanderia.db");
             }
             
+#if DEBUG
+            return @"C:\Users\Yadie\RiderProjects\LavanderiaApp0.1\App\BaseDatos\lavanderia.db";
+#else
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LavanderiaApp");
             if (!Directory.Exists(folder))
             {
                 Directory.CreateDirectory(folder);
             }
             return Path.Combine(folder, "lavanderia.db");
+#endif
         }
     }
 }

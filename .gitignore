@@ -1,0 +1,20 @@
+# IDE and Editor settings
+.idea/
+.vs/
+*.user
+*.DotSettings.user
+
+# Build artifacts and directories
+[Bb]in/
+[Oo]bj/
+App/bin/
+App/obj/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated document artifacts
+*.pdf
+*.docx

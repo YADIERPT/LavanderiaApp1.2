@@ -12,9 +12,10 @@ public class InsumoItem
     public double StockMinimo { get; set; }
     public decimal PrecioUnitario { get; set; }
     public string UltimaActualizacion { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
+    public double CapacidadEnvase { get; set; } = 0.0;
 
     public bool EstaEnAlertaStock => Cantidad <= StockMinimo;
-    public decimal ValuacionTotal => (decimal)Cantidad * PrecioUnitario;
+    public decimal ValuacionTotal => CapacidadEnvase > 0 ? (decimal)(Cantidad / CapacidadEnvase) * PrecioUnitario : (decimal)Cantidad * PrecioUnitario;
 }
 
 public class InventarioRepositorio
@@ -31,6 +32,9 @@ public class InventarioRepositorio
 
         while (reader.Read())
         {
+            double cap = 0;
+            try { cap = reader.GetDouble(reader.GetOrdinal("CapacidadEnvase")); } catch { cap = 0; }
+            
             lista.Add(new InsumoItem
             {
                 IdInsumo = reader.GetInt32(reader.GetOrdinal("IdInsumo")),
@@ -40,7 +44,8 @@ public class InventarioRepositorio
                 UnidadMedida = reader.GetString(reader.GetOrdinal("UnidadMedida")),
                 StockMinimo = reader.GetDouble(reader.GetOrdinal("StockMinimo")),
                 PrecioUnitario = reader.GetDecimal(reader.GetOrdinal("PrecioUnitario")),
-                UltimaActualizacion = reader.GetString(reader.GetOrdinal("UltimaActualizacion"))
+                UltimaActualizacion = reader.GetString(reader.GetOrdinal("UltimaActualizacion")),
+                CapacidadEnvase = cap
             });
         }
         return lista;
@@ -57,7 +62,7 @@ public class InventarioRepositorio
                 UPDATE Inventario SET 
                 Nombre = @Nombre, Categoria = @Categoria, Cantidad = @Cantidad, 
                 UnidadMedida = @UnidadMedida, StockMinimo = @StockMinimo, 
-                PrecioUnitario = @PrecioUnitario, UltimaActualizacion = @UltimaActualizacion
+                PrecioUnitario = @PrecioUnitario, UltimaActualizacion = @UltimaActualizacion, CapacidadEnvase = @CapacidadEnvase
                 WHERE IdInsumo = @IdInsumo";
             using var cmd = new SqliteCommand(updateQuery, conexion);
             cmd.Parameters.AddWithValue("@Nombre", item.Nombre);
@@ -67,14 +72,15 @@ public class InventarioRepositorio
             cmd.Parameters.AddWithValue("@StockMinimo", item.StockMinimo);
             cmd.Parameters.AddWithValue("@PrecioUnitario", item.PrecioUnitario);
             cmd.Parameters.AddWithValue("@UltimaActualizacion", DateTime.Now.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@CapacidadEnvase", item.CapacidadEnvase);
             cmd.Parameters.AddWithValue("@IdInsumo", item.IdInsumo);
             cmd.ExecuteNonQuery();
         }
         else
         {
             string insertQuery = @"
-                INSERT INTO Inventario (Nombre, Categoria, Cantidad, UnidadMedida, StockMinimo, PrecioUnitario, UltimaActualizacion)
-                VALUES (@Nombre, @Categoria, @Cantidad, @UnidadMedida, @StockMinimo, @PrecioUnitario, @UltimaActualizacion)";
+                INSERT INTO Inventario (Nombre, Categoria, Cantidad, UnidadMedida, StockMinimo, PrecioUnitario, UltimaActualizacion, CapacidadEnvase)
+                VALUES (@Nombre, @Categoria, @Cantidad, @UnidadMedida, @StockMinimo, @PrecioUnitario, @UltimaActualizacion, @CapacidadEnvase)";
             using var cmd = new SqliteCommand(insertQuery, conexion);
             cmd.Parameters.AddWithValue("@Nombre", item.Nombre);
             cmd.Parameters.AddWithValue("@Categoria", item.Categoria);
@@ -83,6 +89,7 @@ public class InventarioRepositorio
             cmd.Parameters.AddWithValue("@StockMinimo", item.StockMinimo);
             cmd.Parameters.AddWithValue("@PrecioUnitario", item.PrecioUnitario);
             cmd.Parameters.AddWithValue("@UltimaActualizacion", DateTime.Now.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@CapacidadEnvase", item.CapacidadEnvase);
             cmd.ExecuteNonQuery();
         }
     }

@@ -130,18 +130,36 @@ public class DatabaseInitializer
                 Observacion TEXT
             );
 
+            CREATE TABLE IF NOT EXISTS ConsumoPorPedido (
+                IdConsumo INTEGER PRIMARY KEY AUTOINCREMENT,
+                IdInsumo INTEGER NOT NULL,
+                Cantidad REAL NOT NULL,
+                FOREIGN KEY (IdInsumo) REFERENCES Inventario(IdInsumo)
+            );
+
             CREATE TABLE IF NOT EXISTS AppMetadata (
                 Clave TEXT PRIMARY KEY,
                 Valor TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS HistorialInsumos (
+                IdHistorial INTEGER PRIMARY KEY AUTOINCREMENT,
+                IdInsumo INTEGER NOT NULL,
+                CantidadAnterior REAL NOT NULL,
+                CantidadNueva REAL NOT NULL,
+                Motivo TEXT NOT NULL,
+                UsuarioResponsable TEXT NOT NULL,
+                Fecha TEXT NOT NULL,
+                FOREIGN KEY (IdInsumo) REFERENCES Inventario(IdInsumo)
             );
 
             CREATE TABLE IF NOT EXISTS Notificaciones (
                 IdNotificacion INTEGER PRIMARY KEY AUTOINCREMENT,
                 Titulo TEXT NOT NULL,
                 Mensaje TEXT NOT NULL,
-                Tipo TEXT NOT NULL,
                 Fecha TEXT NOT NULL,
-                Leida INTEGER DEFAULT 0
+                Leida INTEGER NOT NULL DEFAULT 0,
+                Tipo TEXT NOT NULL DEFAULT 'Info'
             );
         ";
 
@@ -151,12 +169,22 @@ public class DatabaseInitializer
         }
 
         // 2. MIGRACIONES (Rutina automática de introspección con PRAGMA table_info)
+        MigrarTabla(conexion, "Inventario", new Dictionary<string, string>
+        {
+            { "CapacidadEnvase", "REAL NOT NULL DEFAULT 0.0" }
+        });
+
         MigrarTabla(conexion, "Pedidos", new Dictionary<string, string>
         {
             { "Estado", "TEXT NOT NULL DEFAULT 'En espera'" },
             { "InventarioRestado", "INTEGER NOT NULL DEFAULT 0" },
             { "CostoInsumos", "DECIMAL NOT NULL DEFAULT 0.0" },
             { "MaquinaAsignada", "TEXT" }
+        });
+
+        MigrarTabla(conexion, "ConsumoPorPedido", new Dictionary<string, string>
+        {
+            { "UnidadConsumo", "TEXT NOT NULL DEFAULT ''" }
         });
 
         MigrarTabla(conexion, "Servicios", new Dictionary<string, string>
