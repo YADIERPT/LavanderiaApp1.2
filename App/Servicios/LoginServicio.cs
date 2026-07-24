@@ -5,11 +5,17 @@ namespace LavanderiaApp.Servicios;
 
 public class LoginServicio
 {
-    private UsuarioRepositorio _usuarioRepo;
+    private readonly UsuarioRepositorio _usuarioRepo;
 
-    public LoginServicio()
+    public LoginServicio(UsuarioRepositorio usuarioRepo)
     {
-        _usuarioRepo = new UsuarioRepositorio();
+        _usuarioRepo = usuarioRepo;
+    }
+
+    // Destructor para cumplir con los requerimientos del proyecto
+    ~LoginServicio()
+    {
+        System.Diagnostics.Debug.WriteLine("Destruyendo la instancia de LoginServicio y liberando recursos...");
     }
 
     public bool Login(string nombreUsuario, string password)

@@ -24,9 +24,13 @@ public partial class App : Application
         serviceCollection.AddSingleton<LoginServicio>();
         serviceCollection.AddSingleton<ClienteRepositorio>();
         serviceCollection.AddSingleton<PedidoRepositorio>();
+        serviceCollection.AddSingleton<IPedidoRepositorio>(sp => sp.GetRequiredService<PedidoRepositorio>());
+        serviceCollection.AddSingleton<DetallePedidoRepositorio>();
+        serviceCollection.AddSingleton<IDetallePedidoRepositorio>(sp => sp.GetRequiredService<DetallePedidoRepositorio>());
         serviceCollection.AddSingleton<ServicioRepositorio>();
         serviceCollection.AddSingleton<UsuarioRepositorio>();
         serviceCollection.AddSingleton<PagoRepositorio>();
+        serviceCollection.AddSingleton<IPagoRepositorio>(sp => sp.GetRequiredService<PagoRepositorio>());
         serviceCollection.AddSingleton<InventarioRepositorio>();
         serviceCollection.AddSingleton<MaquinaRepositorio>();
         serviceCollection.AddSingleton<PedidoServicio>();
@@ -37,5 +41,12 @@ public partial class App : Application
 #endif
 
         Services = serviceCollection.BuildServiceProvider();
+
+        // Suscribirse a eventos de dominio para mantener el SRP en los servicios
+        var pedidoServicio = Services.GetRequiredService<PedidoServicio>();
+        pedidoServicio.OnPedidoEstadoActualizado += (idPedido, nuevoEstado) => 
+        {
+            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(idPedido, nuevoEstado);
+        };
     }
 }

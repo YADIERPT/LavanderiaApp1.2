@@ -8,12 +8,8 @@ public class Empleado : Usuario
 {
     public string Codigo { get; set; } = string.Empty;
     public string Posicion { get; set; } = "Recepcionista";
-    public string Turno { get; set; } = "Matutino";
     public string Estado { get; set; } = "ACTIVO"; // "ACTIVO", "EN DESCANSO", "INACTIVO"
     public decimal PagoMes { get; set; }
-    public DateTime? FechaContrato { get; set; }
-    public int? Edad { get; set; }
-    public string Sucursal { get; set; } = "Sucursal Principal";
     public bool HasAvatarImage { get; set; } = false;
 
     public Empleado()
@@ -73,7 +69,7 @@ public class Empleado : Usuario
         if (PagoMes < 0)
             errores.Add("El salario mensual no puede ser negativo.");
 
-        if (Edad.HasValue && (Edad < 16 || Edad > 99))
+        if (Edad > 0 && (Edad < 16 || Edad > 99))
             errores.Add("La edad ingresada no es válida.");
 
         return errores.Count == 0;

@@ -59,14 +59,15 @@ public class UsuarioRepositorio
 
     private Usuario MapearUsuario(SqliteDataReader reader)
     {
-        var u = new Usuario
-        {
-            IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-            Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
-            NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario")),
-            Password = reader.GetString(reader.GetOrdinal("Password")),
-            Rol = reader.GetString(reader.GetOrdinal("Rol"))
-        };
+        string rol = reader.GetString(reader.GetOrdinal("Rol"));
+        var u = LavanderiaApp.Servicios.UsuarioFactory.CrearUsuario(rol);
+        
+        u.IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario"));
+        u.Nombre = reader.GetString(reader.GetOrdinal("Nombre"));
+        u.NombreUsuario = reader.GetString(reader.GetOrdinal("NombreUsuario"));
+        u.Password = reader.GetString(reader.GetOrdinal("Password"));
+        u.Rol = rol;
+
 
         try { u.Telefono = !reader.IsDBNull(reader.GetOrdinal("Telefono")) ? reader.GetString(reader.GetOrdinal("Telefono")) : ""; } catch { }
         try { u.Correo = !reader.IsDBNull(reader.GetOrdinal("Correo")) ? reader.GetString(reader.GetOrdinal("Correo")) : ""; } catch { }

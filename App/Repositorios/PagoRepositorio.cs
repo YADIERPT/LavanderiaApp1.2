@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace LavanderiaApp.Repositorios;
 
-public class PagoRepositorio
+public class PagoRepositorio : IPagoRepositorio
 {
     public void Guardar(Pago pago)
     {

@@ -7,13 +7,24 @@ namespace LavanderiaApp;
 
 public class PedidoServicio
 {
-    private PedidoRepositorio _pedidoRepo;
-    private DetallePedidoRepositorio _detalleRepo;
+    private readonly IPedidoRepositorio _pedidoRepo;
+    private readonly IDetallePedidoRepositorio _detalleRepo;
+    private readonly IPagoRepositorio _pagoRepo;
 
-    public PedidoServicio()
+    public event Action<int, string> OnPedidoEstadoActualizado;
+
+    public PedidoServicio(IPedidoRepositorio pedidoRepo, IDetallePedidoRepositorio detalleRepo, IPagoRepositorio pagoRepo)
     {
-        _pedidoRepo = new PedidoRepositorio();
-        _detalleRepo = new DetallePedidoRepositorio();
+        _pedidoRepo = pedidoRepo;
+        _detalleRepo = detalleRepo;
+        _pagoRepo = pagoRepo;
+    }
+
+    // Destructor para limpiar el event Handler
+    ~PedidoServicio()
+    {
+        OnPedidoEstadoActualizado = null;
+        System.Diagnostics.Debug.WriteLine("Destruyendo la instancia de PedidoServicio y limpiando eventos...");
     }
 
     public string RegistrarPedido(Pedido pedido, List<DetallePedido> detalles, decimal anticipo = 0m, Pago.MetodoPago metodo = Pago.MetodoPago.Efectivo)
@@ -48,7 +59,7 @@ public class PedidoServicio
                     Metodo = metodo,
                     FechaPago = DateTime.Now
                 };
-                new PagoRepositorio().Guardar(pago);
+                _pagoRepo.Guardar(pago);
             }
             
             return "Éxito";
@@ -77,7 +88,7 @@ public class PedidoServicio
         try
         {
             _pedidoRepo.ActualizarEstado(idPedido, nuevoEstado);
-            MaquinasAutomatizacion.RegistrarCicloYValidarMantenimiento(idPedido, nuevoEstado);
+            OnPedidoEstadoActualizado?.Invoke(idPedido, nuevoEstado);
             return "Éxito";
         }
         catch (System.Exception ex)

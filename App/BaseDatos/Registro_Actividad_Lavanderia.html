@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Corte de Caja y Registro de Actividad</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; color: #1E293B; background: #FFFFFF; }
+    .header { border-bottom: 2px solid #1E3A8A; padding-bottom: 12px; margin-bottom: 24px; }
+    .header h1 { color: #1E3A8A; font-size: 22px; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .header p { color: #0284C7; font-size: 13px; margin: 0; font-weight: 600; }
+    h2 { color: #0F172A; font-size: 16px; margin-top: 28px; margin-bottom: 12px; border-left: 4px solid #0284C7; padding-left: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+    th { background: #1E3A8A; color: white; text-align: left; padding: 10px 14px; font-weight: 600; }
+    th.secondary { background: #0284C7; }
+    td { padding: 10px 14px; border-bottom: 1px solid #E2E8F0; }
+    tr:nth-child(even) td { background: #F8FAFC; }
+    tr.total-row td { background: #F1F5F9; font-weight: 700; color: #0F172A; border-top: 2px solid #CBD5E1; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 11px; color: #64748B; display: flex; justify-content: space-between; }
+    @media print { body { margin: 20px; } .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Lavanderias villas del sur — CORTE DE CAJA Y REGISTRO DE ACTIVIDAD</h1>
+    <p>Tel: 961 123 4567 | Dirección: Villas del Sur, Calle Principal #123 | Fecha de Corte: 23/07/2026</p>
+  </div>
+  <h2>Resumen Ejecutivo de Ingresos y Cobros</h2>
+  <table>
+    <thead><tr><th>Concepto</th><th>Monto ($ MXN)</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>Ingresos en Efectivo</td><td>$600.00</td><td>Caja Chica</td></tr>
+      <tr><td>Ingresos Digitales / Transferencia</td><td>$0.00</td><td>Bancos</td></tr>
+      <tr class="total-row"><td>TOTAL RECAUDADO HOY</td><td>$600.00</td><td>Consolidado</td></tr>
+    </tbody>
+  </table>
+  <h2>Actividad Reciente y Órdenes Registradas</h2>
+  <table>
+    <thead><tr><th class="secondary">Folio</th><th class="secondary">Cliente</th><th class="secondary">Fecha</th><th class="secondary">Estado</th><th class="secondary">Total</th></tr></thead>
+    <tbody>
+      <tr><td>ORD-0003</td><td>Cliente #1</td><td>2026-07-23</td><td>En Lavado</td><td>$600.00</td></tr>
+      <tr><td>ORD-0002</td><td>Cliente #1</td><td>2026-07-23</td><td>En Secado</td><td>$600.00</td></tr>
+      <tr><td>ORD-0001</td><td>Cliente #1</td><td>2026-07-23</td><td>Entregado</td><td>$600.00</td></tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <span>Reporte generado: 2026-07-23 17:38:12 | Sistema LavanderiaApp</span>
+    <span>Documento Oficial de Registro</span>
+  </div>
+</body>
+</html>

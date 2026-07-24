@@ -42,29 +42,14 @@ public class Usuario
         return Password.Equals(password);
     }
 
-    /// <summary>
-    /// Determina si el usuario posee rol de Master.
-    /// </summary>
-    public bool EsMaster => !string.IsNullOrEmpty(Rol) && 
-        Rol.Equals("Master", StringComparison.OrdinalIgnoreCase);
+    public virtual bool EsMaster => false;
+    public virtual bool EsAdmin => false;
+    public virtual bool EsEmpleado => true;
 
-    /// <summary>
-    /// Determina si el usuario posee rol de Administrador o Master.
-    /// </summary>
-    public bool EsAdmin => !string.IsNullOrEmpty(Rol) && 
-        (Rol.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
-         Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-         Rol.Equals("Master", StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>
-    /// Determina si el usuario es un Empleado.
-    /// </summary>
-    public bool EsEmpleado => !EsAdmin;
-
-    public bool PuedeGestionarPedidos => true;
-    public bool PuedeOperarMaquinas => true;
-    public bool PuedeGestionarInventario => true;
-    public bool PuedeVerFinanzas => EsAdmin;
+    public virtual bool PuedeGestionarPedidos => true;
+    public virtual bool PuedeOperarMaquinas => true;
+    public virtual bool PuedeGestionarInventario => true;
+    public virtual bool PuedeVerFinanzas => false;
 
     /// <summary>
     /// Valida si el objeto cumple con las reglas básicas de negocio.

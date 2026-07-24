@@ -6,13 +6,13 @@ namespace LavanderiaApp.Servicios;
 
 public class PagoServicio
 {
-    private PagoRepositorio _pagoRepo;
-    private PedidoRepositorio _pedidoRepo;
+    private readonly IPagoRepositorio _pagoRepo;
+    private readonly IPedidoRepositorio _pedidoRepo;
 
-    public PagoServicio()
+    public PagoServicio(IPagoRepositorio pagoRepo, IPedidoRepositorio pedidoRepo)
     {
-        _pagoRepo = new PagoRepositorio();
-        _pedidoRepo = new PedidoRepositorio();
+        _pagoRepo = pagoRepo;
+        _pedidoRepo = pedidoRepo;
     }
 
     public string ProcesarPago(int idPedido, decimal monto, Pago.MetodoPago metodo)

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace LavanderiaApp.Repositorios;
 
-public class DetallePedidoRepositorio
+public class DetallePedidoRepositorio : IDetallePedidoRepositorio
 {
     public void Guardar(DetallePedido detalle)
     {

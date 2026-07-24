@@ -1,9 +1,11 @@
 using Microsoft.Data.Sqlite;
 using LavanderiaApp.Modelos;
 
+using LavanderiaApp.Repositorios;
+
 namespace  LavanderiaApp;
 
-public class PedidoRepositorio
+public class PedidoRepositorio : IPedidoRepositorio
 {
     public int Guardar(Pedido pedido)
     {

@@ -36,8 +36,6 @@
     [Parameter]
     public int Id { get; set; }
 
-    private PagoServicio _pagoServicio = new();
-
     private void SeleccionarEfectivo()
     {
         if (Id <= 0) { NavManager.NavigateTo("/pedidos"); return; }

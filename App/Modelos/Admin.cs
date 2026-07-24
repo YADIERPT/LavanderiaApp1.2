@@ -23,6 +23,11 @@ public class Admin : Usuario
         Superusuario = true;
     }
 
+    public override bool EsAdmin => true;
+    public override bool EsEmpleado => false;
+    public override bool EsMaster => Superusuario;
+    public override bool PuedeVerFinanzas => true;
+
     /// <summary>
     /// Verifica si el administrador posee permisos para ejecutar acciones avanzadas.
     /// </summary>

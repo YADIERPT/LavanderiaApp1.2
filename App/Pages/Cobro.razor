@@ -6,6 +6,7 @@
 @using LavanderiaApp.Modelos
 @using LavanderiaApp.Servicios
 @inject NavigationManager NavManager
+@inject PagoServicio _pagoServicio
 
 <div class="cobro-page-container">
     <!-- Left Column: Order & Client Summary Details -->
@@ -330,7 +331,6 @@
     private decimal CalculatedChange => AmountPaid > SaldoDeudor ? AmountPaid - SaldoDeudor : 0.00m;
     private string FolioText => $"FOL-{DateTime.Now.Year}-{TurnoHelper.ObtenerNumeroDisplay(OrderId):D4}";
 
-    private PagoServicio _pagoServicio = new();
     private PedidoRepositorio _pedidoRepo = new();
     private ClienteRepositorio _clienteRepo = new();
     private PagoRepositorio _pagoRepo = new();
